@@ -385,3 +385,12 @@ class Potential:
         ax.imshow(array, cmap="inferno",extent=extent)
         plt.show()
 
+    def plotLayers(self):
+        import matplotlib.pyplot as plt
+        plt.clf()
+        fig=plt.figure()
+        N=int(np.ceil(np.sqrt(len(self.zs))))
+        for i in range(len(self.zs)):
+            ax = fig.add_subplot(N,N,i+1)
+            ax.imshow(self.array[:,:,i])
+        plt.show()
