@@ -83,11 +83,18 @@ def kirkland(qsq, Z):
     d = ABCDs[:, 3]
     
     # Vectorized computation on GPU
-    a_expanded = a[:, None, None]
-    b_expanded = b[:, None, None]
-    c_expanded = c[:, None, None]
-    d_expanded = d[:, None, None]
-    qsq_expanded = qsq[None, :, :]
+    if len(qsq.shape)==2:
+        a_expanded = a[:, None, None]
+        b_expanded = b[:, None, None]
+        c_expanded = c[:, None, None]
+        d_expanded = d[:, None, None]
+        qsq_expanded = qsq[None, :, :]
+    else: # qsq may be defined in kx,ky,kz axes. TODO is there a better way to do this? 
+        a_expanded = a[:, None, None, None]
+        b_expanded = b[:, None, None, None]
+        c_expanded = c[:, None, None, None]
+        d_expanded = d[:, None, None, None]
+        qsq_expanded = qsq[None, :, :, : ]
     
     kwarg = {"dim":0} if TORCH_AVAILABLE else {"axis":0}
     term1 = xp.sum(a_expanded / (qsq_expanded + b_expanded), **kwarg)
@@ -185,7 +192,7 @@ def loadKirkland(device='cpu'):
         kirklandABCDs = np.asarray(kirkland_params)
 
 class Potential:    
-    def __init__(self, xs, ys, zs, positions, atomTypes, kind="kirkland", device=None, slice_axis=2):
+    def __init__(self, xs, ys, zs, positions, atomTypes, kind="kirkland", device=None, slice_axis=2, fourierZ=False):
         # Set up device and backend first
         if TORCH_AVAILABLE:
             # Auto-detect device if not specified
@@ -244,17 +251,23 @@ class Potential:
         self.slice_spacing = spacings[slice_axis]
         self.n_slices = len(self.slice_coords)
         
-        # Set up device kwargs for unified xp interface
+        # Set up device
         device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
         
         # Set up k-space frequencies using xp with conditional device
         self.kxs = xp.fft.fftfreq(nx, d=dx, **device_kwargs)
         self.kys = xp.fft.fftfreq(ny, d=dy, **device_kwargs)
         qsq = self.kxs[:, None]**2 + self.kys[None, :]**2
-        
+        if fourierZ:
+            self.kzs = xp.fft.fftfreq(nz, d=dz, **device_kwargs)
+            qsq = qsq[:,:,None] + self.kzs[None, None, :]**2
+
         # Initialize potential array using xp with conditional device
         device_kwargs = {'device': self.device } if self.use_torch else {}
-        reciprocal = xp.zeros((nx, ny, self.n_slices), dtype=self.complex_dtype, **device_kwargs)
+        if fourierZ:
+            reciprocal = xp.zeros((nx, ny, nz), dtype=self.complex_dtype, **device_kwargs)
+        else:
+            reciprocal = xp.zeros((nx, ny, self.n_slices), dtype=self.complex_dtype, **device_kwargs)
         
         # Convert atom types to atomic numbers if needed
         unique_atom_types = set(atomTypes)
@@ -299,6 +312,8 @@ class Potential:
             if len(slice_coords) == 0:
                 continue
                 
+            if fourierZ:
+                self.slice_spacing = max(zs) # this is just for the following loop. hacky?
             for slice_idx in range(self.n_slices):
                 # Vectorized spatial masking using correct slice coordinates
                 slice_min = self.slice_coords[slice_idx] - self.slice_spacing/2 if slice_idx > 0 else 0
@@ -322,30 +337,42 @@ class Potential:
                 # Compute structure factors - match NumPy pattern exactly
                 expx = xp.exp(-1j * 2 * np.pi * self.kxs[None, :] * atomsx[:, None])
                 expy = xp.exp(-1j * 2 * np.pi * self.kys[None, :] * atomsy[:, None])
-                
+                if fourierZ:
+                    atomsz = slice_positions[:, 2]
+                    expz = xp.exp(-1j * 2 * np.pi * self.kzs[None, :] * atomsz[:, None])
+
                 # Einstein summation - match NumPy
                 kwarg={True:{},False:{"optimize":True}}[TORCH_AVAILABLE]
+                if fourierZ:
+                    shape_factor = xp.einsum('ax,ay,az->xyz', expx, expy, expz, **kwarg)
+                    reciprocal[:, :, :] += shape_factor * form_factor
+                    break
+
                 shape_factor = xp.einsum('ax,ay->xy', expx, expy, **kwarg)
                 
                 reciprocal[:, :, slice_idx] += shape_factor * form_factor
         
         # Slice-by-slice IFFT to match NumPy implementation exactly
         device_kwargs = {'device': device} if self.use_torch else {}
-        potential_real = xp.zeros((nx, ny, self.n_slices), dtype=float_dtype, **device_kwargs)
-        for slice_idx in range(self.n_slices):
-            potential_slice = xp.fft.ifft2(reciprocal[:, :, slice_idx])
-            potential_real[:, :, slice_idx] = xp.real(potential_slice)
+        if fourierZ:
+            self.array = reciprocal
+
+        else:
+            potential_real = xp.zeros((nx, ny, self.n_slices), dtype=float_dtype, **device_kwargs)
+            for slice_idx in range(self.n_slices):
+                potential_slice = xp.fft.ifft2(reciprocal[:, :, slice_idx])
+                potential_real[:, :, slice_idx] = xp.real(potential_slice)
         
-        # Apply proper normalization factor (dx²×dy²) to match reference implementation
-        dx = self.xs[1] - self.xs[0]
-        dy = self.ys[1] - self.ys[0] 
-        potential_real = potential_real / (dx**2 * dy**2)
+            # Apply proper normalization factor (dx²×dy²) to match reference implementation
+            dx = self.xs[1] - self.xs[0]
+            dy = self.ys[1] - self.ys[0] 
+            potential_real = potential_real / (dx**2 * dy**2)
         
-        #if TORCH_AVAILABLE:
-        #   self.array = potential_real.cpu().numpy()  # Move to CPU and convert to NumPy
+            #if TORCH_AVAILABLE:
+            #   self.array = potential_real.cpu().numpy()  # Move to CPU and convert to NumPy
         
-        # Store tensor version for potential GPU operations
-        self.array = potential_real
+            # Store tensor version for potential GPU operations
+            self.array = potential_real
         
     def to_cpu(self):
         """Convert tensors back to CPU NumPy arrays."""

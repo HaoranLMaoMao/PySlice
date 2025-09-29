@@ -19,7 +19,7 @@ trajectory=TrajectoryLoader(dump,timestep=dt,atom_mapping=types).load()
 positions = trajectory.positions[0]
 atom_types=trajectory.atom_types
 xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=0.1,slice_thickness=0.5)
-potential = Potential(xs, ys, zs, positions, atom_types, kind="kirkland")
+potential = Potential(xs, ys, zs, positions, atom_types, kind="kirkland",fourierZ=True)
 ary=potential.to_cpu()  # Convert to CPU numpy array properly
 
 print(ary.shape)
