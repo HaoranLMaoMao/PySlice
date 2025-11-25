@@ -275,7 +275,7 @@ class MultisliceCalculator:
                     else:
                         frame_data_cpu = frame_data
 
-                    if "exitwaves" in self.cache_levels:
+                    if "exitwaves" in self.cache_levels or "slices" in self.cache_levels:
                         np.save(cache_file, frame_data_cpu)
 
                 self.wavefunction_data[:, frame_idx, :, :, :] = frame_data[:, :, :, :, 0] # load p,x,y,l,1 --> p,t,x,y,l indices
