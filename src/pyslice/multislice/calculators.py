@@ -328,7 +328,7 @@ logging_tracker=[]
 def _process_frame_worker_torch(args):
     frame_idx, positions, atom_types, xs, ys, zs, aperture, eV, probe, probe_positions, element_map, cache_file, cache_levels , slice_axis, device = args
 
-    if cache_file.exists() and "exitwaves" in cache_levels:
+    if cache_file.exists() and ( "exitwaves" in cache_levels or "slices" in cache_levels ):
         global logging_tracker
         parent = str(cache_file.parent)
         if "cache_exists-"+parent not in logging_tracker:
@@ -429,7 +429,7 @@ def _process_frame_worker_torch(args):
     else:
         frame_data_cpu = frame_data
 
-    if "exitwaves" in cache_levels:
+    if "exitwaves" in cache_levels or "slices" in cache_levels:
         np.save(cache_file, frame_data_cpu)
 
     return frame_idx, frame_data, False

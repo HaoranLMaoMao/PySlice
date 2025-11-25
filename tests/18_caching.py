@@ -93,7 +93,7 @@ traj8=trajectory.get_random_timesteps(5,seed=8)
 calculator=MultisliceCalculator()
 probe_xs = np.linspace(a,3*a,6)
 probe_ys = np.linspace(b,3*b,7)
-calculator.setup(traj8,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,cache_levels=["slices","exitwaves"])
+calculator.setup(traj8,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,cache_levels=["slices"])
 exitwaves = calculator.run()
 differ(exitwaves.array[:,::3,::20,::20,::5],"outputs/caching/08-test.npy","08") # p,t,x,y,l indices
 
@@ -101,7 +101,7 @@ differ(exitwaves.array[:,::3,::20,::20,::5],"outputs/caching/08-test.npy","08") 
 print("9. many timesteps, one probe, layerwise caching")
 traj9=trajectory.get_random_timesteps(5,seed=9)
 calculator=MultisliceCalculator()
-calculator.setup(traj9,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,cache_levels=["slices","exitwaves"])
+calculator.setup(traj9,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,cache_levels=["slices"])
 exitwaves = calculator.run()
 differ(exitwaves.array[:,:,::5,::5,::5],"outputs/caching/09-test.npy","09") # p,t,x,y,l indices
 
@@ -111,7 +111,7 @@ traj10=trajectory.get_random_timesteps(1,seed=10)
 calculator=MultisliceCalculator()
 probe_xs = np.linspace(a,3*a,9)
 probe_ys = np.linspace(b,3*b,10)
-calculator.setup(traj10,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,cache_levels=["slices","exitwaves"])
+calculator.setup(traj10,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,cache_levels=["slices"])
 exitwaves = calculator.run()
 differ(exitwaves.array[:,:,::10,::10,::5],"outputs/caching/10-test.npy","10") # p,t,x,y,l indices
 
