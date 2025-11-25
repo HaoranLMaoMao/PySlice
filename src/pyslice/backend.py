@@ -122,7 +122,7 @@ def expand_dims(ary,d):
     if xp != np:
         return xp.unsqueeze(ary,dim=d)
     else:
-        return np.expand_dims(ary,dim=d)
+        return np.expand_dims(ary,d)
 
 def exp(x):
     return xp.exp(x)
