@@ -356,6 +356,8 @@ class Potential:
             dy = self.ys[1] - self.ys[0] 
             Z = real / (dx**2 * dy**2)
             if cache_file is not None:
+                if TORCH_AVAILABLE and hasattr(Z, 'cpu'):
+                    Z = Z.cpu().numpy()
                 np.save(cache_file,Z)
             return Z
         
