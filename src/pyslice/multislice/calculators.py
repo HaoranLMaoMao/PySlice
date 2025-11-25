@@ -330,8 +330,9 @@ def _process_frame_worker_torch(args):
 
     if cache_file.exists() and "exitwaves" in cache_levels:
         global logging_tracker
-        if "cache_exists" not in logging_tracker:
-            logging_tracker.append("cache_exists")
+        parent = str(cache_file.parent)
+        if "cache_exists-"+parent not in logging_tracker:
+            logging_tracker.append("cache_exists-"+parent)
             logging.warning("One or more frames reloaded from cache: "+str(cache_file.parent))
         return frame_idx, xp.asarray(np.load(cache_file)), True # if always saving as numpy, then must cast to torch array if re-reading cache file back in
 
