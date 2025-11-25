@@ -288,7 +288,9 @@ class Potential:
                 cache_file = self.cache_dir / ("potential_"+str(frame_idx)+"_"+str(slice_idx)+".npy")
             if cache_file is not None and os.path.exists(cache_file):
                 Z = np.load(cache_file)
-                return zeros(Z.shape) + Z
+                if TORCH_AVAILABLE:
+                    return xp.from_numpy(Z).to(device)
+                return Z
 
             # Initialize slice of potential array using xp with conditional device
             device_kwargs = {'device': self.device } if self.use_torch else {}
