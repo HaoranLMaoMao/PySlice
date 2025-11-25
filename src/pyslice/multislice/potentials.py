@@ -357,8 +357,10 @@ class Potential:
             Z = real / (dx**2 * dy**2)
             if cache_file is not None:
                 if TORCH_AVAILABLE and hasattr(Z, 'cpu'):
-                    Z = Z.cpu().numpy()
-                np.save(cache_file,Z)
+                    Z_cpu = Z.cpu().numpy()
+                else:
+                    Z_cpu = Z
+                np.save(cache_file,Z_cpu)
             return Z
         
         self.calculateSlice = calculateSlice
