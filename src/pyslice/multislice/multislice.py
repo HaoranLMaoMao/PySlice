@@ -233,55 +233,60 @@ class Probe:
         #if dz<0:
         #   self.array = xp.fft.ifft2( xp.fft.fft2( self.array ) / P )
 
-    # See Kirkland Eq 2.10: 
-    # χ(k,ϕ) = π/2 Cs λ³ k⁴ - π Δf λ k²
-    # + π fa2 λ k² sin(2*(ϕ-ϕa2)) + 2π/3 fa3 λ² k³ sin(3*(ϕ-ϕa3)) 
-    # + 2π/3 fc3 λ² k³ sin(ϕ-ϕc3)
-    # where fa is astig, fc is coma, with orientations ϕa or ϕc
-    # or https://doi-org.ornl.idm.oclc.org/10.1016/S0304-3991(99)00013-3 Eq. A1
-    # χ(rᵤ,rᵥ) = 2π/λ { C₁₀ ( rᵤ² + rᵥ² ) / 2
-    # + C₁₂ᵤ ( rᵤ² - rᵥ² ) / 2 + C₁₂ᵥ rᵤ rᵥ
-    # + C₂₁ᵤ rᵤ ( rᵤ² + rᵥ² ) / 3 + C₂₁ᵥ rᵥ ( rᵤ² + rᵥ² ) / 3 
-    # + C₂₃ᵤ rᵤ ( rᵤ² - 3 rᵥ² ) / 3 + C₂₃ᵥ rᵥ ( 3 rᵤ² - rᵥ² ) / 3
-    # + C₃₀ ( rᵤ² + rᵥ² )² / 4
-    # + C₃₂ᵤ ( rᵤ⁴ - rᵥ⁴ ) / 4 + C₃₂ᵥ 2 rᵤ rᵥ ( rᵤ² + rᵥ² ) / 4
-    # + C₃₄ᵤ ( rᵤ⁴ - 6 rᵤ² rᵥ² + rᵥ² ) / 4 + C₃₄ᵥ ( rᵤ³ rᵥ - rᵤ rᵥ³ ) } 
-    # where rᵤ = r cos(ϕ) and rᵥ = r sin(ϕ), r² = rᵤ² + rᵥ²
-    # χ(rᵤ,rᵥ) = 2π/λ { C₁₀ r² / 2
-    # + C₁₂ᵤ ( rᵤ² - rᵥ² ) / 2 + C₁₂ᵥ rᵤ rᵥ
-    # + C₂₁ᵤ rᵤ r² / 3 + C₂₁ᵥ rᵥ r² / 3 
-    # + C₂₃ᵤ rᵤ ( rᵤ² - 3 rᵥ² ) / 3 + C₂₃ᵥ rᵥ ( 3 rᵤ² - rᵥ² ) / 3
-    # + C₃₀ r⁴ / 4
-    # + C₃₂ᵤ ( rᵤ⁴ - rᵥ⁴ ) / 4 + C₃₂ᵥ 2 rᵤ rᵥ ( rᵤ² + rᵥ² ) / 4
-    # + C₃₄ᵤ ( rᵤ⁴ - 6 rᵤ² rᵥ² + rᵥ² ) / 4 + C₃₄ᵥ ( rᵤ³ rᵥ - rᵤ rᵥ³ ) } 
-    # or https://doi-org.ornl.idm.oclc.org/10.1016/j.ultramic.2010.04.006 Eq A1
-    # χ(u,v) = C₀₁ u + C₀₁ v
-    # + 1/2 [ C₁₀ ( u² + v² ) + C₁₂ᵤ ( u² - v² ) + 2 C₁₂ᵥ u v ]
-    # +1/3 [ C₂₃ᵤ
-    # ₀₁₂₃₄ᵤᵥ
-    # or comparing to: https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
-    # χ(k,ϕ) = π/2/λ 1/(n+1) C ( k λ )^(n+1) cos(m*(ϕ-ϕa))
-    # where Kirkland 
-    def aberrate(self,aberrations): # aberrations should be a dict of Cnm following https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
-        dPhi = xp.zeros(self._array.shape)
-        ks = xp.sqrt( self.kxs[:,None]**2 + self.kys[None,:]**2 )
-        theta = xp.atan2( self.kys[None,:] , self.kxs[:,None] )
-        for k in aberrations.keys():
-            n,m = int(k[1]),int(k[2]) # C03 --> 0,3
-            C = aberrations[k] ; phi0 = 0
-            if not isinstance(C,(int,float)):
-                C,phi0 = C
-            dPhi += 2*xp.pi/self.wavelength * \
-                (1/(n+1)) * C * ( ks * self.wavelength ) ** (n+1) * \
-                xp.cos( m * (theta-phi0) )
-		
-        # recall, in __init__, we created the real-space array via:
-        # self.array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
-        # Aberrations are defined at the aperture plane, so we must apply them in reciprocal space. 
-		# (or do a convolution in real-space)
-        reciprocal = xp.fft.fft2(xp.fft.fftshift(self._array))
+    def aberrate(self,aberrations):
+        self._array = aberrateWave(self._array,self.kxs,self.kys,self.wavelength,aberrations,arrayIsRealSpace=True)
+
+# See Kirkland Eq 2.10: 
+# χ(k,ϕ) = π/2 Cs λ³ k⁴ - π Δf λ k²
+# + π fa2 λ k² sin(2*(ϕ-ϕa2)) + 2π/3 fa3 λ² k³ sin(3*(ϕ-ϕa3)) 
+# + 2π/3 fc3 λ² k³ sin(ϕ-ϕc3)
+# where fa is astig, fc is coma, with orientations ϕa or ϕc
+# or https://doi-org.ornl.idm.oclc.org/10.1016/S0304-3991(99)00013-3 Eq. A1
+# χ(rᵤ,rᵥ) = 2π/λ { C₁₀ ( rᵤ² + rᵥ² ) / 2
+# + C₁₂ᵤ ( rᵤ² - rᵥ² ) / 2 + C₁₂ᵥ rᵤ rᵥ
+# + C₂₁ᵤ rᵤ ( rᵤ² + rᵥ² ) / 3 + C₂₁ᵥ rᵥ ( rᵤ² + rᵥ² ) / 3 
+# + C₂₃ᵤ rᵤ ( rᵤ² - 3 rᵥ² ) / 3 + C₂₃ᵥ rᵥ ( 3 rᵤ² - rᵥ² ) / 3
+# + C₃₀ ( rᵤ² + rᵥ² )² / 4
+# + C₃₂ᵤ ( rᵤ⁴ - rᵥ⁴ ) / 4 + C₃₂ᵥ 2 rᵤ rᵥ ( rᵤ² + rᵥ² ) / 4
+# + C₃₄ᵤ ( rᵤ⁴ - 6 rᵤ² rᵥ² + rᵥ² ) / 4 + C₃₄ᵥ ( rᵤ³ rᵥ - rᵤ rᵥ³ ) } 
+# where rᵤ = r cos(ϕ) and rᵥ = r sin(ϕ), r² = rᵤ² + rᵥ²
+# χ(rᵤ,rᵥ) = 2π/λ { C₁₀ r² / 2
+# + C₁₂ᵤ ( rᵤ² - rᵥ² ) / 2 + C₁₂ᵥ rᵤ rᵥ
+# + C₂₁ᵤ rᵤ r² / 3 + C₂₁ᵥ rᵥ r² / 3 
+# + C₂₃ᵤ rᵤ ( rᵤ² - 3 rᵥ² ) / 3 + C₂₃ᵥ rᵥ ( 3 rᵤ² - rᵥ² ) / 3
+# + C₃₀ r⁴ / 4
+# + C₃₂ᵤ ( rᵤ⁴ - rᵥ⁴ ) / 4 + C₃₂ᵥ 2 rᵤ rᵥ ( rᵤ² + rᵥ² ) / 4
+# + C₃₄ᵤ ( rᵤ⁴ - 6 rᵤ² rᵥ² + rᵥ² ) / 4 + C₃₄ᵥ ( rᵤ³ rᵥ - rᵤ rᵥ³ ) } 
+# or https://doi-org.ornl.idm.oclc.org/10.1016/j.ultramic.2010.04.006 Eq A1
+# χ(u,v) = C₀₁ u + C₀₁ v
+# + 1/2 [ C₁₀ ( u² + v² ) + C₁₂ᵤ ( u² - v² ) + 2 C₁₂ᵥ u v ]
+# +1/3 [ C₂₃ᵤ
+# ₀₁₂₃₄ᵤᵥ
+# or comparing to: https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
+# χ(k,ϕ) = π/2/λ 1/(n+1) C ( k λ )^(n+1) cos(m*(ϕ-ϕa))
+# where Kirkland 
+def aberrateWave(array,kxs,kys,wavelength,aberrations,arrayIsRealSpace=True): # aberrations should be a dict of Cnm following https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
+    dPhi = xp.zeros(array.shape)
+    ks = xp.sqrt( kxs[:,None]**2 + kys[None,:]**2 )
+    theta = xp.atan2( kys[None,:] , kxs[:,None] )
+    for k in aberrations.keys():
+        n,m = int(k[1]),int(k[2]) # C03 --> 0,3
+        C = aberrations[k] ; phi0 = 0
+        if not isinstance(C,(int,float)):
+            C,phi0 = C
+        dPhi += 2*xp.pi/wavelength * \
+            (1/(n+1)) * C * ( ks * wavelength ) ** (n+1) * \
+            xp.cos( m * (theta-phi0) )
+
+    # recall, in Probe.__init__, we created the real-space array via:
+    # self.array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
+    # Aberrations are defined at the aperture plane, so we must apply them in reciprocal space. 
+	# (or do a convolution in real-space)
+    if arrayIsRealSpace:
+        reciprocal = xp.fft.fft2(xp.fft.fftshift(array))
         reciprocal *= xp.exp(-1j * dPhi)
-        self._array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
+        return xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
+    return array * xp.exp(-1j * dPhi)
 
 
 def probe_grid(xlims,ylims,n,m):
