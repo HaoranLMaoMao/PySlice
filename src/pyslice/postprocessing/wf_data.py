@@ -3,7 +3,7 @@ Wave function data structure.
 """
 import numpy as np
 from typing import List, Tuple, Optional
-from ..multislice.multislice import Probe,aberrateWave
+from ..multislice.multislice import Probe,aberrationFunction
 from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 from pathlib import Path
 from ..backend import mean
@@ -441,9 +441,5 @@ class WFData(Signal):
         self._kys = self._kys[j1:j2]
 
     def aberrate(self,aberrations):
-        npt,nt,nx,ny,nl = self._array.shape
-        for p in range(npt):
-            for t in range(nt):
-                for l in range(nl):
-                    self._array[p,t,:,:,l] = aberrateWave(self._array[p,t,:,:,l],self._kxs,self._kys,self.probe.wavelength,aberrations,arrayIsRealSpace=False) 
-
+        dP = aberrationFunction(self._kxs,self._kys,self.probe.wavelength,aberrations)
+        self._array[:,:,:,:,:] *= dP[None,None,:,:,None] # indices npt,nt,kx,ky,nl

@@ -234,7 +234,14 @@ class Probe:
         #   self.array = xp.fft.ifft2( xp.fft.fft2( self.array ) / P )
 
     def aberrate(self,aberrations):
-        self._array = aberrateWave(self._array,self.kxs,self.kys,self.wavelength,aberrations,arrayIsRealSpace=True)
+        dP = aberrationFunction(self.kxs,self.kys,self.wavelength,aberrations)
+        # recall, in Probe.__init__, we created the real-space array via:
+        # self.array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
+        # Aberrations are defined at the aperture plane, so we must apply them in reciprocal space. 
+	    # (or do a convolution in real-space)
+        reciprocal = xp.fft.fft2(xp.fft.fftshift(self._array))
+        reciprocal *= dP
+        self._array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
 
 # See Kirkland Eq 2.10: 
 # χ(k,ϕ) = π/2 Cs λ³ k⁴ - π Δf λ k²
@@ -264,9 +271,10 @@ class Probe:
 # ₀₁₂₃₄ᵤᵥ
 # or comparing to: https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
 # χ(k,ϕ) = π/2/λ 1/(n+1) C ( k λ )^(n+1) cos(m*(ϕ-ϕa))
-# where Kirkland 
-def aberrateWave(array,kxs,kys,wavelength,aberrations,arrayIsRealSpace=True): # aberrations should be a dict of Cnm following https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
-    dPhi = xp.zeros(array.shape)
+# Aberrations are an adjustment to the phase of the wave ("dPhi"), to be applied in reciprocal space.
+# this is done by multiplying the complex wave (be it a probe or an exit wave) by xp.exp(-1j * dPhi)
+def aberrationFunction(kxs,kys,wavelength,aberrations): # aberrations should be a dict of Cnm following https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
+    dPhi = xp.zeros((len(kxs),len(kys)))
     ks = xp.sqrt( kxs[:,None]**2 + kys[None,:]**2 )
     theta = xp.atan2( kys[None,:] , kxs[:,None] )
     for k in aberrations.keys():
@@ -277,17 +285,7 @@ def aberrateWave(array,kxs,kys,wavelength,aberrations,arrayIsRealSpace=True): # 
         dPhi += 2*xp.pi/wavelength * \
             (1/(n+1)) * C * ( ks * wavelength ) ** (n+1) * \
             xp.cos( m * (theta-phi0) )
-
-    # recall, in Probe.__init__, we created the real-space array via:
-    # self.array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
-    # Aberrations are defined at the aperture plane, so we must apply them in reciprocal space. 
-	# (or do a convolution in real-space)
-    if arrayIsRealSpace:
-        reciprocal = xp.fft.fft2(xp.fft.fftshift(array))
-        reciprocal *= xp.exp(-1j * dPhi)
-        return xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
-    return array * xp.exp(-1j * dPhi)
-
+    return xp.exp(-1j * dPhi)
 
 def probe_grid(xlims,ylims,n,m):
 	x,y=np.meshgrid(np.linspace(*xlims,n),np.linspace(*ylims,m))
