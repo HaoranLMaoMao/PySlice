@@ -23,7 +23,7 @@ potential = Potential(xs, ys, zs, positions, atom_types, kind="kirkland")
 potential.build()
 ary=potential.array  # ".array" converts torch tensor to CPU numpy array automatically if required
 print(ary.shape)
-differ(ary[::20,::20,::2],"outputs/potentials-test.npy","POTENTIAL")
+differ(ary[::3,::3,:],"outputs/potentials-test.npy","POTENTIAL")
 
 potential.plot("outputs/figs/01_potentials.png")
 

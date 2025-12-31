@@ -7,6 +7,7 @@ from pathlib import Path
 import logging
 from .wf_data import WFData
 from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from ..backend import zeros
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +161,7 @@ class HAADFData(Signal):
         radius_inner = (inner_mrad * 1e-3) / self.probe.wavelength
         radius_outer = (outer_mrad * 1e-3) / self.probe.wavelength
 
-        mask = xp.zeros(q.shape, device=self._wf_array.device if TORCH_AVAILABLE else None, dtype=float_dtype)
+        mask = zeros(q.shape, device=self._wf_array.device if TORCH_AVAILABLE else None, dtype=float_dtype)
         mask[q >= radius_inner] = 1
         mask[q >= radius_outer] = 0
 
