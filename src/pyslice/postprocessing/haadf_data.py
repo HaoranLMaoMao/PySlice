@@ -64,7 +64,7 @@ class HAADFData(Signal):
         self.cache_dir = wf_data.cache_dir
 
         # Store reference to source WFData array for ADF calculation
-        self._wf_array = wf_data.reshaped # x,y,t,kx,ky,l indices
+        self._wf_array = wf_data.reshaped # nprobes,x,y,t,kx,ky,l indices
 
         # Initialize ADF as None, will be computed by calculateADF
         self._array = None
@@ -186,16 +186,16 @@ class HAADFData(Signal):
         #        self._array[i, j] = collected
 
 
-        # recall self._wf_array is reshaped: p,t,kx,ky,l --> x,y,t,kx,ky,l
+        # recall self._wf_array is reshaped: p,t,kx,ky,l --> c,x,y,t,kx,ky,l
         if preview:
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots()
-            preview_data = xp.mean(xp.absolute(self._wf_array),axis=(0,1,2,5))**.2 * (1 - mask)
+            preview_data = xp.mean(xp.absolute(self._wf_array),axis=(0,1,2,3,6))**.2 * (1 - mask)
             ax.imshow(np.asarray(preview_data), cmap="inferno")
             plt.show()
 
-        collected = self._wf_array * mask[None,None,None,:,:,None] # x,y,t,kx,ky,l indices, mask is kx,ky
-        self._array = xp.mean(xp.sum(xp.absolute(collected),axis=(3,4)),axis=(2,3)) # sum over kx,ky, mean over t,l
+        collected = self._wf_array * mask[None,None,None,:,:,None] # c,x,y,t,kx,ky,l indices, mask is kx,ky
+        self._array = xp.mean(xp.sum(xp.absolute(collected),axis=(4,5)),axis=(0,3,4)) # sum over kx,ky, mean over c,t,l
 
         # Update dimensions with computed xs, ys
         def to_numpy(x):
