@@ -149,10 +149,6 @@ class MultisliceCalculator:
         self.cache_levels = cache_levels
         self.max_kx = max_kx
         self.max_ky = max_ky
-
-        #print(cache_key)
-        self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+cache_key)
-        self.output_dir.mkdir(parents=True, exist_ok=True)
                 
         # Set up spatial grids
         xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=sampling,slice_thickness=slice_thickness)
@@ -187,7 +183,11 @@ class MultisliceCalculator:
         # Generate cache key and setup output directory
         cache_key = self._generate_cache_key(trajectory, aperture, voltage_eV,
                                            slice_thickness, sampling, probe_positions)
+        #print(cache_key)
+        self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+cache_key)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
+		
         # Create probe on the correct device from the start
         self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device)
 
