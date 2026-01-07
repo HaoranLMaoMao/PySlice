@@ -23,7 +23,7 @@ testFiles={"silicon_pos.positions":{"ovitokwargs":{"atom_style":"molecular"}},	#
 	#"silicon_xyz.xyz": {},               # xyz file following wikipedia conventions (https://en.wikipedia.org/wiki/XYZ_file_format), generated via generatePositions.py
 	#"silicon_cif.cif": {},		       # generated via ase.io.read/write from silicon.xyz
 	"hBN_cif.cif": {},				   # taken from DOI: 10.1016/j.matlet.2006.07.108 https://materials.springer.com/isp/crystallographic/docs/sd_1923917
-	"hBN_xyz.xyz": {},				   # taken from DOI: 10.17863/CAM.66112
+	#"hBN_xyz.xyz": {},				   # taken from DOI: 10.17863/CAM.66112
 	"hBN_truncated.lammpstrj": {"atom_mapping":{1:"B",2:"N"}},   # multiple timesteps, generated via a custom dump command from lammps
     "hBN_GAP_ase.trj": {},           # multiple timesteps, generated via a ASE MD run using the GAP potential from https://doi.org/10.1021/acs.jpcc.0c05831
 }

@@ -1,0 +1,9 @@
+-------------------------------------------------------------------------------
+There are messages associated with the following module(s):
+-------------------------------------------------------------------------------
+
+cuda/11.4.0:
+   Please note, CUDA/11.4.0 is required if compiling for NVIDIA K80 GPUs.
+   Newer toolchain versions will not work for K80's.
+
+-------------------------------------------------------------------------------DeprecationWarning: 'source deactivate' is deprecated. Use 'conda deactivate'.
