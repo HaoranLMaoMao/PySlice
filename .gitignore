@@ -47,6 +47,7 @@ Thumbs.db
 
 # Log files
 *.log
+!runAllTests*.log
 logs/
 !tests/runAllTests.log
 
