@@ -9,7 +9,7 @@ from pyslice import Loader,gridFromTrajectory,Potential,differ
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Remove previously-cached npy files (we want to rest reloading them)
+# Remove previously-cached npy files (we want to test reloading them)
 outfiles=glob.glob("inputs/*.npy")
 for f in outfiles:
 	if "-test" not in f:
@@ -18,14 +18,14 @@ for f in outfiles:
 # https://www.ovito.org/manual/reference/file_formats/file_formats_input.html
 # https://www.ovito.org/manual/usage/data_model.html#usage-particle-properties
 
-# define our test input files. all of these should be supported
-testFiles={"silicon.positions":{"atom_style":"molecular"},	# lammps input positions file, generated via generatePositions.py
-	"silicon.xyz": None,               # xyz file following wikipedia conventions (https://en.wikipedia.org/wiki/XYZ_file_format), generated via generatePositions.py
-	"silicon.cif": None,		       # generated via ase.io.read/write from silicon.xyz
-	"hBN.cif": None,				   # taken from DOI: 10.1016/j.matlet.2006.07.108 https://materials.springer.com/isp/crystallographic/docs/sd_1923917
-	"hBN.xyz": None,				   # taken from DOI: 10.17863/CAM.66112
-	"hBN_truncated.lammpstrj": None,   # multiple timesteps, generated via a custom dump command from lammps
-    "hBN_GAP_ase.trj": None,           # multiple timesteps, generated via a ASE MD run using the GAP potential from https://doi.org/10.1021/acs.jpcc.0c05831
+# define our test input files. all of these should be supported. additional keyword args may be required
+testFiles={"silicon.positions":{"ovitokwargs":{"atom_style":"molecular"}},	# lammps input positions file, generated via generatePositions.py
+	"silicon.xyz": {},               # xyz file following wikipedia conventions (https://en.wikipedia.org/wiki/XYZ_file_format), generated via generatePositions.py
+	"silicon.cif": {},		       # generated via ase.io.read/write from silicon.xyz
+	"hBN.cif": {},				   # taken from DOI: 10.1016/j.matlet.2006.07.108 https://materials.springer.com/isp/crystallographic/docs/sd_1923917
+	"hBN.xyz": {},				   # taken from DOI: 10.17863/CAM.66112
+	"hBN_truncated.lammpstrj": {"atom_mapping":{1:"B",2:"N"}},   # multiple timesteps, generated via a custom dump command from lammps
+    "hBN_GAP_ase.trj": {},           # multiple timesteps, generated via a ASE MD run using the GAP potential from https://doi.org/10.1021/acs.jpcc.0c05831
 }
 
 
@@ -33,7 +33,7 @@ testFiles={"silicon.positions":{"atom_style":"molecular"},	# lammps input positi
 for i,filename in enumerate(testFiles.keys()):
 	# LOAD IT
 	print("attempting to load","inputs/"+filename)
-	trajectory=Loader("inputs/"+filename,ovitokwargs=testFiles[filename]).load()
+	trajectory=Loader("inputs/"+filename,**testFiles[filename]).load()
 	# DIFF IT
 	positions = trajectory.positions[0]
 	differ(positions,"outputs/loaders-test_"+filename+".npy","POSITIONS")
