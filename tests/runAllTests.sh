@@ -6,5 +6,5 @@ for s in ${scripts[@]}
 do
 	echo python3 $s >> runAllTests-$1.log
 	python3 $s >> runAllTests-$1.log 2>> runAllTests-$1.log
-        rm -rf psi_data/*
+        #rm -rf psi_data/*
 done

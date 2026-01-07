@@ -7,8 +7,8 @@
 #SBATCH -n 1
 #SBATCH -c 1
 #SBATCH -G v100:1
-#SBATCH --output=SI.sbout
-#SBATCH --error=SI.sberr
+#SBATCH --output=gpu.sbout
+#SBATCH --error=gpu.sberr
 
 module load cuda/11.4.0
 module load gcc
