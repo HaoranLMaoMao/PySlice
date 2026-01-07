@@ -2,12 +2,22 @@ scripts=( "00_probe.py" "01_potentials.py" "02_propagate_otf=False.py" "02_propa
 
 echo $(date) > runAllTests.log
 
+mv /media/qwe/Alexandria/Software/Python3.12/site-packages/torch_bak /media/qwe/Alexandria/Software/Python3.12/site-packages/torch
+
 for s in ${scripts[@]}
 do
-	for version in 3 3.13 3.9
-	do
-		echo python$version $s >> runAllTests.log
-		python$version $s >> runAllTests.log 2>> runAllTests.log
+	echo python3 $s >> runAllTests.log
+	python3 $s >> runAllTests.log 2>> runAllTests.log
         rm -rf psi_data/*
-	done
 done
+
+mv /media/qwe/Alexandria/Software/Python3.12/site-packages/torch /media/qwe/Alexandria/Software/Python3.12/site-packages/torch_bak
+
+for s in ${scripts[@]}
+do
+	echo python3 $s >> runAllTests.log
+	python3 $s >> runAllTests.log 2>> runAllTests.log
+        rm -rf psi_data/*
+done
+
+mv /media/qwe/Alexandria/Software/Python3.12/site-packages/torch_bak /media/qwe/Alexandria/Software/Python3.12/site-packages/torch
