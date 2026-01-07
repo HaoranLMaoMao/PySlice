@@ -1,1852 +1,15 @@
-Tue Jan 6 10:05:37 PM EST 2026
-python3 06_loaders.py
-No velocity data found. Setting velocities to zero.
-attempting to load inputs/silicon_pos.positions
-Loading frames:   0%|          | 0/1 [00:00<?, ?frame/s]Loading frames: 100%|██████████| 1/1 [00:00<00:00, 1929.30frame/s]
-No velocity data found. Setting velocities to zero.
-diff npy file does not exist. creating anew
-saving plot for silicon_pos.positions to 06_loaders_0.png
-attempting to load inputs/hBN_cif.cif
-diff npy file does not exist. creating anew
-saving plot for hBN_cif.cif to 06_loaders_1.png
-attempting to load inputs/hBN_xyz.xyz
-Loading frames:   0%|          | 0/1847 [00:00<?, ?frame/s]Loading frames:  19%|█▉        | 354/1847 [00:00<00:00, 3539.70frame/s]Failed to load frame 397: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 398: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 399: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 400: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 401: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 402: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 403: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 404: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 405: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 406: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 407: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 408: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 409: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 410: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 411: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 412: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 413: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 414: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 415: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 416: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 417: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 418: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 419: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 420: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 421: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 422: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 423: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 424: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 425: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 426: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 427: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 428: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 429: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 430: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 431: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 432: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 433: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 434: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 435: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 436: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 437: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 438: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 439: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 440: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 441: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 442: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 443: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 444: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 445: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 446: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 447: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 448: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 449: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 450: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 451: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 452: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 453: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 454: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 455: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 456: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 457: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 458: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 459: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 460: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 461: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 462: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 463: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 464: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 465: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 466: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 467: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 468: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 469: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 470: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 471: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 472: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 473: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 474: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 475: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 476: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 477: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 478: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 479: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 480: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 481: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 482: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 483: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 484: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 485: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 486: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 487: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 488: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 489: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 490: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 491: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 492: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 493: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 494: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 495: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 496: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 497: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 498: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 499: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 500: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 501: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 502: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 503: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 504: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 505: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 506: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 507: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 508: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 509: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 510: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 511: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 512: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 513: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 514: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 515: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 516: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 517: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 518: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 519: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 520: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 521: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 522: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 523: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 524: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 525: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 526: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 527: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 528: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 529: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 530: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 531: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 532: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 533: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 534: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 535: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 536: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 537: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 538: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 539: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 540: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 541: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 542: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 543: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 544: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 545: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 546: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 547: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 548: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 549: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 550: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 551: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 552: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 553: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 554: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 555: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 556: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 557: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 558: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 559: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 560: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 561: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 562: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 563: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 564: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 565: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 566: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 567: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 568: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 569: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 570: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 571: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 572: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 573: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 574: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 575: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 576: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 577: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 578: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 579: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 580: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 581: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 582: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 583: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 584: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 585: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 586: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 587: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 588: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 589: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 590: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 591: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 592: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 593: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 594: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 595: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 596: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 597: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 598: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 599: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 600: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 601: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 602: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 603: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 604: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 605: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 606: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 607: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 608: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 609: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 610: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 611: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 612: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 613: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 614: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 615: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 616: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 617: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 618: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 619: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 620: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 621: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 622: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 623: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 624: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 625: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 626: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 627: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 628: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 629: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 630: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 631: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 632: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 633: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 634: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 635: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 636: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 637: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 638: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 639: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 640: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 641: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 642: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 643: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 644: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 645: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 646: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 647: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 648: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 649: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 650: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 651: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 652: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 653: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 654: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 655: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 656: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 657: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 658: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 659: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 660: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 661: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 662: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 663: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 664: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 665: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 666: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 667: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 668: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 669: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 670: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 671: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 672: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 673: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 674: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 675: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 676: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 677: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 678: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 679: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 680: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 681: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 682: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 683: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 684: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 685: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 686: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 687: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 688: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 689: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 690: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 691: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 692: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 693: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 694: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 695: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 696: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 697: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 698: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 699: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 700: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 701: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 702: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 703: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 704: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 705: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 706: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 707: could not broadcast input array from shape (196,3) into shape (200,3)
-Loading frames:  38%|███▊      | 708/1847 [00:00<00:00, 3178.46frame/s]Failed to load frame 708: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 709: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 710: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 711: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 712: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 713: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 714: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 715: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 716: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 717: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 718: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 719: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 720: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 721: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 722: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 723: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 724: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 725: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 726: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 727: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 728: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 729: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 730: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 731: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 732: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 733: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 734: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 735: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 736: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 737: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 738: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 739: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 740: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 741: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 742: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 743: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 744: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 745: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 746: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 747: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 748: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 749: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 750: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 751: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 752: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 753: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 754: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 755: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 756: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 757: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 758: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 759: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 760: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 761: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 762: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 763: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 764: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 765: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 766: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 767: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 768: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 769: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 770: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 771: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 772: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 773: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 774: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 775: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 776: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 777: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 778: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 779: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 780: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 781: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 782: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 783: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 784: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 785: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 786: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 787: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 788: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 789: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 790: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 791: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 792: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 793: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 794: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 795: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 796: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 797: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 798: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 799: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 800: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 801: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 802: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 803: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 804: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 805: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 806: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 807: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 808: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 809: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 810: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 811: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 812: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 813: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 814: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 815: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 816: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 817: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 818: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 819: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 820: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 821: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 822: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 823: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 824: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 825: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 826: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 827: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 828: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 829: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 830: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 831: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 832: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 833: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 834: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 835: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 836: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 837: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 838: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 839: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 840: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 841: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 842: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 843: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 844: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 845: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 846: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 847: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 848: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 849: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 850: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 851: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 852: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 853: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 854: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 855: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 856: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 857: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 858: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 859: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 860: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 861: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 862: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 863: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 864: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 865: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 866: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 867: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 868: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 869: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 870: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 871: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 872: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 873: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 874: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 875: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 876: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 877: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 878: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 882: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 888: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 889: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 890: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 891: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 892: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 893: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 894: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 895: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 896: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 897: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 898: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 899: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 900: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 901: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 902: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 903: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 904: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 905: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 906: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 907: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 908: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 909: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 910: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 911: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 912: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 913: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 914: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 915: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 916: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 917: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 918: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 919: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 920: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 921: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 922: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 923: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 924: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 925: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 926: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 927: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 928: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 929: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 930: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 931: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 932: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 933: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 934: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 935: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 936: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 937: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 938: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 939: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 940: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 941: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 942: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 943: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 944: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 945: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 946: could not broadcast input array from shape (196,3) into shape (200,3)
-Failed to load frame 947: could not broadcast input array from shape (196,3) into shape (200,3)
-Loading frames:  56%|█████▌    | 1029/1847 [00:00<00:00, 3020.55frame/s]Failed to load frame 1345: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1346: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1347: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1348: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1349: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1350: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1351: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1352: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1353: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1354: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1355: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1356: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1357: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1358: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1359: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1360: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1361: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1362: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1363: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1364: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1365: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1366: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1367: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1368: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1369: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1370: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1371: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1372: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1373: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1374: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1375: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1376: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1377: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1378: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1379: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1380: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1381: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1382: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1383: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1384: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1385: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1386: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1387: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1388: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1389: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1390: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1391: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1392: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1393: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1394: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1395: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1396: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1397: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1398: could not broadcast input array from shape (180,3) into shape (200,3)
-Loading frames:  76%|███████▌  | 1399/1847 [00:00<00:00, 3269.93frame/s]Failed to load frame 1399: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1400: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1401: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1402: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1403: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1404: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1405: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1406: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1407: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1408: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1409: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1410: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1411: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1412: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1413: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1414: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1415: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1416: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1417: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1418: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1419: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1420: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1421: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1422: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1423: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1424: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1425: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1426: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1427: could not broadcast input array from shape (80,3) into shape (200,3)
-Failed to load frame 1428: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1429: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1430: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1431: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1432: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1433: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1434: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1435: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1436: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1437: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1438: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1439: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1440: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1441: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1442: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1443: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1444: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1445: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1446: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1447: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1448: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1449: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1450: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1451: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1452: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1453: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1454: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1455: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1456: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1457: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1458: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1459: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1460: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1461: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1462: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1463: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1464: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1465: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1466: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1467: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1468: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1469: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1470: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1471: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1472: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1473: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1474: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1475: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1476: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1477: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1478: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1479: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1480: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1481: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1482: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1483: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1484: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1485: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1486: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1487: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1488: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1489: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1490: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1491: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1492: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1493: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1494: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1495: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1496: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1497: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1498: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1499: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1500: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1501: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1502: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1503: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1504: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1505: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1506: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1507: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1508: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1509: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1510: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1511: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1512: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1513: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1514: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1515: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1516: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1517: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1518: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1519: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1520: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1521: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1522: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1523: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1524: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1525: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1526: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1527: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1528: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1529: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1530: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1531: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1532: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1533: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1534: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1535: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1536: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1537: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1538: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1539: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1540: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1541: could not broadcast input array from shape (96,3) into shape (200,3)
-Failed to load frame 1542: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1543: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1544: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1545: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1546: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1547: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1548: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1549: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1550: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1551: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1552: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1553: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1554: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1555: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1556: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1557: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1558: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1559: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1560: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1561: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1562: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1563: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1564: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1565: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1566: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1567: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1568: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1569: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1570: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1571: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1572: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1573: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1574: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1575: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1576: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1577: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1578: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1579: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1580: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1581: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1582: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1583: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1584: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1585: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1586: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1587: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1588: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1589: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1590: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1591: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1592: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1593: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1594: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1595: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1596: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1597: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1598: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1599: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1600: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1601: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1602: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1603: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1604: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1605: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1606: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1607: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1608: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1609: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1610: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1611: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1612: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1613: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1614: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1615: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1616: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1617: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1618: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1619: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1620: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1621: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1622: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1623: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1624: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1625: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1626: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1627: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1628: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1629: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1630: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1631: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1632: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1633: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1634: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1635: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1636: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1637: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1638: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1639: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1640: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1641: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1642: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1643: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1644: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1645: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1646: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1647: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1648: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1649: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1650: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1651: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1652: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1653: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1654: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1655: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1656: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1657: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1658: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1659: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1660: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1661: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1662: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1663: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1664: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1665: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1666: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1667: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1668: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1669: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1670: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1671: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1672: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1673: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1674: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1675: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1676: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1677: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1678: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1679: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1680: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1681: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1682: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1683: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1684: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1685: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1686: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1687: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1688: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1689: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1690: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1691: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1692: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1693: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1694: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1695: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1696: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1697: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1698: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1699: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1700: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1701: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1702: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1703: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1704: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1705: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1706: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1707: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1708: could not broadcast input array from shape (144,3) into shape (200,3)
-Failed to load frame 1709: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1710: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1711: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1712: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1713: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1714: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1715: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1716: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1717: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1718: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1719: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1720: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1721: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1722: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1723: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1724: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1725: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1726: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1727: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1728: could not broadcast input array from shape (180,3) into shape (200,3)
-Loading frames:  94%|█████████▎| 1729/1847 [00:00<00:00, 3077.40frame/s]Failed to load frame 1729: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1730: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1731: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1732: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1733: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1734: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1735: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1736: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1737: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1738: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1739: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1740: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1741: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1742: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1743: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1744: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1745: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1746: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1747: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1748: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1749: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1750: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1751: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1752: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1753: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1754: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1755: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1756: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1757: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1758: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1759: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1760: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1761: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1762: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1763: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1764: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1765: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1766: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1767: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1768: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1769: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1770: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1771: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1772: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1773: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1774: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1775: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1776: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1777: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1778: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1779: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1780: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1781: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1782: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1783: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1784: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1785: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1786: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1787: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1788: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1789: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1790: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1791: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1792: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1793: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1794: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1795: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1796: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1797: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1798: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1799: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1800: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1801: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1802: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1803: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1804: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1805: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1806: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1807: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1808: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1809: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1810: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1811: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1812: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1813: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1814: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1815: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1816: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1817: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1818: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1819: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1820: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1821: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1822: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1823: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1824: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1825: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1826: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1827: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1828: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1829: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1830: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1831: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1832: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1833: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1834: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1835: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1836: could not broadcast input array from shape (160,3) into shape (200,3)
-Failed to load frame 1837: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1838: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1839: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1840: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1841: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1842: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1843: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1844: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1845: could not broadcast input array from shape (180,3) into shape (200,3)
-Failed to load frame 1846: could not broadcast input array from shape (180,3) into shape (200,3)
-Loading frames: 100%|██████████| 1847/1847 [00:00<00:00, 3110.89frame/s]
-diff npy file does not exist. creating anew
-saving plot for hBN_xyz.xyz to 06_loaders_2.png
-attempting to load inputs/hBN_truncated.lammpstrj
-Loading frames:   0%|          | 0/100 [00:00<?, ?frame/s]Loading frames:  51%|█████     | 51/100 [00:00<00:00, 506.71frame/s]Loading frames: 100%|██████████| 100/100 [00:00<00:00, 502.18frame/s]
-No velocity data found. Setting velocities to zero.
-diff npy file does not exist. creating anew
-saving plot for hBN_truncated.lammpstrj to 06_loaders_3.png
-attempting to load inputs/hBN_GAP_ase.trj
-Loading frames:   0%|          | 0/101 [00:00<?, ?frame/s]Loading frames:  14%|█▍        | 14/101 [00:00<00:00, 131.64frame/s]Loading frames:  28%|██▊       | 28/101 [00:00<00:00, 125.31frame/s]Loading frames:  41%|████      | 41/101 [00:00<00:00, 123.44frame/s]Loading frames:  53%|█████▎    | 54/101 [00:00<00:00, 119.70frame/s]Loading frames:  65%|██████▌   | 66/101 [00:00<00:00, 117.62frame/s]Loading frames:  77%|███████▋  | 78/101 [00:00<00:00, 116.48frame/s]Loading frames:  89%|████████▉ | 90/101 [00:00<00:00, 115.41frame/s]Loading frames: 100%|██████████| 101/101 [00:00<00:00, 117.71frame/s]
-diff npy file does not exist. creating anew
-saving plot for hBN_GAP_ase.trj to 06_loaders_4.png
-
-Testing ASE Atoms object loading (single frame)
-✓ Loaded from ASE Atoms: 1 frames, 54 atoms
-✓ ASE Atoms single frame loading test PASSED
-
-Testing ASE Atoms trajectory loading (multiple frames)
-✓ Loaded from ASE trajectory: 10 frames, 16 atoms
-✓ ASE Atoms multi-frame loading test PASSED
-python3.13 06_loaders.py
-runAllTests.sh: line 10: python3.13: command not found
-python3.9 06_loaders.py
-runAllTests.sh: line 10: python3.9: command not found
-python3 07_defocus.py
-python3.13 07_defocus.py
-runAllTests.sh: line 10: python3.13: command not found
-python3.9 07_defocus.py
-runAllTests.sh: line 10: python3.9: command not found
-python3 08_LACBED_iterative.py
-Loading frames:   0%|          | 0/50 [00:00<?, ?frame/s]Loading frames:  32%|███▏      | 16/50 [00:00<00:00, 156.81frame/s]Loading frames:  64%|██████▍   | 32/50 [00:00<00:00, 152.05frame/s]Loading frames:  96%|█████████▌| 48/50 [00:00<00:00, 149.87frame/s]Loading frames: 100%|██████████| 50/50 [00:00<00:00, 150.66frame/s]
-Processing frames:   0%|          | 0/1 [00:00<?, ?frame/s]propagating through slices
-
-  0%|          | 0/55 [00:00<?, ?it/s][A
-  4%|▎         | 2/55 [00:00<00:04, 13.13it/s][A
-  7%|▋         | 4/55 [00:00<00:05,  9.29it/s][A
- 11%|█         | 6/55 [00:00<00:04, 10.35it/s][A
- 15%|█▍        | 8/55 [00:00<00:04, 10.77it/s][A
- 18%|█▊        | 10/55 [00:01<00:04,  9.46it/s][A
- 22%|██▏       | 12/55 [00:01<00:04,  8.79it/s][A
- 25%|██▌       | 14/55 [00:01<00:04,  9.60it/s][A
- 29%|██▉       | 16/55 [00:01<00:04,  9.11it/s][A
- 31%|███       | 17/55 [00:01<00:04,  8.72it/s][A
- 33%|███▎      | 18/55 [00:01<00:04,  8.49it/s][A
- 36%|███▋      | 20/55 [00:02<00:04,  8.70it/s][A
- 40%|████      | 22/55 [00:02<00:03, 10.23it/s][A
- 44%|████▎     | 24/55 [00:02<00:03,  9.30it/s][A
- 47%|████▋     | 26/55 [00:02<00:03,  8.83it/s][A
- 51%|█████     | 28/55 [00:02<00:02,  9.47it/s][A
- 53%|█████▎    | 29/55 [00:03<00:02,  9.29it/s][A
- 56%|█████▋    | 31/55 [00:03<00:02,  8.95it/s][A
- 60%|██████    | 33/55 [00:03<00:02, 10.28it/s][A
- 64%|██████▎   | 35/55 [00:03<00:02,  9.38it/s][A
- 67%|██████▋   | 37/55 [00:03<00:01,  9.03it/s][A
- 71%|███████   | 39/55 [00:04<00:01,  9.82it/s][A
- 75%|███████▍  | 41/55 [00:04<00:01, 10.29it/s][A
- 78%|███████▊  | 43/55 [00:04<00:01,  9.35it/s][A
- 82%|████████▏ | 45/55 [00:04<00:01,  9.02it/s][A
- 85%|████████▌ | 47/55 [00:04<00:00, 10.23it/s][A
- 89%|████████▉ | 49/55 [00:05<00:00,  9.58it/s][A
- 93%|█████████▎| 51/55 [00:05<00:00,  9.07it/s][A
- 96%|█████████▋| 53/55 [00:05<00:00,  8.69it/s][A
-100%|██████████| 55/55 [00:05<00:00,  9.62it/s][A100%|██████████| 55/55 [00:05<00:00,  9.43it/s]
-Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.02s/frame]Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.02s/frame]
-Processing frames:   0%|          | 0/1 [00:00<?, ?frame/s]propagating through slices
-
-  0%|          | 0/55 [00:00<?, ?it/s][A
-  2%|▏         | 1/55 [00:00<00:07,  7.20it/s][A
-  5%|▌         | 3/55 [00:00<00:04, 10.43it/s][A
-  9%|▉         | 5/55 [00:00<00:06,  7.35it/s][A
- 11%|█         | 6/55 [00:00<00:06,  7.12it/s][A
- 13%|█▎        | 7/55 [00:00<00:07,  6.83it/s][A
- 16%|█▋        | 9/55 [00:01<00:06,  7.08it/s][A
- 18%|█▊        | 10/55 [00:01<00:05,  7.56it/s][A
- 22%|██▏       | 12/55 [00:01<00:05,  7.25it/s][A
- 25%|██▌       | 14/55 [00:01<00:04,  8.25it/s][A
- 27%|██▋       | 15/55 [00:02<00:05,  7.15it/s][A
- 31%|███       | 17/55 [00:02<00:04,  8.14it/s][A
- 33%|███▎      | 18/55 [00:02<00:04,  7.87it/s][A
- 36%|███▋      | 20/55 [00:02<00:04,  7.74it/s][A
- 40%|████      | 22/55 [00:02<00:03,  9.09it/s][A
- 42%|████▏     | 23/55 [00:02<00:04,  7.60it/s][A
- 45%|████▌     | 25/55 [00:03<00:03,  8.53it/s][A
- 47%|████▋     | 26/55 [00:03<00:03,  7.33it/s][A
- 51%|█████     | 28/55 [00:03<00:03,  8.41it/s][A
- 53%|█████▎    | 29/55 [00:03<00:03,  8.39it/s][A
- 56%|█████▋    | 31/55 [00:03<00:02,  8.43it/s][A
- 60%|██████    | 33/55 [00:04<00:02, 10.19it/s][A
- 64%|██████▎   | 35/55 [00:04<00:02,  9.01it/s][A
- 67%|██████▋   | 37/55 [00:04<00:02,  8.54it/s][A
- 71%|███████   | 39/55 [00:04<00:01,  9.28it/s][A
- 73%|███████▎  | 40/55 [00:04<00:01,  8.82it/s][A
- 76%|███████▋  | 42/55 [00:05<00:01,  8.79it/s][A
- 80%|████████  | 44/55 [00:05<00:01, 10.13it/s][A
- 84%|████████▎ | 46/55 [00:05<00:00,  9.35it/s][A
- 87%|████████▋ | 48/55 [00:05<00:00,  8.27it/s][A
- 91%|█████████ | 50/55 [00:06<00:00,  8.55it/s][A
- 93%|█████████▎| 51/55 [00:06<00:00,  8.20it/s][A
- 96%|█████████▋| 53/55 [00:06<00:00,  8.15it/s][A
-100%|██████████| 55/55 [00:06<00:00,  9.25it/s][A100%|██████████| 55/55 [00:06<00:00,  8.38it/s]
-Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.80s/frame]Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.80s/frame]
-Processing frames:   0%|          | 0/1 [00:00<?, ?frame/s]propagating through slices
-
-  0%|          | 0/55 [00:00<?, ?it/s][A
-  2%|▏         | 1/55 [00:00<00:05,  9.82it/s][A
-  5%|▌         | 3/55 [00:00<00:03, 13.33it/s][A
-  9%|▉         | 5/55 [00:00<00:05,  9.83it/s][A
- 13%|█▎        | 7/55 [00:00<00:05,  8.79it/s][A
- 16%|█▋        | 9/55 [00:01<00:05,  8.39it/s][A
- 20%|██        | 11/55 [00:01<00:04,  9.62it/s][A
- 24%|██▎       | 13/55 [00:01<00:04,  8.89it/s][A
- 27%|██▋       | 15/55 [00:01<00:04,  8.38it/s][A
- 31%|███       | 17/55 [00:01<00:04,  9.09it/s][A
- 33%|███▎      | 18/55 [00:01<00:04,  8.80it/s][A
- 36%|███▋      | 20/55 [00:02<00:04,  8.40it/s][A
- 40%|████      | 22/55 [00:02<00:03,  9.42it/s][A
- 42%|████▏     | 23/55 [00:02<00:04,  7.87it/s][A
- 45%|████▌     | 25/55 [00:02<00:03,  9.46it/s][A
- 49%|████▉     | 27/55 [00:03<00:03,  8.72it/s][A
- 51%|█████     | 28/55 [00:03<00:03,  8.41it/s][A
- 53%|█████▎    | 29/55 [00:03<00:03,  8.21it/s][A
- 56%|█████▋    | 31/55 [00:03<00:02,  8.23it/s][A
- 60%|██████    | 33/55 [00:03<00:02,  9.83it/s][A
- 64%|██████▎   | 35/55 [00:03<00:02,  9.00it/s][A
- 67%|██████▋   | 37/55 [00:04<00:02,  8.31it/s][A
- 71%|███████   | 39/55 [00:04<00:01,  8.94it/s][A
- 73%|███████▎  | 40/55 [00:04<00:01,  8.70it/s][A
- 76%|███████▋  | 42/55 [00:04<00:01,  8.42it/s][A
- 80%|████████  | 44/55 [00:04<00:01,  9.42it/s][A
- 82%|████████▏ | 45/55 [00:05<00:01,  8.00it/s][A
- 85%|████████▌ | 47/55 [00:05<00:00,  9.54it/s][A
- 89%|████████▉ | 49/55 [00:05<00:00,  8.87it/s][A
- 91%|█████████ | 50/55 [00:05<00:00,  8.51it/s][A
- 93%|█████████▎| 51/55 [00:05<00:00,  8.35it/s][A
- 96%|█████████▋| 53/55 [00:06<00:00,  8.32it/s][A
-100%|██████████| 55/55 [00:06<00:00,  9.55it/s][A100%|██████████| 55/55 [00:06<00:00,  8.89it/s]
-Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.39s/frame]Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.39s/frame]
-Processing frames:   0%|          | 0/1 [00:00<?, ?frame/s]propagating through slices
-
-  0%|          | 0/55 [00:00<?, ?it/s][A
-  2%|▏         | 1/55 [00:00<00:05,  9.28it/s][A
-  5%|▌         | 3/55 [00:00<00:04, 11.30it/s][A
-  9%|▉         | 5/55 [00:00<00:05,  8.61it/s][A
- 11%|█         | 6/55 [00:00<00:05,  8.31it/s][A
- 13%|█▎        | 7/55 [00:00<00:06,  7.96it/s][A
- 16%|█▋        | 9/55 [00:01<00:05,  7.95it/s][A
- 20%|██        | 11/55 [00:01<00:04,  9.39it/s][A
- 22%|██▏       | 12/55 [00:01<00:05,  7.66it/s][A
- 25%|██▌       | 14/55 [00:01<00:04,  9.53it/s][A
- 29%|██▉       | 16/55 [00:01<00:04,  8.84it/s][A
- 31%|███       | 17/55 [00:01<00:04,  8.49it/s][A
- 33%|███▎      | 18/55 [00:02<00:04,  8.34it/s][A
- 36%|███▋      | 20/55 [00:02<00:04,  7.34it/s][A
- 40%|████      | 22/55 [00:02<00:03,  8.68it/s][A
- 42%|████▏     | 23/55 [00:02<00:04,  7.40it/s][A
- 45%|████▌     | 25/55 [00:02<00:03,  8.77it/s][A
- 47%|████▋     | 26/55 [00:03<00:03,  7.55it/s][A
- 51%|█████     | 28/55 [00:03<00:03,  8.56it/s][A
- 53%|█████▎    | 29/55 [00:03<00:03,  8.23it/s][A
- 56%|█████▋    | 31/55 [00:03<00:02,  8.11it/s][A
- 60%|██████    | 33/55 [00:03<00:02,  9.60it/s][A
- 64%|██████▎   | 35/55 [00:04<00:02,  8.72it/s][A
- 67%|██████▋   | 37/55 [00:04<00:02,  8.02it/s][A
- 71%|███████   | 39/55 [00:04<00:01,  8.75it/s][A
- 73%|███████▎  | 40/55 [00:04<00:01,  8.50it/s][A
- 76%|███████▋  | 42/55 [00:04<00:01,  8.22it/s][A
- 80%|████████  | 44/55 [00:05<00:01,  9.71it/s][A
- 84%|████████▎ | 46/55 [00:05<00:01,  8.85it/s][A
- 87%|████████▋ | 48/55 [00:05<00:00,  8.22it/s][A
- 91%|█████████ | 50/55 [00:05<00:00,  8.75it/s][A
- 93%|█████████▎| 51/55 [00:06<00:00,  8.42it/s][A
- 96%|█████████▋| 53/55 [00:06<00:00,  8.24it/s][A
-100%|██████████| 55/55 [00:06<00:00,  9.15it/s][A100%|██████████| 55/55 [00:06<00:00,  8.56it/s]
-Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.62s/frame]Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.62s/frame]
-Processing frames:   0%|          | 0/1 [00:00<?, ?frame/s]propagating through slices
-
-  0%|          | 0/55 [00:00<?, ?it/s][A
-  2%|▏         | 1/55 [00:00<00:07,  7.09it/s][A
-  4%|▎         | 2/55 [00:00<00:06,  8.31it/s][A
-  5%|▌         | 3/55 [00:00<00:06,  8.31it/s][A
-  7%|▋         | 4/55 [00:00<00:09,  5.53it/s][A
- 11%|█         | 6/55 [00:00<00:07,  6.73it/s][A
- 13%|█▎        | 7/55 [00:01<00:07,  6.58it/s][A
- 16%|█▋        | 9/55 [00:01<00:06,  7.06it/s][A
- 20%|██        | 11/55 [00:01<00:04,  8.95it/s][A
- 22%|██▏       | 12/55 [00:01<00:05,  7.48it/s][A
- 25%|██▌       | 14/55 [00:01<00:04,  9.16it/s][A
- 29%|██▉       | 16/55 [00:02<00:04,  8.68it/s][A
- 31%|███       | 17/55 [00:02<00:04,  8.40it/s][A
- 33%|███▎      | 18/55 [00:02<00:04,  8.08it/s][A
- 36%|███▋      | 20/55 [00:02<00:04,  7.94it/s][A
- 40%|████      | 22/55 [00:02<00:03,  9.74it/s][A
- 44%|████▎     | 24/55 [00:02<00:03,  8.95it/s][A
- 47%|████▋     | 26/55 [00:03<00:03,  8.33it/s][A
- 51%|█████     | 28/55 [00:03<00:03,  8.98it/s][A
- 53%|█████▎    | 29/55 [00:03<00:03,  8.48it/s][A
- 56%|█████▋    | 31/55 [00:03<00:02,  8.01it/s][A
- 58%|█████▊    | 32/55 [00:03<00:02,  8.28it/s][A
- 62%|██████▏   | 34/55 [00:04<00:02,  7.95it/s][A
- 65%|██████▌   | 36/55 [00:04<00:01,  9.66it/s][A
- 69%|██████▉   | 38/55 [00:04<00:01,  8.99it/s][A
- 71%|███████   | 39/55 [00:04<00:01,  8.53it/s][A
- 73%|███████▎  | 40/55 [00:04<00:01,  8.25it/s][A
- 76%|███████▋  | 42/55 [00:05<00:01,  7.96it/s][A
- 80%|████████  | 44/55 [00:05<00:01,  9.58it/s][A
- 84%|████████▎ | 46/55 [00:05<00:01,  8.65it/s][A
- 87%|████████▋ | 48/55 [00:05<00:00,  7.83it/s][A
- 91%|█████████ | 50/55 [00:06<00:00,  8.47it/s][A
- 93%|█████████▎| 51/55 [00:06<00:00,  8.27it/s][A
- 96%|█████████▋| 53/55 [00:06<00:00,  7.98it/s][A
-100%|██████████| 55/55 [00:06<00:00,  9.05it/s][A100%|██████████| 55/55 [00:06<00:00,  8.35it/s]
-Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.80s/frame]Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.80s/frame]
-Processing frames:   0%|          | 0/1 [00:00<?, ?frame/s]propagating through slices
-
-  0%|          | 0/55 [00:00<?, ?it/s][A
-  2%|▏         | 1/55 [00:00<00:06,  8.95it/s][A
-  5%|▌         | 3/55 [00:00<00:04, 11.96it/s][A
-  9%|▉         | 5/55 [00:00<00:05,  8.98it/s][A
- 11%|█         | 6/55 [00:00<00:05,  8.36it/s][A
- 13%|█▎        | 7/55 [00:00<00:06,  7.88it/s][A
- 16%|█▋        | 9/55 [00:01<00:05,  7.75it/s][A
- 20%|██        | 11/55 [00:01<00:04,  9.35it/s][A
- 22%|██▏       | 12/55 [00:01<00:05,  7.59it/s][A
- 25%|██▌       | 14/55 [00:01<00:04,  9.19it/s][A
- 27%|██▋       | 15/55 [00:01<00:05,  7.58it/s][A
- 31%|███       | 17/55 [00:02<00:04,  8.31it/s][A
- 33%|███▎      | 18/55 [00:02<00:04,  7.99it/s][A
- 36%|███▋      | 20/55 [00:02<00:04,  7.70it/s][A
- 40%|████      | 22/55 [00:02<00:03,  9.02it/s][A
- 42%|████▏     | 23/55 [00:02<00:04,  6.78it/s][A
- 45%|████▌     | 25/55 [00:03<00:03,  8.19it/s][A
- 47%|████▋     | 26/55 [00:03<00:04,  6.77it/s][A
- 51%|█████     | 28/55 [00:03<00:03,  7.17it/s][A
- 53%|█████▎    | 29/55 [00:03<00:03,  6.71it/s][A
- 56%|█████▋    | 31/55 [00:04<00:03,  6.18it/s][A
- 58%|█████▊    | 32/55 [00:04<00:03,  6.51it/s][A
- 62%|██████▏   | 34/55 [00:04<00:03,  6.02it/s][A
- 65%|██████▌   | 36/55 [00:04<00:02,  7.13it/s][A
- 67%|██████▋   | 37/55 [00:05<00:03,  5.98it/s][A
- 71%|███████   | 39/55 [00:05<00:02,  6.86it/s][A
- 73%|███████▎  | 40/55 [00:05<00:02,  6.92it/s][A
- 76%|███████▋  | 42/55 [00:05<00:01,  7.05it/s][A
- 80%|████████  | 44/55 [00:05<00:01,  8.61it/s][A
- 82%|████████▏ | 45/55 [00:06<00:01,  7.34it/s][A
- 85%|████████▌ | 47/55 [00:06<00:00,  8.62it/s][A
- 87%|████████▋ | 48/55 [00:06<00:01,  6.71it/s][A
- 91%|█████████ | 50/55 [00:06<00:00,  6.98it/s][A
- 93%|█████████▎| 51/55 [00:06<00:00,  6.63it/s][A
- 96%|█████████▋| 53/55 [00:07<00:00,  6.41it/s][A
-100%|██████████| 55/55 [00:07<00:00,  7.71it/s][A100%|██████████| 55/55 [00:07<00:00,  7.44it/s]
-Processing frames: 100%|██████████| 1/1 [00:07<00:00,  7.63s/frame]Processing frames: 100%|██████████| 1/1 [00:07<00:00,  7.63s/frame]
-Processing frames:   0%|          | 0/1 [00:00<?, ?frame/s]propagating through slices
-
-  0%|          | 0/55 [00:00<?, ?it/s][A
-  2%|▏         | 1/55 [00:00<00:07,  7.61it/s][A
-  5%|▌         | 3/55 [00:00<00:04, 10.47it/s][A
-  9%|▉         | 5/55 [00:00<00:05,  8.38it/s][A
- 11%|█         | 6/55 [00:00<00:06,  7.82it/s][A
- 13%|█▎        | 7/55 [00:00<00:06,  7.28it/s][A
- 16%|█▋        | 9/55 [00:01<00:06,  7.26it/s][A
- 20%|██        | 11/55 [00:01<00:05,  8.39it/s][A
- 22%|██▏       | 12/55 [00:01<00:06,  6.95it/s][A
- 25%|██▌       | 14/55 [00:01<00:05,  8.18it/s][A
- 27%|██▋       | 15/55 [00:01<00:05,  6.97it/s][A
- 31%|███       | 17/55 [00:02<00:04,  7.75it/s][A
- 33%|███▎      | 18/55 [00:02<00:05,  7.33it/s][A
- 36%|███▋      | 20/55 [00:02<00:04,  7.21it/s][A
- 40%|████      | 22/55 [00:02<00:04,  8.06it/s][A
- 42%|████▏     | 23/55 [00:03<00:04,  6.87it/s][A
- 45%|████▌     | 25/55 [00:03<00:03,  8.28it/s][A
- 47%|████▋     | 26/55 [00:03<00:04,  7.05it/s][A
- 51%|█████     | 28/55 [00:03<00:03,  7.77it/s][A
- 53%|█████▎    | 29/55 [00:03<00:03,  7.42it/s][A
- 56%|█████▋    | 31/55 [00:04<00:03,  7.25it/s][A
- 60%|██████    | 33/55 [00:04<00:02,  8.47it/s][A
- 62%|██████▏   | 34/55 [00:04<00:03,  6.96it/s][A
- 65%|██████▌   | 36/55 [00:04<00:02,  7.73it/s][A
- 67%|██████▋   | 37/55 [00:05<00:02,  6.13it/s][A
- 71%|███████   | 39/55 [00:05<00:02,  6.38it/s][A
- 73%|███████▎  | 40/55 [00:05<00:02,  6.00it/s][A
- 76%|███████▋  | 42/55 [00:05<00:02,  5.64it/s][A
- 78%|███████▊  | 43/55 [00:06<00:01,  6.09it/s][A
- 82%|████████▏ | 45/55 [00:06<00:01,  5.76it/s][A
- 85%|████████▌ | 47/55 [00:06<00:01,  7.06it/s][A
- 87%|████████▋ | 48/55 [00:06<00:01,  6.30it/s][A
- 91%|█████████ | 50/55 [00:07<00:00,  7.06it/s][A
- 93%|█████████▎| 51/55 [00:07<00:00,  6.96it/s][A
- 96%|█████████▋| 53/55 [00:07<00:00,  6.60it/s][A
- 98%|█████████▊| 54/55 [00:07<00:00,  6.98it/s][A
-100%|██████████| 55/55 [00:07<00:00,  7.25it/s][A100%|██████████| 55/55 [00:07<00:00,  7.13it/s]
-Processing frames: 100%|██████████| 1/1 [00:07<00:00,  7.96s/frame]Processing frames: 100%|██████████| 1/1 [00:07<00:00,  7.96s/frame]
-Processing frames:   0%|          | 0/1 [00:00<?, ?frame/s]propagating through slices
-
-  0%|          | 0/55 [00:00<?, ?it/s][A
-  2%|▏         | 1/55 [00:00<00:08,  6.40it/s][A
-  5%|▌         | 3/55 [00:00<00:05,  8.98it/s][A
-  7%|▋         | 4/55 [00:00<00:07,  6.80it/s][A
- 11%|█         | 6/55 [00:00<00:05,  8.17it/s][A
- 13%|█▎        | 7/55 [00:00<00:06,  7.74it/s][A
- 16%|█▋        | 9/55 [00:01<00:05,  7.73it/s][A
- 18%|█▊        | 10/55 [00:01<00:05,  8.02it/s][A
- 22%|██▏       | 12/55 [00:01<00:05,  7.65it/s][A
- 25%|██▌       | 14/55 [00:01<00:04,  9.05it/s][A
- 27%|██▋       | 15/55 [00:01<00:05,  6.88it/s][A
- 31%|███       | 17/55 [00:02<00:04,  7.99it/s][A
- 33%|███▎      | 18/55 [00:02<00:04,  7.71it/s][A
- 36%|███▋      | 20/55 [00:02<00:04,  7.69it/s][A
- 40%|████      | 22/55 [00:02<00:03,  8.91it/s][A
- 42%|████▏     | 23/55 [00:02<00:04,  7.59it/s][A
- 45%|████▌     | 25/55 [00:03<00:03,  9.13it/s][A
- 47%|████▋     | 26/55 [00:03<00:03,  7.35it/s][A
- 51%|█████     | 28/55 [00:03<00:03,  8.14it/s][A
- 53%|█████▎    | 29/55 [00:03<00:03,  7.96it/s][A
- 56%|█████▋    | 31/55 [00:03<00:03,  7.92it/s][A
- 60%|██████    | 33/55 [00:04<00:02,  9.46it/s][A
- 64%|██████▎   | 35/55 [00:04<00:02,  8.44it/s][A
- 67%|██████▋   | 37/55 [00:04<00:02,  7.95it/s][A
- 71%|███████   | 39/55 [00:04<00:01,  8.52it/s][A
- 73%|███████▎  | 40/55 [00:04<00:01,  8.16it/s][A
- 76%|███████▋  | 42/55 [00:05<00:01,  7.97it/s][A
- 80%|████████  | 44/55 [00:05<00:01,  9.47it/s][A
- 84%|████████▎ | 46/55 [00:05<00:01,  8.86it/s][A
- 87%|████████▋ | 48/55 [00:05<00:00,  8.12it/s][A
- 91%|█████████ | 50/55 [00:06<00:00,  8.72it/s][A
- 93%|█████████▎| 51/55 [00:06<00:00,  8.32it/s][A
- 96%|█████████▋| 53/55 [00:06<00:00,  8.11it/s][A
-100%|██████████| 55/55 [00:06<00:00,  9.02it/s][A100%|██████████| 55/55 [00:06<00:00,  8.25it/s]
-Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.94s/frame]Processing frames: 100%|██████████| 1/1 [00:06<00:00,  6.94s/frame]
-Processing frames:   0%|          | 0/1 [00:00<?, ?frame/s]propagating through slices
-
-  0%|          | 0/55 [00:00<?, ?it/s][A
-  2%|▏         | 1/55 [00:00<00:06,  8.99it/s][A
-  5%|▌         | 3/55 [00:00<00:04, 12.65it/s][A
-  9%|▉         | 5/55 [00:00<00:05,  8.78it/s][A
- 11%|█         | 6/55 [00:00<00:06,  7.66it/s][A
- 13%|█▎        | 7/55 [00:00<00:06,  7.02it/s][A
- 16%|█▋        | 9/55 [00:01<00:06,  6.64it/s][A
- 18%|█▊        | 10/55 [00:01<00:06,  7.12it/s][A
- 22%|██▏       | 12/55 [00:01<00:06,  6.29it/s][A
- 25%|██▌       | 14/55 [00:01<00:05,  7.22it/s][A
- 27%|██▋       | 15/55 [00:02<00:06,  6.14it/s][A
- 31%|███       | 17/55 [00:02<00:05,  6.78it/s][A
- 33%|███▎      | 18/55 [00:02<00:05,  6.79it/s][A
- 36%|███▋      | 20/55 [00:02<00:04,  7.17it/s][A
- 40%|████      | 22/55 [00:02<00:03,  8.54it/s][A
- 42%|████▏     | 23/55 [00:03<00:04,  7.47it/s][A
- 45%|████▌     | 25/55 [00:03<00:03,  8.83it/s][A
- 47%|████▋     | 26/55 [00:03<00:03,  7.71it/s][A
- 51%|█████     | 28/55 [00:03<00:03,  8.51it/s][A
- 53%|█████▎    | 29/55 [00:03<00:03,  8.25it/s][A
- 56%|█████▋    | 31/55 [00:04<00:02,  8.13it/s][A
- 60%|██████    | 33/55 [00:04<00:02,  9.43it/s][A
- 62%|██████▏   | 34/55 [00:04<00:02,  7.77it/s][A
- 65%|██████▌   | 36/55 [00:04<00:02,  9.07it/s][A
- 67%|██████▋   | 37/55 [00:04<00:02,  7.79it/s][A
- 71%|███████   | 39/55 [00:04<00:01,  8.73it/s][A
- 73%|███████▎  | 40/55 [00:05<00:01,  8.24it/s][A
- 76%|███████▋  | 42/55 [00:05<00:01,  8.01it/s][A
- 80%|████████  | 44/55 [00:05<00:01,  9.61it/s][A
- 84%|████████▎ | 46/55 [00:05<00:01,  7.97it/s][A
- 87%|████████▋ | 48/55 [00:06<00:00,  7.70it/s][A
- 91%|█████████ | 50/55 [00:06<00:00,  8.40it/s][A
- 93%|█████████▎| 51/55 [00:06<00:00,  8.20it/s][A
- 96%|█████████▋| 53/55 [00:06<00:00,  7.78it/s][A
-100%|██████████| 55/55 [00:06<00:00,  8.44it/s][A100%|██████████| 55/55 [00:06<00:00,  7.93it/s]
-Processing frames: 100%|██████████| 1/1 [00:07<00:00,  7.15s/frame]Processing frames: 100%|██████████| 1/1 [00:07<00:00,  7.15s/frame]
-Processing frames:   0%|          | 0/1 [00:00<?, ?frame/s]propagating through slices
-
-  0%|          | 0/55 [00:00<?, ?it/s][A
-  2%|▏         | 1/55 [00:00<00:06,  8.26it/s][A
-  5%|▌         | 3/55 [00:00<00:04, 10.40it/s][A
-  9%|▉         | 5/55 [00:00<00:07,  7.11it/s][A
- 11%|█         | 6/55 [00:00<00:07,  6.50it/s][A
- 13%|█▎        | 7/55 [00:01<00:07,  6.02it/s][A
- 16%|█▋        | 9/55 [00:01<00:07,  5.91it/s][A
- 18%|█▊        | 10/55 [00:01<00:07,  6.24it/s][A
- 22%|██▏       | 12/55 [00:01<00:07,  5.90it/s][A
- 24%|██▎       | 13/55 [00:02<00:06,  6.38it/s][A
- 25%|██▌       | 14/55 [00:02<00:06,  6.61it/s][A
- 27%|██▋       | 15/55 [00:02<00:06,  5.92it/s][A
- 31%|███       | 17/55 [00:02<00:05,  7.10it/s][A
- 33%|███▎      | 18/55 [00:02<00:05,  7.02it/s][A
- 36%|███▋      | 20/55 [00:03<00:05,  6.08it/s][A
- 40%|████      | 22/55 [00:03<00:04,  7.30it/s][A
- 42%|████▏     | 23/55 [00:03<00:05,  6.00it/s][A
- 45%|████▌     | 25/55 [00:03<00:04,  7.03it/s][A
- 47%|████▋     | 26/55 [00:04<00:04,  5.96it/s][A
- 51%|█████     | 28/55 [00:04<00:04,  6.57it/s][A
- 53%|█████▎    | 29/55 [00:04<00:03,  6.72it/s][A
- 56%|█████▋    | 31/55 [00:04<00:03,  7.14it/s][A
- 60%|██████    | 33/55 [00:04<00:02,  8.55it/s][A
- 62%|██████▏   | 34/55 [00:05<00:02,  7.35it/s][A
- 65%|██████▌   | 36/55 [00:05<00:02,  8.82it/s][A
- 67%|██████▋   | 37/55 [00:05<00:02,  7.61it/s][A
- 71%|███████   | 39/55 [00:05<00:01,  8.41it/s][A
- 73%|███████▎  | 40/55 [00:05<00:01,  7.99it/s][A
- 76%|███████▋  | 42/55 [00:05<00:01,  7.77it/s][A
- 80%|████████  | 44/55 [00:06<00:01,  9.16it/s][A
- 82%|████████▏ | 45/55 [00:06<00:01,  7.76it/s][A
- 85%|████████▌ | 47/55 [00:06<00:00,  8.92it/s][A
- 87%|████████▋ | 48/55 [00:06<00:00,  7.65it/s][A
- 91%|█████████ | 50/55 [00:06<00:00,  8.33it/s][A
- 93%|█████████▎| 51/55 [00:07<00:00,  8.02it/s][A
- 96%|█████████▋| 53/55 [00:07<00:00,  7.90it/s][A
-100%|██████████| 55/55 [00:07<00:00,  8.74it/s][A100%|██████████| 55/55 [00:07<00:00,  7.33it/s]
-Processing frames: 100%|██████████| 1/1 [00:07<00:00,  7.73s/frame]Processing frames: 100%|██████████| 1/1 [00:07<00:00,  7.73s/frame]
-Traceback (most recent call last):
-  File "/media/qwe/Alexandria/PySlice/fixBrokenSparsification/tests/08_LACBED_iterative.py", line 80, in <module>
-    differ(ary[::10,::10],"outputs/lacbed-test.npy","LACBED")
-  File "/media/qwe/Alexandria/PySlice/fixBrokenSparsification/tests/../src/pyslice/postprocessing/testtools.py", line 14, in differ
-    dz=np.sum( (F-D)**2 ) / np.sum( F**2 ) # a scaling-resistant values-near-zero-resistance residual function
-                ~^~
-ValueError: operands could not be broadcast together with shapes (1,1,1360,1360,1) (1,1,136,136,1) 
-python3.13 08_LACBED_iterative.py
-runAllTests.sh: line 10: python3.13: command not found
-python3.9 08_LACBED_iterative.py
-runAllTests.sh: line 10: python3.9: command not found
-python3 08_LACBED_onthefly.py
-Processing frames:   0%|          | 0/1 [00:00<?, ?frame/s]propagating through slices
-
-  0%|          | 0/544 [00:00<?, ?it/s][A
-  0%|          | 1/544 [00:00<01:09,  7.84it/s][A
-  1%|          | 3/544 [00:00<00:54,  9.96it/s][A
-  1%|          | 4/544 [00:00<01:13,  7.31it/s][A
-  1%|          | 6/544 [00:00<01:10,  7.63it/s][A
-  1%|▏         | 7/544 [00:00<01:09,  7.76it/s][A
-  2%|▏         | 9/544 [00:01<01:16,  6.95it/s][A
-  2%|▏         | 10/544 [00:01<01:13,  7.30it/s][A
-  2%|▏         | 12/544 [00:01<01:17,  6.88it/s][A
-  3%|▎         | 14/544 [00:01<01:07,  7.88it/s][A
-  3%|▎         | 15/544 [00:02<01:15,  7.03it/s][A
-  3%|▎         | 17/544 [00:02<01:15,  6.99it/s][A
-  3%|▎         | 18/544 [00:02<01:13,  7.19it/s][A
-  4%|▎         | 20/544 [00:02<01:14,  7.02it/s][A
-  4%|▍         | 22/544 [00:02<01:05,  7.98it/s][A
-  4%|▍         | 23/544 [00:03<01:16,  6.84it/s][A
-  5%|▍         | 25/544 [00:03<01:10,  7.31it/s][A
-  5%|▍         | 26/544 [00:03<01:12,  7.15it/s][A
-  5%|▌         | 28/544 [00:03<01:13,  7.03it/s][A
-  6%|▌         | 30/544 [00:04<01:04,  7.95it/s][A
-  6%|▌         | 31/544 [00:04<01:14,  6.91it/s][A
-  6%|▌         | 33/544 [00:04<01:06,  7.66it/s][A
-  6%|▋         | 34/544 [00:04<01:13,  6.94it/s][A
-  7%|▋         | 36/544 [00:04<01:13,  6.93it/s][A
-  7%|▋         | 37/544 [00:05<01:10,  7.20it/s][A
-  7%|▋         | 39/544 [00:05<01:12,  6.97it/s][A
-  7%|▋         | 40/544 [00:05<01:07,  7.45it/s][A
-  8%|▊         | 41/544 [00:05<01:04,  7.76it/s][A
-  8%|▊         | 42/544 [00:05<01:16,  6.59it/s][A
-  8%|▊         | 44/544 [00:06<01:07,  7.42it/s][A
-  8%|▊         | 45/544 [00:06<01:11,  7.01it/s][A
-  9%|▊         | 47/544 [00:06<01:12,  6.84it/s][A
-  9%|▉         | 49/544 [00:06<01:03,  7.76it/s][A
-  9%|▉         | 50/544 [00:06<01:13,  6.73it/s][A
- 10%|▉         | 52/544 [00:07<01:04,  7.67it/s][A
- 10%|▉         | 53/544 [00:07<01:12,  6.81it/s][A
- 10%|█         | 55/544 [00:07<01:11,  6.85it/s][A
- 10%|█         | 56/544 [00:07<01:11,  6.87it/s][A
- 11%|█         | 58/544 [00:08<01:12,  6.71it/s][A
- 11%|█         | 60/544 [00:08<01:04,  7.45it/s][A
- 11%|█         | 61/544 [00:08<01:13,  6.55it/s][A
- 12%|█▏        | 63/544 [00:08<01:05,  7.33it/s][A
- 12%|█▏        | 64/544 [00:08<01:09,  6.87it/s][A
- 12%|█▏        | 66/544 [00:09<01:11,  6.72it/s][A
- 12%|█▏        | 67/544 [00:09<01:06,  7.13it/s][A
- 13%|█▎        | 69/544 [00:09<01:11,  6.65it/s][A
- 13%|█▎        | 71/544 [00:09<01:03,  7.51it/s][A
- 13%|█▎        | 72/544 [00:10<01:11,  6.64it/s][A
- 14%|█▎        | 74/544 [00:10<01:06,  7.03it/s][A
- 14%|█▍        | 75/544 [00:10<01:05,  7.15it/s][A
- 14%|█▍        | 77/544 [00:10<01:08,  6.86it/s][A
- 14%|█▍        | 78/544 [00:10<01:04,  7.21it/s][A
- 15%|█▍        | 80/544 [00:11<01:08,  6.77it/s][A
- 15%|█▌        | 82/544 [00:11<01:00,  7.69it/s][A
- 15%|█▌        | 83/544 [00:11<01:06,  6.95it/s][A
- 16%|█▌        | 85/544 [00:11<01:06,  6.90it/s][A
- 16%|█▌        | 86/544 [00:12<01:03,  7.19it/s][A
- 16%|█▌        | 88/544 [00:12<01:05,  6.98it/s][A
- 17%|█▋        | 90/544 [00:12<00:57,  7.87it/s][A
- 17%|█▋        | 91/544 [00:12<01:06,  6.86it/s][A
- 17%|█▋        | 93/544 [00:12<01:02,  7.23it/s][A
- 17%|█▋        | 94/544 [00:13<01:04,  6.97it/s][A
- 18%|█▊        | 96/544 [00:13<01:05,  6.80it/s][A
- 18%|█▊        | 98/544 [00:13<00:57,  7.80it/s][A
- 18%|█▊        | 99/544 [00:13<01:05,  6.81it/s][A
- 19%|█▊        | 101/544 [00:14<00:57,  7.72it/s][A
- 19%|█▉        | 102/544 [00:14<01:03,  6.99it/s][A
- 19%|█▉        | 104/544 [00:14<01:02,  7.06it/s][A
- 19%|█▉        | 105/544 [00:14<00:58,  7.45it/s][A
- 20%|█▉        | 107/544 [00:14<01:02,  7.04it/s][A
- 20%|██        | 109/544 [00:15<00:54,  7.91it/s][A
- 20%|██        | 110/544 [00:15<01:11,  6.11it/s][A
- 21%|██        | 112/544 [00:15<01:01,  6.98it/s][A
- 21%|██        | 113/544 [00:15<01:04,  6.71it/s][A
- 21%|██        | 115/544 [00:16<01:04,  6.65it/s][A
- 21%|██▏       | 116/544 [00:16<01:00,  7.05it/s][A
- 22%|██▏       | 118/544 [00:16<01:02,  6.81it/s][A
- 22%|██▏       | 120/544 [00:16<00:54,  7.78it/s][A
- 22%|██▏       | 121/544 [00:16<01:00,  6.94it/s][A
- 23%|██▎       | 123/544 [00:17<00:59,  7.13it/s][A
- 23%|██▎       | 124/544 [00:17<00:58,  7.24it/s][A
- 23%|██▎       | 126/544 [00:17<01:00,  6.93it/s][A
- 24%|██▎       | 128/544 [00:17<00:53,  7.72it/s][A
- 24%|██▎       | 129/544 [00:18<01:01,  6.73it/s][A
- 24%|██▍       | 131/544 [00:18<00:55,  7.47it/s][A
- 24%|██▍       | 132/544 [00:18<00:58,  7.03it/s][A
- 25%|██▍       | 134/544 [00:18<00:59,  6.93it/s][A
- 25%|██▍       | 135/544 [00:18<00:56,  7.20it/s][A
- 25%|██▌       | 136/544 [00:19<00:53,  7.59it/s][A
- 25%|██▌       | 137/544 [00:19<01:02,  6.48it/s][A
- 26%|██▌       | 139/544 [00:19<00:54,  7.40it/s][A
- 26%|██▌       | 140/544 [00:19<01:02,  6.45it/s][A
- 26%|██▌       | 142/544 [00:19<00:58,  6.82it/s][A
- 26%|██▋       | 143/544 [00:20<00:57,  6.96it/s][A
- 27%|██▋       | 145/544 [00:20<00:58,  6.76it/s][A
- 27%|██▋       | 147/544 [00:20<00:51,  7.76it/s][A
- 27%|██▋       | 148/544 [00:20<00:58,  6.82it/s][A
- 28%|██▊       | 150/544 [00:21<00:52,  7.52it/s][A
- 28%|██▊       | 151/544 [00:21<00:56,  6.93it/s][A
- 28%|██▊       | 153/544 [00:21<00:56,  6.98it/s][A
- 28%|██▊       | 154/544 [00:21<00:53,  7.35it/s][A
- 29%|██▊       | 156/544 [00:21<00:55,  6.96it/s][A
- 29%|██▉       | 158/544 [00:22<00:48,  7.95it/s][A
- 29%|██▉       | 159/544 [00:22<00:55,  6.98it/s][A
- 30%|██▉       | 161/544 [00:22<00:51,  7.45it/s][A
- 30%|██▉       | 162/544 [00:22<00:54,  7.06it/s][A
- 30%|███       | 164/544 [00:23<00:55,  6.90it/s][A
- 31%|███       | 166/544 [00:23<00:47,  7.90it/s][A
- 31%|███       | 167/544 [00:23<00:55,  6.85it/s][A
- 31%|███       | 169/544 [00:23<00:48,  7.70it/s][A
- 31%|███▏      | 170/544 [00:23<00:53,  6.94it/s][A
- 32%|███▏      | 172/544 [00:24<00:53,  7.01it/s][A
- 32%|███▏      | 173/544 [00:24<00:51,  7.27it/s][A
- 32%|███▏      | 175/544 [00:24<00:51,  7.10it/s][A
- 33%|███▎      | 177/544 [00:24<00:45,  8.10it/s][A
- 33%|███▎      | 178/544 [00:24<00:51,  7.14it/s][A
- 33%|███▎      | 180/544 [00:25<00:47,  7.60it/s][A
- 33%|███▎      | 181/544 [00:25<00:50,  7.18it/s][A
- 34%|███▎      | 183/544 [00:25<00:51,  7.07it/s][A
- 34%|███▍      | 185/544 [00:25<00:44,  8.07it/s][A
- 34%|███▍      | 186/544 [00:25<00:50,  7.03it/s][A
- 35%|███▍      | 188/544 [00:26<00:43,  8.15it/s][A
- 35%|███▍      | 189/544 [00:26<00:49,  7.14it/s][A
- 35%|███▌      | 191/544 [00:26<00:47,  7.39it/s][A
- 35%|███▌      | 192/544 [00:26<00:46,  7.63it/s][A
- 36%|███▌      | 194/544 [00:27<00:48,  7.17it/s][A
- 36%|███▌      | 196/544 [00:27<00:42,  8.26it/s][A
- 36%|███▌      | 197/544 [00:27<00:48,  7.14it/s][A
- 37%|███▋      | 199/544 [00:27<00:44,  7.81it/s][A
- 37%|███▋      | 200/544 [00:27<00:48,  7.16it/s][A
- 37%|███▋      | 202/544 [00:28<00:48,  7.10it/s][A
- 37%|███▋      | 203/544 [00:28<00:46,  7.37it/s][A
- 38%|███▊      | 205/544 [00:28<00:48,  7.05it/s][A
- 38%|███▊      | 207/544 [00:28<00:41,  8.13it/s][A
- 38%|███▊      | 208/544 [00:28<00:48,  6.95it/s][A
- 39%|███▊      | 210/544 [00:29<00:47,  7.00it/s][A
- 39%|███▉      | 211/544 [00:29<00:46,  7.15it/s][A
- 39%|███▉      | 213/544 [00:29<00:47,  7.04it/s][A
- 40%|███▉      | 215/544 [00:29<00:40,  8.04it/s][A
- 40%|███▉      | 216/544 [00:30<00:46,  7.00it/s][A
- 40%|████      | 218/544 [00:30<00:42,  7.76it/s][A
- 40%|████      | 219/544 [00:30<00:47,  6.85it/s][A
- 41%|████      | 221/544 [00:30<00:46,  6.91it/s][A
- 41%|████      | 222/544 [00:30<00:44,  7.26it/s][A
- 41%|████      | 224/544 [00:31<00:45,  7.01it/s][A
- 42%|████▏     | 226/544 [00:31<00:39,  8.05it/s][A
- 42%|████▏     | 227/544 [00:31<00:44,  7.06it/s][A
- 42%|████▏     | 229/544 [00:31<00:41,  7.56it/s][A
- 42%|████▏     | 230/544 [00:31<00:42,  7.32it/s][A
- 43%|████▎     | 232/544 [00:32<00:43,  7.18it/s][A
- 43%|████▎     | 234/544 [00:32<00:37,  8.17it/s][A
- 43%|████▎     | 235/544 [00:32<00:43,  7.08it/s][A
- 44%|████▎     | 237/544 [00:32<00:38,  7.95it/s][A
- 44%|████▍     | 238/544 [00:33<00:42,  7.17it/s][A
- 44%|████▍     | 240/544 [00:33<00:42,  7.11it/s][A
- 44%|████▍     | 241/544 [00:33<00:40,  7.49it/s][A
- 45%|████▍     | 243/544 [00:33<00:42,  7.14it/s][A
- 45%|████▌     | 245/544 [00:33<00:37,  8.06it/s][A
- 45%|████▌     | 246/544 [00:34<00:42,  7.04it/s][A
- 46%|████▌     | 248/544 [00:34<00:38,  7.72it/s][A
- 46%|████▌     | 249/544 [00:34<00:39,  7.51it/s][A
- 46%|████▌     | 251/544 [00:34<00:40,  7.29it/s][A
- 47%|████▋     | 253/544 [00:34<00:36,  8.08it/s][A
- 47%|████▋     | 254/544 [00:35<00:42,  6.89it/s][A
- 47%|████▋     | 256/544 [00:35<00:36,  7.93it/s][A
- 47%|████▋     | 257/544 [00:35<00:42,  6.78it/s][A
- 48%|████▊     | 259/544 [00:35<00:42,  6.78it/s][A
- 48%|████▊     | 260/544 [00:36<00:40,  6.94it/s][A
- 48%|████▊     | 262/544 [00:36<00:41,  6.88it/s][A
- 49%|████▊     | 264/544 [00:36<00:39,  7.10it/s][A
- 49%|████▊     | 265/544 [00:36<00:48,  5.73it/s][A
- 49%|████▉     | 266/544 [00:37<00:45,  6.14it/s][A
- 49%|████▉     | 267/544 [00:37<00:45,  6.08it/s][A
- 49%|████▉     | 268/544 [00:37<00:49,  5.54it/s][A
- 50%|████▉     | 270/544 [00:37<00:45,  6.04it/s][A
- 50%|█████     | 272/544 [00:37<00:37,  7.20it/s][A
- 50%|█████     | 273/544 [00:38<00:41,  6.50it/s][A
- 51%|█████     | 275/544 [00:38<00:34,  7.82it/s][A
- 51%|█████     | 276/544 [00:38<00:38,  6.96it/s][A
- 51%|█████     | 278/544 [00:38<00:35,  7.40it/s][A
- 51%|█████▏    | 279/544 [00:38<00:35,  7.40it/s][A
- 52%|█████▏    | 281/544 [00:39<00:36,  7.12it/s][A
- 52%|█████▏    | 283/544 [00:39<00:31,  8.33it/s][A
- 52%|█████▏    | 284/544 [00:39<00:36,  7.12it/s][A
- 53%|█████▎    | 286/544 [00:39<00:33,  7.73it/s][A
- 53%|█████▎    | 287/544 [00:39<00:35,  7.16it/s][A
- 53%|█████▎    | 289/544 [00:40<00:35,  7.20it/s][A
- 53%|█████▎    | 290/544 [00:40<00:33,  7.54it/s][A
- 54%|█████▎    | 292/544 [00:40<00:34,  7.28it/s][A
- 54%|█████▍    | 294/544 [00:40<00:30,  8.17it/s][A
- 54%|█████▍    | 295/544 [00:41<00:34,  7.14it/s][A
- 55%|█████▍    | 297/544 [00:41<00:31,  7.73it/s][A
- 55%|█████▍    | 298/544 [00:41<00:31,  7.69it/s][A
- 55%|█████▌    | 300/544 [00:41<00:33,  7.34it/s][A
- 56%|█████▌    | 302/544 [00:41<00:28,  8.46it/s][A
- 56%|█████▌    | 303/544 [00:42<00:33,  7.28it/s][A
- 56%|█████▌    | 305/544 [00:42<00:28,  8.33it/s][A
- 56%|█████▋    | 306/544 [00:42<00:31,  7.46it/s][A
- 57%|█████▋    | 308/544 [00:42<00:31,  7.54it/s][A
- 57%|█████▋    | 309/544 [00:42<00:29,  7.85it/s][A
- 57%|█████▋    | 311/544 [00:43<00:30,  7.52it/s][A
- 58%|█████▊    | 313/544 [00:43<00:26,  8.56it/s][A
- 58%|█████▊    | 314/544 [00:43<00:31,  7.36it/s][A
- 58%|█████▊    | 316/544 [00:43<00:28,  7.91it/s][A
- 58%|█████▊    | 317/544 [00:43<00:30,  7.56it/s][A
- 59%|█████▊    | 319/544 [00:44<00:30,  7.38it/s][A
- 59%|█████▉    | 321/544 [00:44<00:26,  8.44it/s][A
- 59%|█████▉    | 322/544 [00:44<00:30,  7.31it/s][A
- 60%|█████▉    | 324/544 [00:44<00:25,  8.47it/s][A
- 60%|█████▉    | 325/544 [00:44<00:29,  7.36it/s][A
- 60%|██████    | 327/544 [00:45<00:29,  7.45it/s][A
- 60%|██████    | 328/544 [00:45<00:28,  7.65it/s][A
- 61%|██████    | 330/544 [00:45<00:29,  7.24it/s][A
- 61%|██████    | 331/544 [00:45<00:28,  7.58it/s][A
- 61%|██████    | 333/544 [00:45<00:29,  7.08it/s][A
- 62%|██████▏   | 335/544 [00:46<00:27,  7.73it/s][A
- 62%|██████▏   | 336/544 [00:46<00:28,  7.22it/s][A
- 62%|██████▏   | 338/544 [00:46<00:28,  7.19it/s][A
- 62%|██████▏   | 339/544 [00:46<00:26,  7.61it/s][A
- 63%|██████▎   | 341/544 [00:47<00:28,  7.24it/s][A
- 63%|██████▎   | 343/544 [00:47<00:24,  8.19it/s][A
- 63%|██████▎   | 344/544 [00:47<00:28,  7.13it/s][A
- 64%|██████▎   | 346/544 [00:47<00:26,  7.38it/s][A
- 64%|██████▍   | 347/544 [00:47<00:26,  7.41it/s][A
- 64%|██████▍   | 349/544 [00:48<00:27,  7.13it/s][A
- 65%|██████▍   | 351/544 [00:48<00:22,  8.42it/s][A
- 65%|██████▍   | 352/544 [00:48<00:26,  7.22it/s][A
- 65%|██████▌   | 354/544 [00:48<00:23,  8.18it/s][A
- 65%|██████▌   | 355/544 [00:48<00:25,  7.37it/s][A
- 66%|██████▌   | 357/544 [00:49<00:25,  7.22it/s][A
- 66%|██████▌   | 358/544 [00:49<00:24,  7.58it/s][A
- 66%|██████▌   | 360/544 [00:49<00:25,  7.28it/s][A
- 67%|██████▋   | 362/544 [00:49<00:22,  8.16it/s][A
- 67%|██████▋   | 363/544 [00:50<00:27,  6.60it/s][A
- 67%|██████▋   | 365/544 [00:50<00:27,  6.51it/s][A
- 67%|██████▋   | 366/544 [00:50<00:29,  5.98it/s][A
- 68%|██████▊   | 368/544 [00:50<00:32,  5.48it/s][A
- 68%|██████▊   | 369/544 [00:51<00:29,  6.02it/s][A
- 68%|██████▊   | 371/544 [00:51<00:27,  6.24it/s][A
- 69%|██████▊   | 373/544 [00:51<00:23,  7.29it/s][A
- 69%|██████▉   | 374/544 [00:51<00:27,  6.14it/s][A
- 69%|██████▉   | 376/544 [00:52<00:25,  6.71it/s][A
- 69%|██████▉   | 378/544 [00:52<00:21,  7.84it/s][A
- 70%|██████▉   | 379/544 [00:52<00:24,  6.82it/s][A
- 70%|███████   | 381/544 [00:52<00:20,  7.79it/s][A
- 70%|███████   | 382/544 [00:52<00:23,  6.88it/s][A
- 71%|███████   | 384/544 [00:53<00:21,  7.44it/s][A
- 71%|███████   | 385/544 [00:53<00:22,  7.18it/s][A
- 71%|███████   | 387/544 [00:53<00:22,  7.13it/s][A
- 72%|███████▏  | 389/544 [00:53<00:19,  8.04it/s][A
- 72%|███████▏  | 390/544 [00:53<00:22,  6.88it/s][A
- 72%|███████▏  | 392/544 [00:54<00:18,  8.02it/s][A
- 72%|███████▏  | 393/544 [00:54<00:20,  7.22it/s][A
- 73%|███████▎  | 395/544 [00:54<00:20,  7.43it/s][A
- 73%|███████▎  | 396/544 [00:54<00:19,  7.57it/s][A
- 73%|███████▎  | 398/544 [00:55<00:20,  7.29it/s][A
- 74%|███████▎  | 400/544 [00:55<00:17,  8.46it/s][A
- 74%|███████▎  | 401/544 [00:55<00:20,  7.01it/s][A
- 74%|███████▍  | 403/544 [00:55<00:17,  7.85it/s][A
- 74%|███████▍  | 404/544 [00:55<00:18,  7.40it/s][A
- 75%|███████▍  | 406/544 [00:56<00:18,  7.30it/s][A
- 75%|███████▌  | 408/544 [00:56<00:15,  8.56it/s][A
- 75%|███████▌  | 409/544 [00:56<00:18,  7.32it/s][A
- 76%|███████▌  | 411/544 [00:56<00:15,  8.45it/s][A
- 76%|███████▌  | 412/544 [00:56<00:17,  7.36it/s][A
- 76%|███████▌  | 414/544 [00:57<00:16,  7.73it/s][A
- 76%|███████▋  | 415/544 [00:57<00:16,  7.67it/s][A
- 77%|███████▋  | 417/544 [00:57<00:17,  7.41it/s][A
- 77%|███████▋  | 419/544 [00:57<00:15,  8.33it/s][A
- 77%|███████▋  | 420/544 [00:57<00:18,  6.81it/s][A
- 78%|███████▊  | 422/544 [00:58<00:15,  7.74it/s][A
- 78%|███████▊  | 423/544 [00:58<00:16,  7.19it/s][A
- 78%|███████▊  | 425/544 [00:58<00:16,  7.22it/s][A
- 78%|███████▊  | 426/544 [00:58<00:15,  7.60it/s][A
- 79%|███████▊  | 428/544 [00:58<00:15,  7.35it/s][A
- 79%|███████▉  | 430/544 [00:59<00:13,  8.39it/s][A
- 79%|███████▉  | 431/544 [00:59<00:15,  7.33it/s][A
- 80%|███████▉  | 433/544 [00:59<00:14,  7.76it/s][A
- 80%|███████▉  | 434/544 [00:59<00:14,  7.55it/s][A
- 80%|████████  | 436/544 [01:00<00:14,  7.23it/s][A
- 80%|████████  | 437/544 [01:00<00:13,  7.65it/s][A
- 81%|████████  | 439/544 [01:00<00:14,  7.15it/s][A
- 81%|████████  | 441/544 [01:00<00:12,  8.14it/s][A
- 81%|████████▏ | 442/544 [01:00<00:14,  7.29it/s][A
- 82%|████████▏ | 444/544 [01:01<00:13,  7.41it/s][A
- 82%|████████▏ | 445/544 [01:01<00:12,  7.70it/s][A
- 82%|████████▏ | 447/544 [01:01<00:13,  7.41it/s][A
- 82%|████████▏ | 448/544 [01:01<00:12,  7.83it/s][A
- 83%|████████▎ | 450/544 [01:01<00:12,  7.50it/s][A
- 83%|████████▎ | 452/544 [01:02<00:11,  8.02it/s][A
- 83%|████████▎ | 453/544 [01:02<00:11,  7.71it/s][A
- 84%|████████▎ | 455/544 [01:02<00:11,  7.57it/s][A
- 84%|████████▍ | 457/544 [01:02<00:10,  8.50it/s][A
- 84%|████████▍ | 458/544 [01:02<00:11,  7.45it/s][A
- 85%|████████▍ | 460/544 [01:03<00:09,  8.59it/s][A
- 85%|████████▍ | 461/544 [01:03<00:10,  7.58it/s][A
- 85%|████████▌ | 463/544 [01:03<00:10,  7.63it/s][A
- 85%|████████▌ | 464/544 [01:03<00:10,  7.87it/s][A
- 86%|████████▌ | 466/544 [01:03<00:10,  7.49it/s][A
- 86%|████████▌ | 468/544 [01:04<00:08,  8.65it/s][A
- 86%|████████▌ | 469/544 [01:04<00:10,  7.38it/s][A
- 87%|████████▋ | 471/544 [01:04<00:09,  8.05it/s][A
- 87%|████████▋ | 472/544 [01:04<00:09,  7.48it/s][A
- 87%|████████▋ | 474/544 [01:04<00:09,  7.35it/s][A
- 87%|████████▋ | 475/544 [01:05<00:08,  7.76it/s][A
- 88%|████████▊ | 477/544 [01:05<00:09,  7.38it/s][A
- 88%|████████▊ | 479/544 [01:05<00:07,  8.37it/s][A
- 88%|████████▊ | 480/544 [01:05<00:08,  7.18it/s][A
- 88%|████████▊ | 481/544 [01:05<00:08,  7.51it/s][A
- 89%|████████▊ | 482/544 [01:05<00:08,  7.09it/s][A
- 89%|████████▉ | 483/544 [01:06<00:08,  7.32it/s][A
- 89%|████████▉ | 485/544 [01:06<00:08,  7.01it/s][A
- 90%|████████▉ | 487/544 [01:06<00:06,  8.17it/s][A
- 90%|████████▉ | 488/544 [01:06<00:08,  6.99it/s][A
- 90%|█████████ | 490/544 [01:07<00:06,  7.83it/s][A
- 90%|█████████ | 491/544 [01:07<00:07,  7.17it/s][A
- 91%|█████████ | 493/544 [01:07<00:07,  7.19it/s][A
- 91%|█████████ | 495/544 [01:07<00:05,  8.35it/s][A
- 91%|█████████ | 496/544 [01:07<00:06,  7.19it/s][A
- 92%|█████████▏| 498/544 [01:08<00:05,  8.27it/s][A
- 92%|█████████▏| 499/544 [01:08<00:06,  7.12it/s][A
- 92%|█████████▏| 501/544 [01:08<00:05,  7.47it/s][A
- 92%|█████████▏| 502/544 [01:08<00:05,  7.31it/s][A
- 93%|█████████▎| 504/544 [01:08<00:05,  7.24it/s][A
- 93%|█████████▎| 506/544 [01:09<00:04,  8.10it/s][A
- 93%|█████████▎| 507/544 [01:09<00:05,  6.98it/s][A
- 94%|█████████▎| 509/544 [01:09<00:04,  7.90it/s][A
- 94%|█████████▍| 510/544 [01:09<00:04,  7.17it/s][A
- 94%|█████████▍| 512/544 [01:10<00:04,  7.15it/s][A
- 94%|█████████▍| 514/544 [01:10<00:03,  8.26it/s][A
- 95%|█████████▍| 515/544 [01:10<00:04,  6.28it/s][A
- 95%|█████████▌| 517/544 [01:10<00:03,  7.54it/s][A
- 95%|█████████▌| 518/544 [01:10<00:03,  6.67it/s][A
- 96%|█████████▌| 520/544 [01:11<00:03,  7.38it/s][A
- 96%|█████████▌| 521/544 [01:11<00:03,  7.17it/s][A
- 96%|█████████▌| 523/544 [01:11<00:02,  7.08it/s][A
- 97%|█████████▋| 525/544 [01:11<00:02,  8.31it/s][A
- 97%|█████████▋| 526/544 [01:11<00:02,  7.21it/s][A
- 97%|█████████▋| 528/544 [01:12<00:01,  8.34it/s][A
- 97%|█████████▋| 529/544 [01:12<00:02,  7.42it/s][A
- 98%|█████████▊| 531/544 [01:12<00:01,  7.51it/s][A
- 98%|█████████▊| 532/544 [01:12<00:01,  7.84it/s][A
- 98%|█████████▊| 534/544 [01:12<00:01,  7.37it/s][A
- 99%|█████████▊| 536/544 [01:13<00:00,  8.12it/s][A
- 99%|█████████▊| 537/544 [01:13<00:00,  7.11it/s][A
- 99%|█████████▉| 539/544 [01:13<00:00,  7.88it/s][A
- 99%|█████████▉| 540/544 [01:13<00:00,  7.42it/s][A
-100%|█████████▉| 542/544 [01:14<00:00,  7.36it/s][A
-100%|█████████▉| 543/544 [01:14<00:00,  7.77it/s][A
-100%|██████████| 544/544 [01:14<00:00,  7.74it/s][A100%|██████████| 544/544 [01:14<00:00,  7.33it/s]
-Processing frames: 100%|██████████| 1/1 [01:15<00:00, 75.07s/frame]Processing frames: 100%|██████████| 1/1 [01:15<00:00, 75.07s/frame]
-torch.Size([1, 1, 1360, 1360, 1])
-python3.13 08_LACBED_onthefly.py
-runAllTests.sh: line 10: python3.13: command not found
-python3.9 08_LACBED_onthefly.py
-runAllTests.sh: line 10: python3.9: command not found
-python3 10_midgley.py
-Processing frames:   0%|          | 0/100 [00:00<?, ?frame/s]Processing frames:   1%|          | 1/100 [00:02<03:38,  2.21s/frame]Processing frames:   2%|▏         | 2/100 [00:04<03:39,  2.24s/frame]Processing frames:   3%|▎         | 3/100 [00:06<03:37,  2.24s/frame]Processing frames:   4%|▍         | 4/100 [00:09<03:39,  2.29s/frame]Processing frames:   5%|▌         | 5/100 [00:11<03:37,  2.29s/frame]Processing frames:   6%|▌         | 6/100 [00:13<03:33,  2.28s/frame]Processing frames:   7%|▋         | 7/100 [00:15<03:31,  2.27s/frame]Processing frames:   8%|▊         | 8/100 [00:18<03:27,  2.25s/frame]Processing frames:   9%|▉         | 9/100 [00:20<03:25,  2.26s/frame]Processing frames:  10%|█         | 10/100 [00:22<03:24,  2.27s/frame]Processing frames:  11%|█         | 11/100 [00:24<03:20,  2.25s/frame]Processing frames:  12%|█▏        | 12/100 [00:27<03:21,  2.28s/frame]Processing frames:  13%|█▎        | 13/100 [00:29<03:17,  2.27s/frame]Processing frames:  14%|█▍        | 14/100 [00:31<03:16,  2.28s/frame]Processing frames:  15%|█▌        | 15/100 [00:34<03:17,  2.33s/frame]Processing frames:  16%|█▌        | 16/100 [00:36<03:18,  2.37s/frame]Processing frames:  17%|█▋        | 17/100 [00:39<03:17,  2.38s/frame]Processing frames:  18%|█▊        | 18/100 [00:41<03:14,  2.38s/frame]Processing frames:  19%|█▉        | 19/100 [00:43<03:07,  2.32s/frame]Processing frames:  20%|██        | 20/100 [00:45<03:02,  2.29s/frame]Processing frames:  21%|██        | 21/100 [00:48<02:58,  2.26s/frame]Processing frames:  22%|██▏       | 22/100 [00:50<03:01,  2.33s/frame]Processing frames:  23%|██▎       | 23/100 [00:52<03:00,  2.35s/frame]Processing frames:  24%|██▍       | 24/100 [00:55<02:57,  2.34s/frame]Processing frames:  25%|██▌       | 25/100 [00:57<02:58,  2.38s/frame]Processing frames:  26%|██▌       | 26/100 [01:00<02:54,  2.36s/frame]Processing frames:  27%|██▋       | 27/100 [01:02<02:51,  2.35s/frame]Processing frames:  28%|██▊       | 28/100 [01:04<02:55,  2.44s/frame]Processing frames:  29%|██▉       | 29/100 [01:07<02:49,  2.39s/frame]Processing frames:  30%|███       | 30/100 [01:09<02:49,  2.42s/frame]Processing frames:  31%|███       | 31/100 [01:12<02:49,  2.46s/frame]Processing frames:  32%|███▏      | 32/100 [01:14<02:41,  2.38s/frame]Processing frames:  33%|███▎      | 33/100 [01:16<02:41,  2.41s/frame]Processing frames:  34%|███▍      | 34/100 [01:19<02:35,  2.36s/frame]Processing frames:  35%|███▌      | 35/100 [01:21<02:31,  2.34s/frame]Processing frames:  36%|███▌      | 36/100 [01:23<02:30,  2.35s/frame]Processing frames:  37%|███▋      | 37/100 [01:26<02:23,  2.28s/frame]Processing frames:  38%|███▊      | 38/100 [01:28<02:25,  2.35s/frame]Processing frames:  39%|███▉      | 39/100 [01:30<02:20,  2.30s/frame]Processing frames:  40%|████      | 40/100 [01:32<02:16,  2.27s/frame]Processing frames:  41%|████      | 41/100 [01:35<02:12,  2.25s/frame]Processing frames:  42%|████▏     | 42/100 [01:37<02:12,  2.28s/frame]Processing frames:  43%|████▎     | 43/100 [01:39<02:08,  2.25s/frame]Processing frames:  44%|████▍     | 44/100 [01:42<02:11,  2.34s/frame]Processing frames:  45%|████▌     | 45/100 [01:44<02:06,  2.30s/frame]Processing frames:  46%|████▌     | 46/100 [01:47<02:10,  2.41s/frame]Processing frames:  47%|████▋     | 47/100 [01:49<02:05,  2.36s/frame]Processing frames:  48%|████▊     | 48/100 [01:51<02:02,  2.35s/frame]Processing frames:  49%|████▉     | 49/100 [01:54<02:05,  2.46s/frame]Processing frames:  50%|█████     | 50/100 [01:56<02:00,  2.42s/frame]Processing frames:  51%|█████     | 51/100 [01:59<02:01,  2.47s/frame]Processing frames:  52%|█████▏    | 52/100 [02:01<01:55,  2.41s/frame]Processing frames:  53%|█████▎    | 53/100 [02:03<01:52,  2.38s/frame]Processing frames:  54%|█████▍    | 54/100 [02:06<01:51,  2.42s/frame]Processing frames:  55%|█████▌    | 55/100 [02:08<01:47,  2.38s/frame]Processing frames:  56%|█████▌    | 56/100 [02:11<01:46,  2.41s/frame]Processing frames:  57%|█████▋    | 57/100 [02:13<01:40,  2.34s/frame]Processing frames:  58%|█████▊    | 58/100 [02:15<01:39,  2.36s/frame]Processing frames:  59%|█████▉    | 59/100 [02:17<01:35,  2.33s/frame]Processing frames:  60%|██████    | 60/100 [02:20<01:36,  2.41s/frame]Processing frames:  61%|██████    | 61/100 [02:22<01:33,  2.40s/frame]Processing frames:  62%|██████▏   | 62/100 [02:25<01:28,  2.32s/frame]Processing frames:  63%|██████▎   | 63/100 [02:27<01:26,  2.34s/frame]Processing frames:  64%|██████▍   | 64/100 [02:29<01:21,  2.25s/frame]Processing frames:  65%|██████▌   | 65/100 [02:31<01:19,  2.27s/frame]Processing frames:  66%|██████▌   | 66/100 [02:33<01:15,  2.21s/frame]Processing frames:  66%|██████▌   | 66/100 [02:35<01:20,  2.36s/frame]
-Traceback (most recent call last):
-  File "/media/qwe/Alexandria/PySlice/fixBrokenSparsification/tests/10_midgley.py", line 47, in <module>
-    exitwaves = calculator.run()
-                ^^^^^^^^^^^^^^^^
-  File "/media/qwe/Alexandria/PySlice/fixBrokenSparsification/tests/../src/pyslice/multislice/calculators.py", line 245, in run
-    frame_idx_result, frame_data, was_cached = _process_frame_worker_torch(args)
-                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/media/qwe/Alexandria/PySlice/fixBrokenSparsification/tests/../src/pyslice/multislice/calculators.py", line 374, in _process_frame_worker_torch
-    exit_waves_batch = Propagate(batched_probes, potential, worker_device, progress=(frame_idx==-1), onthefly=True, store_all_slices = ("slices" in cache_levels) )
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/media/qwe/Alexandria/PySlice/fixBrokenSparsification/tests/../src/pyslice/multislice/multislice.py", line 436, in Propagate
-    array = xp.fft.ifft2(propagated_fft, **kwarg)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/qwe/.local/lib/python3.12/site-packages/torch/utils/_device.py", line 103, in __torch_function__
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-KeyboardInterrupt
+Tue Jan 6 10:17:57 PM EST 2026
+python3 00_probe.py
+import failed, falling back to relative paths
+probe import took 1.9825642108917236 s
+differ import took 2.1219253540039062e-05 s
+python3 01_potentials.py
+(1495, 1295, 21)
+python3 02_propagate_otf=False.py
+python3 02_propagate_otf=True.py
+python3 03_manyprobes.py
+(256, 250, 216)
+python3 04_haadf.py
+Processing frames:   0%|          | 0/3 [00:00<?, ?frame/s]Processing frames:  33%|███▎      | 1/3 [00:03<00:06,  3.10s/frame]Processing frames:  67%|██████▋   | 2/3 [00:06<00:03,  3.01s/frame]Processing frames: 100%|██████████| 3/3 [00:08<00:00,  2.98s/frame]Processing frames: 100%|██████████| 3/3 [00:08<00:00,  3.00s/frame]
+python3 05_tacaw.py
+Processing frames:   0%|          | 0/100 [00:00<?, ?frame/s]Processing frames:   1%|          | 1/100 [00:02<03:43,  2.26s/frame]Processing frames:   2%|▏         | 2/100 [00:04<03:32,  2.17s/frame]Processing frames:   3%|▎         | 3/100 [00:06<03:33,  2.20s/frame]Processing frames:   4%|▍         | 4/100 [00:08<03:34,  2.24s/frame]Processing frames:   5%|▌         | 5/100 [00:10<03:26,  2.17s/frame]Processing frames:   6%|▌         | 6/100 [00:13<03:23,  2.16s/frame]Processing frames:   7%|▋         | 7/100 [00:15<03:25,  2.21s/frame]Processing frames:   8%|▊         | 8/100 [00:17<03:22,  2.20s/frame]Processing frames:   9%|▉         | 9/100 [00:19<03:20,  2.21s/frame]Processing frames:  10%|█         | 10/100 [00:22<03:20,  2.23s/frame]Processing frames:  11%|█         | 11/100 [00:24<03:19,  2.24s/frame]Processing frames:  12%|█▏        | 12/100 [00:26<03:18,  2.26s/frame]Processing frames:  13%|█▎        | 13/100 [00:28<03:17,  2.27s/frame]Processing frames:  14%|█▍        | 14/100 [00:31<03:17,  2.30s/frame]Processing frames:  15%|█▌        | 15/100 [00:33<03:16,  2.31s/frame]Processing frames:  16%|█▌        | 16/100 [00:36<03:16,  2.34s/frame]Processing frames:  17%|█▋        | 17/100 [00:38<03:22,  2.44s/frame]Processing frames:  18%|█▊        | 18/100 [00:41<03:20,  2.45s/frame]Processing frames:  19%|█▉        | 19/100 [00:43<03:18,  2.45s/frame]Processing frames:  20%|██        | 20/100 [00:45<03:11,  2.39s/frame]Processing frames:  21%|██        | 21/100 [00:48<03:08,  2.39s/frame]Processing frames:  22%|██▏       | 22/100 [00:50<03:11,  2.45s/frame]Processing frames:  23%|██▎       | 23/100 [00:53<03:15,  2.54s/frame]Processing frames:  24%|██▍       | 24/100 [00:55<03:06,  2.45s/frame]Processing frames:  25%|██▌       | 25/100 [00:58<03:00,  2.41s/frame]Processing frames:  26%|██▌       | 26/100 [01:00<02:56,  2.39s/frame]Processing frames:  27%|██▋       | 27/100 [01:02<02:53,  2.37s/frame]Processing frames:  28%|██▊       | 28/100 [01:05<02:49,  2.35s/frame]Processing frames:  29%|██▉       | 29/100 [01:07<02:45,  2.33s/frame]Processing frames:  30%|███       | 30/100 [01:09<02:41,  2.31s/frame]Processing frames:  31%|███       | 31/100 [01:11<02:38,  2.30s/frame]Processing frames:  32%|███▏      | 32/100 [01:14<02:34,  2.27s/frame]Processing frames:  33%|███▎      | 33/100 [01:16<02:30,  2.25s/frame]Processing frames:  34%|███▍      | 34/100 [01:18<02:28,  2.24s/frame]Processing frames:  35%|███▌      | 35/100 [01:20<02:26,  2.25s/frame]Processing frames:  36%|███▌      | 36/100 [01:23<02:23,  2.24s/frame]Processing frames:  37%|███▋      | 37/100 [01:25<02:23,  2.27s/frame]Processing frames:  38%|███▊      | 38/100 [01:27<02:19,  2.25s/frame]Processing frames:  39%|███▉      | 39/100 [01:29<02:15,  2.22s/frame]Processing frames:  40%|████      | 40/100 [01:32<02:16,  2.27s/frame]Processing frames:  41%|████      | 41/100 [01:34<02:11,  2.23s/frame]Processing frames:  42%|████▏     | 42/100 [01:36<02:08,  2.21s/frame]Processing frames:  43%|████▎     | 43/100 [01:38<02:04,  2.18s/frame]Processing frames:  44%|████▍     | 44/100 [01:40<02:01,  2.17s/frame]Processing frames:  45%|████▌     | 45/100 [01:42<01:59,  2.18s/frame]Processing frames:  46%|████▌     | 46/100 [01:45<01:57,  2.17s/frame]Processing frames:  47%|████▋     | 47/100 [01:47<01:56,  2.20s/frame]Processing frames:  48%|████▊     | 48/100 [01:49<01:55,  2.23s/frame]Processing frames:  49%|████▉     | 49/100 [01:51<01:53,  2.22s/frame]Processing frames:  50%|█████     | 50/100 [01:54<01:52,  2.26s/frame]Processing frames:  51%|█████     | 51/100 [01:56<01:49,  2.24s/frame]Processing frames:  52%|█████▏    | 52/100 [01:58<01:47,  2.23s/frame]Processing frames:  53%|█████▎    | 53/100 [02:00<01:42,  2.19s/frame]Processing frames:  54%|█████▍    | 54/100 [02:02<01:41,  2.20s/frame]Processing frames:  55%|█████▌    | 55/100 [02:05<01:39,  2.20s/frame]Processing frames:  56%|█████▌    | 56/100 [02:07<01:36,  2.20s/frame]Processing frames:  57%|█████▋    | 57/100 [02:09<01:34,  2.20s/frame]Processing frames:  58%|█████▊    | 58/100 [02:11<01:32,  2.21s/frame]Processing frames:  59%|█████▉    | 59/100 [02:14<01:35,  2.34s/frame]Processing frames:  60%|██████    | 60/100 [02:16<01:32,  2.30s/frame]Processing frames:  61%|██████    | 61/100 [02:19<01:32,  2.36s/frame]Processing frames:  62%|██████▏   | 62/100 [02:21<01:30,  2.37s/frame]Processing frames:  63%|██████▎   | 63/100 [02:23<01:28,  2.38s/frame]Processing frames:  64%|██████▍   | 64/100 [02:26<01:26,  2.40s/frame]Processing frames:  65%|██████▌   | 65/100 [02:28<01:23,  2.40s/frame]Processing frames:  66%|██████▌   | 66/100 [02:30<01:17,  2.29s/frame]Processing frames:  67%|██████▋   | 67/100 [02:33<01:17,  2.34s/frame]Processing frames:  68%|██████▊   | 68/100 [02:35<01:15,  2.36s/frame]Processing frames:  69%|██████▉   | 69/100 [02:37<01:10,  2.27s/frame]Processing frames:  70%|███████   | 70/100 [02:39<01:08,  2.27s/frame]Processing frames:  71%|███████   | 71/100 [02:42<01:03,  2.21s/frame]Processing frames:  72%|███████▏  | 72/100 [02:44<01:02,  2.24s/frame]Processing frames:  73%|███████▎  | 73/100 [02:46<00:59,  2.20s/frame]Processing frames:  74%|███████▍  | 74/100 [02:48<00:58,  2.25s/frame]Processing frames:  75%|███████▌  | 75/100 [02:51<00:57,  2.28s/frame]Processing frames:  76%|███████▌  | 76/100 [02:53<00:53,  2.22s/frame]Processing frames:  77%|███████▋  | 77/100 [02:55<00:52,  2.26s/frame]
