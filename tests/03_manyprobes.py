@@ -58,7 +58,7 @@ if hasattr(kxs,'cpu'):
     kys = np.asarray(kys.cpu())
 
 print(ary.shape)
-differ(ary[::2,::2,::2],"outputs/manyprobes-test.npy","EXIT WAVE")
+differ(ary[::5,::5,::5],"outputs/manyprobes-test.npy","EXIT WAVE")
 
 # ASSEMBLE HAADF IMAGE
 q=np.sqrt(kxs[:,None]**2+kys[None,:]**2)
