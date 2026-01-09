@@ -276,7 +276,7 @@ class Probe:
 def aberrationFunction(kxs,kys,wavelength,aberrations): # aberrations should be a dict of Cnm following https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
     dPhi = xp.zeros((len(kxs),len(kys)))
     ks = xp.sqrt( kxs[:,None]**2 + kys[None,:]**2 )
-    theta = xp.atan2( kys[None,:] , kxs[:,None] )
+    theta = xp.arctan2( kys[None,:] , kxs[:,None] )
     for k in aberrations.keys():
         n,m = int(k[1]),int(k[2]) # C03 --> 0,3
         C = aberrations[k] ; phi0 = 0

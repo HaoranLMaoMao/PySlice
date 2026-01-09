@@ -1,100 +1,0 @@
-Tue Dec 30 07:25:57 PM EST 2025
-python3 00_probe.py
-import failed, falling back to relative paths
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-probe import took 0.8086264133453369 s
-differ import took 7.82012939453125e-05 s
-python3.13 00_probe.py
-runAllTests.sh: line 10: python3.13: command not found
-python3.9 00_probe.py
-runAllTests.sh: line 10: python3.9: command not found
-python3 01_potentials.py
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-(1495, 1295, 21)
-python3.13 01_potentials.py
-runAllTests.sh: line 10: python3.13: command not found
-python3.9 01_potentials.py
-runAllTests.sh: line 10: python3.9: command not found
-python3 02_propagate_otf=False.py
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-ERROR! EXIT WAVE DOES NOT MATCH PREVIOUS RUN 0.102612957224793 %
-python3.13 02_propagate_otf=False.py
-runAllTests.sh: line 10: python3.13: command not found
-python3.9 02_propagate_otf=False.py
-runAllTests.sh: line 10: python3.9: command not found
-python3 02_propagate_otf=True.py
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-ERROR! EXIT WAVE DOES NOT MATCH PREVIOUS RUN 0.10261295722479302 %
-python3.13 02_propagate_otf=True.py
-runAllTests.sh: line 10: python3.13: command not found
-python3.9 02_propagate_otf=True.py
-runAllTests.sh: line 10: python3.9: command not found
-python3 03_manyprobes.py
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-(256, 250, 216)
-ERROR! EXIT WAVE DOES NOT MATCH PREVIOUS RUN 0.1063238939526181 %
-python3.13 03_manyprobes.py
-runAllTests.sh: line 10: python3.13: command not found
-python3.9 03_manyprobes.py
-runAllTests.sh: line 10: python3.9: command not found
-python3 04_haadf.py
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-Processing frames:   0%|          | 0/3 [00:00<?, ?frame/s]Processing frames:  33%|███▎      | 1/3 [00:14<00:28, 14.15s/frame]Processing frames:  67%|██████▋   | 2/3 [00:28<00:14, 14.38s/frame]Processing frames: 100%|██████████| 3/3 [00:43<00:00, 14.39s/frame]Processing frames: 100%|██████████| 3/3 [00:43<00:00, 14.36s/frame]
-python3.13 04_haadf.py
-runAllTests.sh: line 10: python3.13: command not found
-python3.9 04_haadf.py
-runAllTests.sh: line 10: python3.9: command not found
-python3 05_tacaw.py
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-PyTorch not available, falling back to NumPy
-Processing frames:   0%|          | 0/100 [00:00<?, ?frame/s]Processing frames:   1%|          | 1/100 [00:35<57:47, 35.03s/frame]Processing frames:   2%|▏         | 2/100 [01:10<57:35, 35.26s/frame]Processing frames:   3%|▎         | 3/100 [01:46<57:16, 35.43s/frame]Processing frames:   4%|▍         | 4/100 [02:21<56:59, 35.62s/frame]Processing frames:   5%|▌         | 5/100 [02:57<56:18, 35.57s/frame]Processing frames:   6%|▌         | 6/100 [03:33<55:44, 35.58s/frame]Processing frames:   7%|▋         | 7/100 [04:08<55:05, 35.54s/frame]Processing frames:   8%|▊         | 8/100 [04:42<53:52, 35.14s/frame]Processing frames:   9%|▉         | 9/100 [05:17<52:52, 34.86s/frame]Processing frames:  10%|█         | 10/100 [05:51<51:57, 34.64s/frame]Processing frames:  11%|█         | 11/100 [06:26<51:29, 34.71s/frame]Processing frames:  12%|█▏        | 12/100 [07:01<51:03, 34.81s/frame]Processing frames:  13%|█▎        | 13/100 [07:36<50:37, 34.91s/frame]Processing frames:  13%|█▎        | 13/100 [08:05<54:06, 37.32s/frame]
-Traceback (most recent call last):
-  File "/media/qwe/Alexandria/ORNL/Various Code/multislice/PySlice/TWP20251230b/tests/05_tacaw.py", line 33, in <module>
-    exitwaves = calculator.run()
-                ^^^^^^^^^^^^^^^^
-  File "/media/qwe/Alexandria/ORNL/Various Code/multislice/PySlice/TWP20251230b/tests/../src/pyslice/multislice/calculators.py", line 244, in run
-    frame_idx_result, frame_data, was_cached = _process_frame_worker_torch(args)
-                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/media/qwe/Alexandria/ORNL/Various Code/multislice/PySlice/TWP20251230b/tests/../src/pyslice/multislice/calculators.py", line 372, in _process_frame_worker_torch
-    exit_waves_batch = Propagate(batched_probes, potential, worker_device, progress=(frame_idx==-1), onthefly=True, store_all_slices = ("slices" in cache_levels) )
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/media/qwe/Alexandria/ORNL/Various Code/multislice/PySlice/TWP20251230b/tests/../src/pyslice/multislice/multislice.py", line 413, in Propagate
-    potential_slice = potential.calculateSlice(z)
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/media/qwe/Alexandria/ORNL/Various Code/multislice/PySlice/TWP20251230b/tests/../src/pyslice/multislice/potentials.py", line 348, in calculateSlice
-    shape_factor += xp.einsum('ax,ay->xy', expx, expy, **kwarg)
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/numpy/core/einsumfunc.py", line 1419, in einsum
-    new_view = tensordot(*tmp_operands, axes=(tuple(left_pos), tuple(right_pos)))
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3/dist-packages/numpy/core/numeric.py", line 1121, in tensordot
-    res = dot(at, bt)
-          ^^^^^^^^^^^
-KeyboardInterrupt
