@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
 from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 from pathlib import Path
-from ..backend import mean,zeros
+from ..backend import mean,ones
 
 try:
     import torch ; xp = torch
@@ -154,10 +154,11 @@ class WFData(Signal):
 
     @property
     def reshaped(self): # where self._array is indices probe,time,kx,ky,layer, we reshape to probe_x,probe_y,time,kx,ky,layer
-        npt,nt,nkx,nky,nl = self._array.shape
-        nx=len(self.probe_xs)
-        ny=len(self.probe_ys)
-        return xp.reshape(self._array,(nx,ny,nt,nkx,nky,nl))
+        nc,nptp,nx,ny = self.probe._array.shape # recall: decoherence creates duplicate probes: num_copies,num_positions,x,y indices
+        npta,nt,nkx,nky,nl = self._array.shape # recall, Propagate flattens the first two, and adds time,layers: nc*npt,num_frames,x,y,nl indice
+        intermediate = xp.reshape(self._array,(nc,nptp,nt,nkx,nky,nl))
+        nx,ny = len(self.probe.probe_xs),len(self.probe.probe_ys)
+        return xp.reshape(intermediate,(nc,nx,ny,nt,nkx,nky,nl))
 
     @array.setter
     def array(self, value):
@@ -234,7 +235,7 @@ class WFData(Signal):
         else:
             array = array[whichProbe] 
 
-        if isinstance(whichTimestep,str) and whichProbe=="mean":
+        if isinstance(whichTimestep,str) and whichTimestep=="mean":
             array = mean(array,axis=0) # t,kx,ky --> kx,ky
         else:
             array = array[whichTimestep] 
@@ -358,22 +359,25 @@ class WFData(Signal):
         else:
             plt.show()
 
-    def plot_realspace(self,whichProbe=0,whichTimestep=0,extent=None,avg=False,filename=None):
+    def plot_realspace(self,whichProbe="mean",whichTimestep="mean",extent=None,filename=None):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
 
-        # Get array (with or without averaging)
-        if avg:
-            array = self._array[whichProbe,:,:,:,-1] # Shape: (time, kx, ky)
-            if hasattr(array, 'mean'):  # torch tensor
-                array = array.mean(dim=0)  # Average over time dimension
-            else:  # numpy array
-                array = np.mean(array, axis=0)
+        array = xp.fft.ifft2(self._array[:,:,:,:,-1])
+
+        array = xp.absolute(array) # probe, time, kx, ky, layer --> p,t,kx,ky
+
+        if isinstance(whichProbe,str) and whichProbe=="mean":
+            array = mean(abs(array),axis=0) # p,t,kx,ky --> t,kx,ky
         else:
-            array = self._array[whichProbe,whichTimestep,:,:,-1]
+            array = array[whichProbe]
+
+        if isinstance(whichTimestep,str) and whichTimestep=="mean":
+            array = mean(array,axis=0) # t,kx,ky --> kx,ky
+        else:
+            array = array[whichTimestep]
 
         array = array.T # imshow convention: y,x. our convention: x,y
-        array = xp.fft.ifft2(array)
 
         # Use provided extent or calculate from data
         if extent is None:
@@ -403,10 +407,31 @@ class WFData(Signal):
         #if dz>0:
         self._array = P[None,None,:,:,None] * self._array
 
+    def addSpatialDecoherence(self,sigma_dz,N):
+        dzs = np.linspace(-2*sigma_dz,2*sigma_dz,N) # suppose N=25
+        amplitudes = np.exp(-dzs**2/sigma_dz**2)
+        self._array = self._array[:,None,:,:,:,:] * ones(N)[None,:,None,None,None,None] # n_probes,nt,nx,ny,nl -->
+        nc,npt,nt,nx,ny,nl = self._array.shape            # suppose nc=10 (addTemporalDecoherence created 10 wavelengths)
+        kx_grid, ky_grid = xp.meshgrid(self._kxs, self._kys, indexing='ij')
+        k_squared = kx_grid**2 + ky_grid**2
+        for i in range(N):
+            inner = xp.pi * self.probe.wavelength * dzs[i] * k_squared
+            P = xp.exp( -1j * inner ) # not sure why, but combining this and previous line triggers a "ComplexWarning: Casting complex values to real discards the imaginary part" in python 2.9.1 but not 2.2.2
+            self._array[:,i,:,:,:,:] *= amplitudes[i]*P[None,None,:,:,None]
+        self._array = self._array.reshape(nc*npt,nt,nx,ny,nl)
+        #self.defocus(dzs)                           # defocus starts with 25,10,npt,nx,ny --reshapes--> 250,npt,nx,ny
+        #for i in range(N):                         # reshape to flatten loops first index last: [[0,1],[2,3]] --> [0,1,2,3]
+        #    for j in range(nc):
+        #        self._array[i*nc+j] *= amplitudes[i]
+        #nc,npt,nx,ny = self._array.shape
+        #if npt==1:
+        #    self.applyShifts()
+
+
     def applyMask(self, radius, realOrReciprocal="reciprocal"):
         if realOrReciprocal == "reciprocal":
             radii = xp.sqrt( self._kxs[:,None]**2 + self._kys[None,:]**2 )
-            mask = zeros(radii.shape, device=self._array.device if TORCH_AVAILABLE else None)
+            mask = xp.zeros(radii.shape, device=self._array.device if TORCH_AVAILABLE else None)
             mask[radii<radius]=1
             self._array*=mask[None,None,:,:,None]
         else:
@@ -417,7 +442,7 @@ class WFData(Signal):
                 radii = xp.tensor(radii_np, dtype=self._array.real.dtype, device=self._array.device)
             else:
                 radii = radii_np
-            mask = zeros(radii.shape, device=self._array.device if TORCH_AVAILABLE else None)
+            mask = xp.zeros(radii.shape, device=self._array.device if TORCH_AVAILABLE else None)
             mask[radii<radius]=1
             kwarg = {"dim":(2,3)} if TORCH_AVAILABLE else {"axes":(2,3)}
             real = xp.fft.ifft2(xp.fft.ifftshift(self._array,**kwarg),**kwarg)

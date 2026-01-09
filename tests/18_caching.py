@@ -19,8 +19,9 @@ types={1:"B",2:"N"}
 a,b=2.4907733333333337,2.1570729817355123
 
 # cache_level options include: ["exitwaves","slices","potentials"]
-tests = [1,2,3,4,5,6,7,8,9,10]
+tests = [1,2,3,4,5,5.5,6,7,8,9,10]
 #tests = [9,10]
+#tests=[5,5.5]
 
 # LOAD TRAJECTORY
 trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()
@@ -75,6 +76,19 @@ if 5 in tests:
     calculator.setup(traj5,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys)
     exitwaves = calculator.run()
     differ(exitwaves.array[:,:,::10,::10,:],"outputs/caching/05-test.npy","05") # p,t,x,y,l indices
+
+# MANY TIMESTEPS, MANY PROBES:
+if 5.5 in tests:
+    print("5.5 many timesteps, many probes, normal caching, with decoherence added")
+    traj55=trajectory.get_random_timesteps(5,seed=5)
+    calculator=MultisliceCalculator()
+    probe_xs = np.linspace(a,3*a,9)
+    probe_ys = np.linspace(b,3*b,10)
+    calculator.setup(traj55,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys)
+    calculator.base_probe.addSpatialDecoherence(1000,7)
+    exitwaves = calculator.run()
+    #differ(exitwaves.array[:,:,::10,::10,:],"outputs/caching/05-test.npy","05") # p,t,x,y,l indices
+
 
 # CACHING TURNED OFF:
 if 6 in tests:

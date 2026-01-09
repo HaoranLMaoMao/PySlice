@@ -80,7 +80,8 @@ class MultisliceCalculator:
         }
     
     def _generate_cache_key(self, trajectory, aperture, voltage_eV,
-                           slice_thickness, sampling, probe_positions):
+                           slice_thickness, sampling, probe_positions,
+                           spatial_decoherence, temporal_decoherence):
         """Generate unique cache key for simulation parameters."""
         firstNAtoms = [ str(np.round(v,4)) for v in trajectory.positions[0,:100,0] ] # first timestep's first 10 atom's x positions
         params = {
@@ -96,6 +97,10 @@ class MultisliceCalculator:
             'probe_positions': probe_positions,
             'backend': 'pytorch' if TORCH_AVAILABLE else 'numpy',
         }
+        if spatial_decoherence is not None:
+            params['spatial_decoherence'] = spatial_decoherence
+        if temporal_decoherence is not None:
+            params['temporal_decoherence'] = temporal_decoherence
         param_str = str(sorted(params.items()))
         return hashlib.md5(param_str.encode()).hexdigest()[:12]
     
@@ -170,31 +175,13 @@ class MultisliceCalculator:
         self.kys = self.kys[self.j1:self.j2]
         self.nx = self.i2 - self.i1 ; self.ny = self.j2 - self.j1 ; nx = self.nx ; ny = self.ny
 
-        # Preferred to pass probe_xs and probe_ys from which we will define a grid
-        if self.probe_xs is not None and self.probe_ys is not None:
-            x,y = np.meshgrid(self.probe_xs,self.probe_ys,indexing='ij')
-            self.probe_positions = np.asarray(list(zip(x.flat,y.flat)))
-            lx = len(self.probe_xs) ; ly = len(self.probe_ys)
-
-        # Set up default probe position if not provided
-        if self.probe_positions is None:
-            self.probe_positions = [(lx/2, ly/2)]  # Center probe
-            self.probe_xs = [lx/2] ; self.probe_ys = [ly/2]
-
-        # Generate cache key and setup output directory
-        cache_key = self._generate_cache_key(trajectory, aperture, voltage_eV,
-                                           slice_thickness, sampling, self.probe_positions)
-        #print(cache_key)
-        self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+cache_key)
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
-		
         # Create probe on the correct device from the start
-        self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device)
+        self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions)
+        self.base_probe.applyShifts()
 
         # Initialize storage for results
         self.n_frames = trajectory.n_frames
-        self.n_probes = len(self.probe_positions)
+        #self.n_probes = len(self.base_probe.probe_positions)
 
         # Set dtype based on the actual device we're using
         if TORCH_AVAILABLE and self.device is not None:
@@ -208,12 +195,25 @@ class MultisliceCalculator:
             self.complex_dtype = np.complex128
             self.float_dtype = np.float64
 
-        # Storage: [probe, frame, x, y, layer] - matches WFData expected format
-        self.n_layers = nz if "slices" in cache_levels else 1
-        self.wavefunction_data = zeros((self.n_probes, self.n_frames, nx, ny, self.n_layers),
-                                                   dtype=self.complex_dtype, device=self.device)
         
     def run(self) -> WFData:
+
+
+        # Generate cache key and setup output directory
+        cache_key = self._generate_cache_key(self.trajectory, self.aperture, self.voltage_eV,
+                                           self.slice_thickness, self.sampling, self.probe_positions,
+                                           self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence )
+        #print(cache_key)
+        self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+cache_key)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+
+        nc,npt,nx,ny = self.base_probe._array.shape
+        self.n_probes = nc*npt
+        # Storage: [probe, frame, x, y, layer] - matches WFData expected format
+        self.n_layers = self.nz if "slices" in self.cache_levels else 1
+        self.wavefunction_data = zeros((self.n_probes, self.n_frames, nx, ny, self.n_layers),
+                                                   dtype=self.complex_dtype, device=self.device)
 
         # Process frames with caching and multiprocessing
         total_start_time = time.time()
@@ -228,6 +228,8 @@ class MultisliceCalculator:
         with tqdm(total=self.n_frames, desc="Processing frames", unit="frame") as pbar:
             for frame_idx in range(self.n_frames):
                 cache_file = self.output_dir / f"frame_{frame_idx}.npy"
+                # Show detailed progress for single-frame runs
+                show_progress = (frame_idx == 0 and self.n_frames == 1)
 
                 positions = self.trajectory.positions[frame_idx]
                 atom_types = self.trajectory.atom_types
@@ -242,26 +244,26 @@ class MultisliceCalculator:
                 cache_exists,frame_data = checkCache(cache_file,self.cache_levels)
 
                 if cache_exists:
-                    #print(frame_data.shape)
-                    pass
+                    frames_cached += 1
                 else:
-                    potential = Potential(self.xs, self.ys, self.zs, positions, atom_type_names, kind="kirkland", device=self.device, slice_axis=self.slice_axis, progress=(frame_idx==-1), cache_dir=cache_file.parent if "potentials" in self.cache_levels else None, frame_idx = frame_idx)
+                    potential = Potential(self.xs, self.ys, self.zs, positions, atom_type_names, kind="kirkland", device=self.device, slice_axis=self.slice_axis, progress=show_progress, cache_dir=cache_file.parent if "potentials" in self.cache_levels else None, frame_idx = frame_idx)
 
-                    n_probes = len(self.probe_positions)
-                    nx, ny = len(self.xs), len(self.ys)
+                    #n_probes = nc*npt
+                    nc,npt,nx,ny = self.base_probe._array.shape
                     n_slices = len(self.zs)
 
-                    batched_probes = create_batched_probes(self.base_probe, self.probe_positions, self.device)
+                    #batched_probes = create_batched_probes(self.base_probe, self.probe_positions, self.device)
                     # Propagate returns: [l,p,x,y] where l,p are both optional (if store_all_slices=True, and if n_probes>1)
-                    exit_waves_batch = Propagate(batched_probes, potential, self.device, progress=(frame_idx==-1), onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
+                    exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
                     #print(exit_waves_batch.shape)
-                    if n_probes==1 and "slices" not in self.cache_levels:
-                        exit_waves_batch = expand_dims(exit_waves_batch,0)
+                    #print(exit_waves_batch.shape)
+                    #if n_probes==1 and "slices" not in self.cache_levels:
+                    #    exit_waves_batch = expand_dims(exit_waves_batch,0)
                     if "slices" not in self.cache_levels:
                         exit_waves_batch = expand_dims(exit_waves_batch,0)
                     #print(exit_waves_batch.shape)
                     # frame_data is always: p,x,y,l,1 (self.wavefunction_data expects p,t,x,y,l, since we loop time. recall Propagate gave l,p,x,y)
-                    frame_data = zeros((n_probes, nx, ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
+                    frame_data = zeros((self.n_probes, nx, ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
                     #print(frame_data.shape)
                     for layer_idx in range(self.n_layers):
                         kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
@@ -278,6 +280,7 @@ class MultisliceCalculator:
 
                     if "exitwaves" in self.cache_levels or "slices" in self.cache_levels:
                         np.save(cache_file, frame_data_cpu)
+                    frames_computed += 1
 
                 self.wavefunction_data[:, frame_idx, :, :, :] = frame_data[:, :, :, :, 0] # load p,x,y,l,1 --> p,t,x,y,l indices
                 # Update progress bar for this frame
@@ -312,7 +315,7 @@ class MultisliceCalculator:
         
         # Package results
         wf_data = WFData(
-            probe_positions=self.probe_positions,
+            probe_positions=self.base_probe.probe_positions,
             probe_xs=self.probe_xs,
             probe_ys=self.probe_ys,
             time=time_array,

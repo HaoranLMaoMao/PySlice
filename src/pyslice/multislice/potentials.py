@@ -2,7 +2,6 @@ import numpy as np
 from pathlib import Path
 import logging,os
 from tqdm import tqdm
-from ..backend import zeros
 
 try:
     import torch  ; xp = torch
@@ -364,7 +363,7 @@ class Potential:
                     Z_cpu = Z.cpu().numpy()
                 else:
                     Z_cpu = Z
-                np.save(cache_file,Z_cpu)
+                np.save(cache_file, Z_cpu)
             return Z
         
         self.calculateSlice = calculateSlice
