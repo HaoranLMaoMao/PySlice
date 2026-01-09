@@ -235,7 +235,7 @@ class WFData(Signal):
         else:
             array = array[whichProbe] 
 
-        if isinstance(whichTimestep,str) and whichProbe=="mean":
+        if isinstance(whichTimestep,str) and whichTimestep=="mean":
             array = mean(array,axis=0) # t,kx,ky --> kx,ky
         else:
             array = array[whichTimestep] 
@@ -372,7 +372,7 @@ class WFData(Signal):
         else:
             array = array[whichProbe]
 
-        if isinstance(whichTimestep,str) and whichProbe=="mean":
+        if isinstance(whichTimestep,str) and whichTimestep=="mean":
             array = mean(array,axis=0) # t,kx,ky --> kx,ky
         else:
             array = array[whichTimestep]
