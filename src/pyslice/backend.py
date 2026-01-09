@@ -118,6 +118,11 @@ def fftfreq(n, d, dtype=DEFAULT_FLOAT_DTYPE, device=DEFAULT_DEVICE):
     else:
         return xp.fft.fftfreq(n, d, dtype=dtype)
 
+def expand_dims(ary,d):
+    if xp != np:
+        return xp.unsqueeze(ary,dim=d)
+    else:
+        return np.expand_dims(ary,d)
 
 def exp(x):
     return xp.exp(x)

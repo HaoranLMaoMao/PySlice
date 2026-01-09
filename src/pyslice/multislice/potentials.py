@@ -2,6 +2,7 @@ import numpy as np
 from pathlib import Path
 import logging,os
 from tqdm import tqdm
+from ..backend import zeros
 
 try:
     import torch  ; xp = torch
@@ -286,7 +287,10 @@ class Potential:
             if self.cache_dir is not None:
                 cache_file = self.cache_dir / ("potential_"+str(frame_idx)+"_"+str(slice_idx)+".npy")
             if cache_file is not None and os.path.exists(cache_file):
-                return np.load(cache_file)
+                Z = np.load(cache_file)
+                if TORCH_AVAILABLE:
+                    return xp.from_numpy(Z).to(device)
+                return Z
 
             # Initialize slice of potential array using xp with conditional device
             device_kwargs = {'device': self.device } if self.use_torch else {}
@@ -356,7 +360,11 @@ class Potential:
             dy = self.ys[1] - self.ys[0] 
             Z = real / (dx**2 * dy**2)
             if cache_file is not None:
-                np.save(cache_file,Z)
+                if TORCH_AVAILABLE and hasattr(Z, 'cpu'):
+                    Z_cpu = Z.cpu().numpy()
+                else:
+                    Z_cpu = Z
+                np.save(cache_file,Z_cpu)
             return Z
         
         self.calculateSlice = calculateSlice
