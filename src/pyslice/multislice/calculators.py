@@ -212,7 +212,7 @@ class MultisliceCalculator:
         self.n_probes = nc*npt
         # Storage: [probe, frame, x, y, layer] - matches WFData expected format
         self.n_layers = self.nz if "slices" in self.cache_levels else 1
-        self.wavefunction_data = zeros((self.n_probes, self.n_frames, nx, ny, self.n_layers),
+        self.wavefunction_data = zeros((self.n_probes, self.n_frames, self.nx, self.ny, self.n_layers),
                                                    dtype=self.complex_dtype, device=self.device)
 
         # Process frames with caching and multiprocessing
@@ -269,8 +269,8 @@ class MultisliceCalculator:
                         kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
                         exit_waves_k = xp.fft.fft2(exit_waves_batch[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
                         diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
-                        cropped = diffraction_patterns[:,self.i1:self.i2,self.j1:self.j2]
-                        frame_data[:,:,:,layer_idx,0] = cropped # load p,x,y --> p,x,y,l,1 indices
+                        #cropped = diffraction_patterns[:,self.i1:self.i2,self.j1:self.j2]
+                        frame_data[:,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
 
                     # Convert to CPU numpy array for saving
                     if TORCH_AVAILABLE and hasattr(frame_data, 'cpu'):
@@ -282,7 +282,10 @@ class MultisliceCalculator:
                         np.save(cache_file, frame_data_cpu)
                     frames_computed += 1
 
-                self.wavefunction_data[:, frame_idx, :, :, :] = frame_data[:, :, :, :, 0] # load p,x,y,l,1 --> p,t,x,y,l indices
+                print(frame_data.shape,self.wavefunction_data.shape)
+                cropped = frame_data[:,self.i1:self.i2,self.j1:self.j2,:,0]
+                print(cropped.shape)
+                self.wavefunction_data[:, frame_idx, :, :, :] = cropped # load p,x,y,l,1 --> p,t,x,y,l indices
                 # Update progress bar for this frame
                 pbar.update(1)
         
