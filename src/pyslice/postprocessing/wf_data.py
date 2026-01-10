@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
 from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 from pathlib import Path
-from ..backend import mean,ones
+from ..backend import mean,ones,zeros
 
 try:
     import torch ; xp = torch
@@ -431,7 +431,7 @@ class WFData(Signal):
     def applyMask(self, radius, realOrReciprocal="reciprocal"):
         if realOrReciprocal == "reciprocal":
             radii = xp.sqrt( self._kxs[:,None]**2 + self._kys[None,:]**2 )
-            mask = xp.zeros(radii.shape, device=self._array.device if TORCH_AVAILABLE else None)
+            mask = zeros(radii.shape, device=self._array.device if TORCH_AVAILABLE else None)
             mask[radii<radius]=1
             self._array*=mask[None,None,:,:,None]
         else:
@@ -442,7 +442,7 @@ class WFData(Signal):
                 radii = xp.tensor(radii_np, dtype=self._array.real.dtype, device=self._array.device)
             else:
                 radii = radii_np
-            mask = xp.zeros(radii.shape, device=self._array.device if TORCH_AVAILABLE else None)
+            mask = zeros(radii.shape, device=self._array.device if TORCH_AVAILABLE else None)
             mask[radii<radius]=1
             kwarg = {"dim":(2,3)} if TORCH_AVAILABLE else {"axes":(2,3)}
             real = xp.fft.ifft2(xp.fft.ifftshift(self._array,**kwarg),**kwarg)
