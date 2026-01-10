@@ -73,7 +73,7 @@ for j in range(ny):
 				probe.defocus(dz)
 			z+=dz
 		axs[j,i].set_title("z="+str(np.round(z))+r"$\AA$")
-		probe = np.stack([ w*p.array for w,p in zip(weighting,probes) ])
+		probe = np.stack([ w*p.array[0,0,:,:] for w,p in zip(weighting,probes) ])
 		probe = np.sum(np.abs(probe),axis=0)
 		axs[j,i].imshow(probe**2)
 		ct+=1

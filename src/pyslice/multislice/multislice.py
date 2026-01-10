@@ -1,6 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import logging
+from ..backend import zeros,mean,ones
 
 try:
     import torch ; xp = torch
@@ -49,7 +50,7 @@ class Probe:
     Significant speedup for large grid sizes through GPU-accelerated FFT operations.
     """
     
-    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False):
+    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, probe_xs=None, probe_ys=None, probe_positions=None):
         """
         Initialize GPU-accelerated probe wavefunction.
         
@@ -59,6 +60,7 @@ class Probe:
             eV: Electron energy in eV
             device: PyTorch device (None for auto-detection)
         """
+        # TORCH DEVICES AND DTYPES
         if TORCH_AVAILABLE:
             # Auto-detect device if not specified (same logic as Potential class)
             if device is None:
@@ -84,10 +86,7 @@ class Probe:
             self.dtype = np.float64
             self.complex_dtype = np.complex128
         
-        self.mrad = mrad
-        self.eV = eV
-        self.wavelength = wavelength(eV)
-
+        # SET UP SPATIAL GRIDS
         # Convert coordinate arrays to tensors if using torch (same as Potential class)
         if self.use_torch:
             # Use as_tensor to avoid copy warning when input is already a tensor
@@ -97,10 +96,40 @@ class Probe:
             self.xs = xs
             self.ys = ys
 
-        nx = len(xs)
-        ny = len(ys)
-        dx = xs[1] - xs[0]
-        dy = ys[1] - ys[0]
+        nx = len(xs) ; ny = len(ys)
+        dx = xs[1] - xs[0] ; dy = ys[1] - ys[0]
+        lx = nx*dx ; ly = ny*dy
+        self.nx = nx ; self.dx = dx ; self.lx = lx
+        self.ny = ny ; self.dy = dy ; self.ly = ly
+
+        # HANDLE PROBE POSTIONS
+        self.probe_xs = probe_xs
+        self.probe_ys = probe_ys
+        self.probe_positions = probe_positions
+
+        # Preferred to pass probe_xs and probe_ys from which we will define a grid. copied from probe_grid (no defunct)
+        if self.probe_xs is not None and self.probe_ys is not None:
+            x,y = np.meshgrid(self.probe_xs,self.probe_ys)
+            self.probe_positions = np.reshape([x,y],(2,len(x.flat))).T
+
+        # Set up default probe position if not provided
+        if self.probe_positions is None:
+            self.probe_positions = [(lx/2, ly/2)]  # Center probe
+            self.probe_xs = [lx/2] ; self.probe_ys = [ly/2]
+
+        # HANDLE BEAM PARAMS
+        self.mrad = mrad
+        #if isinstance(eV,(float,int)):
+        #    n = 1 if array is None else len(array)
+        #    eV = [ eV ]*n
+        self.eV = eV ; self.wavelength=wavelength(eV)
+        self.eVs = np.asarray([eV])
+        if self.use_torch:
+            self.eVs = torch.as_tensor(self.eVs, dtype=self.dtype, device=self.device)
+        self.wavelengths = wavelength(self.eVs)
+        self.temporal_decoherence = None
+        self.spatial_decoherence = None
+        self.gaussianVOA = gaussianVOA
         
         # Set up device kwargs for unified xp interface (same as Potential class)
         device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
@@ -113,36 +142,42 @@ class Probe:
                 self._array = array.to(device=self.device, dtype=self.complex_dtype)
             else:
                 self._array = xp.asarray(array)
-            return
-                    
-        device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
-        if mrad == 0:
-            self._array = xp.ones((nx, ny), **device_kwargs)
         else:
-            reciprocal = xp.zeros((nx, ny), **device_kwargs)
-            radius = (mrad * 1e-3) / self.wavelength  # Convert mrad to reciprocal space units
-            
-            kx_grid, ky_grid = xp.meshgrid(self.kxs, self.kys, indexing='ij')
-            radii = xp.sqrt(kx_grid**2 + ky_grid**2)
-            
-            if gaussianVOA == 0:
-                mask = radii < radius
-                reciprocal[mask] = 1.0
-            else:
-                from scipy.special import erf
-                reciprocal = 1-erf((radii-radius)/(gaussianVOA*radius))
-            
-            if preview:
-                import matplotlib.pyplot as plt
-                fig, ax = plt.subplots() ; print(radius)
-                extent = (xp.min(self.kxs), xp.max(self.kxs), xp.min(self.kys), xp.max(self.kys))
-                ax.imshow(xp.fft.fftshift(reciprocal.T), cmap="inferno",extent=extent)
-                ax.set_xlabel("kx ($\\AA^{-1}$)")
-                ax.set_ylabel("ky ($\\AA^{-1}$)")
-                plt.show()
+            #self._array = zeros((len(self.eV),1,nx,ny))
+            #for i,w in enumerate(self.wavelength):
+            #   self._array[i,0,:,:] = self.generate_single_probe(mrad,w,gaussianVOA,preview=preview)
+            self._array = zeros((1,1,nx,ny),dtype=complex_dtype)
+            self._array[0,0,:,:] = self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)
 
-            self._array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
-        
+        self.applyShifts()
+
+    def generate_single_probe(self,mrad,wavelength,gaussianVOA,preview=False):
+        nx,ny = len(self.kxs) , len(self.kys)
+        if mrad == 0:
+            return zeros((nx, ny))+1
+
+        reciprocal = zeros((nx, ny))
+        radius = (mrad * 1e-3) / wavelength  # Convert mrad to reciprocal space units
+        kx_grid, ky_grid = xp.meshgrid(self.kxs, self.kys, indexing='ij')
+        radii = xp.sqrt(kx_grid**2 + ky_grid**2)
+
+        if gaussianVOA == 0:
+            mask = radii < radius
+            reciprocal[mask] = 1.0
+        else:
+            from scipy.special import erf
+            reciprocal = 1-erf((radii-radius)/(gaussianVOA*radius))
+
+        if preview:
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots() ; print(radius)
+            extent = (xp.min(self.kxs), xp.max(self.kxs), xp.min(self.kys), xp.max(self.kys))
+            ax.imshow(xp.fft.fftshift(reciprocal.T), cmap="inferno",extent=extent)
+            ax.set_xlabel("kx ($\\AA^{-1}$)")
+            ax.set_ylabel("ky ($\\AA^{-1}$)")
+            plt.show()
+
+        return xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
         #self.array_numpy = self.array.cpu().numpy()
     
     def copy(self):
@@ -192,15 +227,13 @@ class Probe:
         self.complex_dtype = complex_dtype
         return self
 
-    def plot(self,filename=None):
+    def plot(self,filename=None,title=None):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
-        array = self.array.T # imshow convention: y,x. our convention: x,y
-
-        # Convert array to CPU if on GPU/MPS device
+        # calling self.array should convert to CPU/numpy
+        array = np.mean(np.absolute(self.array[:,:,:,:]),axis=1)[0,:,:] # positional,summable,x,y indices
+        array=array.T # imshow convention: y,x. our convention: x,y
         plot_array = np.absolute(array)**.25
-        #if hasattr(plot_array, 'cpu'):
-        #    plot_array = plot_array.cpu()
 
         # Convert extent values to CPU if needed (use xp for torch/numpy compatibility)
         xs_min = xp.amin(self.xs)
@@ -218,6 +251,8 @@ class Probe:
         ax.imshow(plot_array, cmap="inferno",extent=extent)
         ax.set_xlabel("x ($\\AA$)")
         ax.set_ylabel("y ($\\AA$)")
+        if title is not None:
+            ax.set_title(title)
 
         if filename is not None:
             plt.savefig(filename)
@@ -225,13 +260,82 @@ class Probe:
             plt.show()
 
     def defocus(self,dz): # POSITIVE DEFOCUS PUTS BEAM WAIST ABOVE SAMPLE, UNITS OF ANGSTROM
+        if isinstance(dz,(int,float)):
+            dz = zeros(len(self._array))+dz
         kx_grid, ky_grid = xp.meshgrid(self.kxs, self.kys, indexing='ij')
         k_squared = kx_grid**2 + ky_grid**2
-        P = xp.exp(-1j * xp.pi * self.wavelength * dz * k_squared)
-        #if dz>0:
-        self._array = xp.fft.ifft2( P * xp.fft.fft2( self._array ) )
-        #if dz<0:
-        #   self.array = xp.fft.ifft2( xp.fft.fft2( self.array ) / P )
+        P = xp.exp(-1j * xp.pi * self.wavelength * dz[:,None,None] * k_squared[None,:,:])
+        nz = len(dz) ; nc,npt,nx,ny = self._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
+        self._array = xp.fft.ifft2( P[:,None,None,:,:] * xp.fft.fft2( self._array )[None,:,:,:,:] )
+        self._array = self._array.reshape((nz*nc,npt,nx,ny))
+        #print("defocus",dz,"new shape",self._array.shape)
+
+    # ORDER OF OPERATIONS IS IMPORTANT. MUST DO: addTemporalDecoherence, addSpatialDecoherence, create_batched_probes
+    # addTemporalDecoherence - creates new standard probes (must come first)
+    # addSpatialDecoherence - applies defocus (applies to existing probe(s))
+    # create_batched_probes - applied shift to each probe
+    def addTemporalDecoherence(self,sigma_eV,N):
+        nc,npt,nx,ny = self._array.shape #; print("addTemporalDecoherence shape was",nc,npt,nx,ny)
+        if self.temporal_decoherence is not None:
+            print("WARNING: calling addTemporalDecoherence twice will overwrite previous")
+        self.temporal_decoherence = (sigma_eV,N)
+        eV = self.eV
+        self.eVs = np.linspace(eV-2*sigma_eV,eV+2*sigma_eV,N)
+        if self.use_torch:
+            self.eVs = torch.as_tensor(self.eVs, dtype=self.dtype, device=self.device)
+        self.wavelengths = wavelength(self.eVs)
+        amplitudes = np.exp(-(eV-self.eVs)**2/sigma_eV**2)
+        self._array = zeros((N,1,nx,ny))
+        for n,eV in enumerate(self.eVs):
+            self._array[n,0,:,:] = amplitudes[n] * self.generate_single_probe(self.mrad,wavelength(eV),self.gaussianVOA)
+        nc,npt,nx,ny = self._array.shape #; print("addTemporalDecoherence expands to",nc,npt,nx,ny)
+        if self.spatial_decoherence is not None:
+            self.addSpatialDecoherence(*self.spatial_decoherence)
+        nc,npt,nx,ny = self._array.shape
+        if npt==1:
+            self.applyShifts()
+
+    def addSpatialDecoherence(self,sigma_dz,N):
+        nc,npt,nx,ny = self._array.shape #; print("addSpatialDecoherence shape was",nc,npt,nx,ny)
+        if self.temporal_decoherence is not None:
+            print("WARNING: calling addSpatialDecoherence twice will overwrite previous")
+        self.spatial_decoherence = (sigma_dz,N)
+        dzs = np.linspace(-2*sigma_dz,2*sigma_dz,N) # suppose N=25
+        amplitudes = np.exp(-dzs**2/sigma_dz**2)
+        nc,npt,nx,ny = self._array.shape            # suppose nc=10 (addTemporalDecoherence created 10 wavelengths)
+        if self.use_torch:
+            dzs = torch.as_tensor(dzs, dtype=self.dtype, device=self.device)
+        self.defocus(dzs)                           # defocus starts with 25,10,npt,nx,ny --reshapes--> 250,npt,nx,ny
+        for i in range(N):                         # reshape to flatten loops first index last: [[0,1],[2,3]] --> [0,1,2,3]
+            for j in range(nc):
+                self._array[i*nc+j] *= amplitudes[i]
+        nc,npt,nx,ny = self._array.shape #; print("addSpatialDecoherence expands to",nc,npt,nx,ny)
+        self.eVs = ones(N)[:,None]*self.eVs[None,:] # defocus expands into nz,nc then flattens to nz*nc
+        self.eVs = self.eVs.reshape(nc)
+        self.wavelengths = ones(N)[:,None]*self.wavelengths[None,:]
+        self.wavelengths = self.wavelengths.reshape(nc)
+        if npt==1:
+            self.applyShifts()
+
+    def applyShifts(self):
+        nc,npt,nx,ny = self._array.shape #; print("applyShifts shape was",nc,npt,nx,ny)
+        if npt>1: # TODO ALSO NEED SOMETHING TO DETERMINE IF SHIFTS HAVE ALREADY BEEN APPLIED. EG A LIST WHICH IS ALWAYS UPDATED WHEN ARRAY IS RESET?
+            return
+        self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
+        for i, (px,py) in enumerate(self.probe_positions):
+            if px-self.lx/2 == 0 and py-self.ly/2 == 0:
+                    continue
+            # Create shifted probe using phase ramp in k-space
+            probe_k = xp.fft.fft2(self._array[:,i,:,:]) # positional,summable,x,y
+
+            # Apply phase ramp for spatial shift
+            kx_shift = xp.exp(2j * xp.pi * self.kxs[None,:, None] * (px-self.lx/2) )
+            ky_shift = xp.exp(2j * xp.pi * self.kys[None,None, :] * (py-self.ly/2) )
+            probe_k_shifted = probe_k * kx_shift * ky_shift
+
+            # Convert back to real space
+            self._array[:,i,:,:] = xp.fft.ifft2(probe_k_shifted)
+        nc,npt,nx,ny = self._array.shape #; print("applyShifts expands to",nc,npt,nx,ny)
 
     def aberrate(self,aberrations):
         dP = aberrationFunction(self.kxs,self.kys,self.wavelength,aberrations)
@@ -287,9 +391,9 @@ def aberrationFunction(kxs,kys,wavelength,aberrations): # aberrations should be 
             xp.cos( m * (theta-phi0) )
     return xp.exp(-1j * dPhi)
 
-def probe_grid(xlims,ylims,n,m):
-	x,y=np.meshgrid(np.linspace(*xlims,n),np.linspace(*ylims,m))
-	return np.reshape([x,y],(2,len(x.flat))).T
+#def probe_grid(xlims,ylims,n,m):
+#	x,y=np.meshgrid(np.linspace(*xlims,n),np.linspace(*ylims,m))
+#	return np.reshape([x,y],(2,len(x.flat))).T
 
 
 def create_batched_probes(base_probe, probe_positions, device=None):
@@ -368,29 +472,32 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     if device is not None and not TORCH_AVAILABLE:
         raise ImportError("PyTorch not available. Please install PyTorch.")
     
+    # Initialize wavefunction with probe(s) - shape: (n_probes, nx, ny)
+    #print(probe._array.shape)
+    nc,npt,nx,ny = probe._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
+    array = probe._array.reshape((nc*npt,nx,ny)) # "flatten" first two indices
+    probe_wavelengths = probe.wavelengths[:,None]*ones(npt)[None,:] # also expand wavelengths and eVs arrays to cover all probe positions npt
+    probe_wavelengths = probe_wavelengths.reshape(nc*npt)
+    probe_eVs = probe.eVs[:,None]*ones(npt)[None,:]
+    probe_eVs = probe_eVs.reshape(nc*npt)
 
-    if len(probe._array.shape) == 2:
-        probe._array = probe._array[None,:,:]
-    
     # Calculate interaction parameter (Kirkland Eq 5.6)
     E0_eV = m_electron * c_light**2 / q_electron
-    sigma = (2 * np.pi) / (probe.wavelength * probe.eV) * \
-            (E0_eV + probe.eV) / (2 * E0_eV + probe.eV)
-    if TORCH_AVAILABLE:
-        #sigma_dtype = torch.float32 if device.type == 'mps' else torch.float64
-        sigma = torch.tensor(sigma, dtype=float_dtype, device=device)
+    sigma = (2 * np.pi) / (probe_wavelengths * probe_eVs) * \
+            (E0_eV + probe_eVs) / (2 * E0_eV + probe_eVs) # wavelength and eVs now have length of n_probes
+
+    #if TORCH_AVAILABLE:
+    #    #sigma_dtype = torch.float32 if device.type == 'mps' else torch.float64
+    #    sigma = torch.tensor(sigma, dtype=float_dtype, device=device)
     
     # Get slice thickness
     dz = potential.zs[1] - potential.zs[0] if len(potential.zs) > 1 else 0.5
     
-    # Initialize wavefunction with probe(s) - shape: (n_probes, nx, ny)
-    array = probe._array #.clone()
-
     # Pre-compute propagation operator in k-space (Fresnel propagation)
     # All tensors should already be on the correct device from creation
     kx_grid, ky_grid = xp.meshgrid(potential.kxs, potential.kys, indexing='ij')
     k_squared = kx_grid**2 + ky_grid**2
-    P = xp.exp(-1j * xp.pi * probe.wavelength * dz * k_squared)
+    P = xp.exp(-1j * xp.pi * probe_wavelengths[:,None,None] * dz * k_squared[None,:,:])
 
     if progress:
         localtqdm = tqdm
@@ -413,11 +520,11 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
             potential_slice = potential.calculateSlice(z)
         else:
             potential_slice = potential._array[:, :, z]
-        t = xp.exp(1j * sigma * potential_slice)
+        t = xp.exp(1j * sigma[:,None,None] * potential_slice[None,:,:])
 
         # Apply transmission to all probes: ψ' = t × ψ
         # Broadcasting: t[nx,ny] * array[n_probes,nx,ny] = array[n_probes,nx,ny]
-        array = t[None, :, :] * array
+        array = t * array
 
         # Store wavefunction at this slice if requested (after transmission)
         if store_all_slices:
@@ -432,7 +539,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
             # Vectorized FFT over spatial dimensions for all probes
             kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
             fft_array = xp.fft.fft2(array, **kwarg)
-            propagated_fft = P[None, :, :] * fft_array
+            propagated_fft = P * fft_array
             array = xp.fft.ifft2(propagated_fft, **kwarg)
 
     # Return results based on what was requested
@@ -444,8 +551,10 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         else:
             return xp.stack(slice_wavefunctions, axis=0)
 
+    #array = array.reshape((nc,npt,nx,ny))
+
     # Return single probe result if input was single, otherwise return batch
-    if array.shape[0] == 1:
-        return array.squeeze(0)
+    #if array.shape[0] == 1:
+    #    return array.squeeze(0)
     return array # okay for Propagate to return a Tensor. we probably don't want to move things off-gpu yet
 

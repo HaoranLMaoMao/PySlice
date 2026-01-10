@@ -49,8 +49,8 @@ for i in range(10):
 	# LACBED USES A DEFOCUSED THE PROBE		
 	if i==0:								
 		calculator.base_probe.defocus(-1000)
-	else:									
-		calculator.base_probe._array = last_slice_exit # FYI: the calling user really shouldn't be setting "internal" variables, but this iterative script is really just meant to be a demo of the hacky capabilities
+	else:
+		calculator.base_probe._array = last_slice_exit[None,None,:,:] # FYI: the calling user really shouldn't be setting "internal" variables, but this iterative script is really just meant to be a demo of the hacky capabilities
 	# RUN THE SIMULATION
 	exitwaves = calculator.run()
 	exit_data = exitwaves._array[0,0,:,:,0] # ".array" converts torch tensor to CPU numpy array automatically if required

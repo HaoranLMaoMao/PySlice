@@ -77,6 +77,7 @@ class TACAWData(Signal):
 
         # Store reference to source WFData array for FFT computation
         self._wf_array = wf_data._array
+        print("tacaw > wfdata",wf_data._array.shape)
 
         # Initialize intensity as None, will be set by fft_from_wf_data
         self._array = None
@@ -187,12 +188,16 @@ class TACAWData(Signal):
             layer_index: Index of the layer to compute FFT for (default: last layer)
         """
         if os.path.exists(self.cache_dir / "tacaw.npy"):
-            self._frequencies = np.load(self.cache_dir / "tacaw_freq.npy")
             self._array = np.load(self.cache_dir / "tacaw.npy")
-            if TORCH_AVAILABLE:
-                self._frequencies = xp.Tensor(self._frequencies)
-                self._array = xp.Tensor(self._array)
-            return
+            # sanity check sizes on reload
+            _,nt,nx,ny,_ = self._wf_array.shape
+            _,nw,nx2,ny2 = self._array.shape
+            if nt==nw and nx==nx2 and ny==ny2:
+                self._frequencies = np.load(self.cache_dir / "tacaw_freq.npy")
+                if TORCH_AVAILABLE:
+                    self._frequencies = xp.Tensor(self._frequencies)
+                    self._array = xp.Tensor(self._array)
+                return
 
         # Default to last layer if not specified
         if layer_index is None:

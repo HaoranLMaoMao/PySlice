@@ -112,12 +112,23 @@ def zeros(dims, dtype=DEFAULT_FLOAT_DTYPE, device=DEFAULT_DEVICE):
         array = xp.zeros(dims, dtype=dtype)
     return array
 
+def ones(dims, dtype=DEFAULT_FLOAT_DTYPE, device=DEFAULT_DEVICE):
+    if xp != np:
+        return xp.ones(dims, dtype=dtype, device=device)
+    else:
+        return xp.ones(dims, dtype=dtype)
+
 def fftfreq(n, d, dtype=DEFAULT_FLOAT_DTYPE, device=DEFAULT_DEVICE):
     if xp != np:
         return xp.fft.fftfreq(n, d, dtype=dtype, device=device)
     else:
         return xp.fft.fftfreq(n, d, dtype=dtype)
 
+def expand_dims(ary,d):
+    if xp != np:
+        return xp.unsqueeze(ary,dim=d)
+    else:
+        return np.expand_dims(ary,d)
 
 def exp(x):
     return xp.exp(x)

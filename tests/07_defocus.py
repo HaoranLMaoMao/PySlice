@@ -46,7 +46,7 @@ for z in zs:
 	#xs_np = probe.xs.cpu().numpy() if hasattr(probe.xs, 'cpu') else probe.xs
 	#ys_np = probe.ys.cpu().numpy() if hasattr(probe.ys, 'cpu') else probe.ys
 
-	array=probe.array  # ".array" converts torch tensor to CPU numpy array automatically if required
+	array=probe.array[0,0,:,:]  # ".array" converts torch tensor to CPU numpy array automatically if required
 	xs_p = probe.xs ; ys_p = probe.ys
 	if hasattr(xs_p,'cpu'):
 		xs_p = np.asarray(xs_p.cpu()) # also need to convert to numpy if using Torch/gpu
@@ -64,7 +64,7 @@ probe.defocus(10*1e2)
 probe.plot("outputs/figs/07_defocus_2D.png")
 
 #array = probe.array.cpu().numpy() if hasattr(probe.array, 'cpu') else probe.array
-array=probe.array  # ".array" converts torch tensor to CPU numpy array automatically if required
+array=probe.array[0,0,:,:]  # ".array" converts torch tensor to CPU numpy array automatically if required
 differ(array[::4,::4],"outputs/defocus-test.npy","DEFOCUSED PROBE")
 
 result = Propagate(probe,potential) # may be a torch tensor but does not appear to matter for following code?

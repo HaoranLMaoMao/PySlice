@@ -32,6 +32,7 @@ if hasattr(result, 'cpu'):
     ary = result.cpu().numpy()  # Convert PyTorch tensor to numpy
 else:
     ary = np.asarray(result)  # Already numpy array
+ary=ary[0,:,:]
 
 differ(ary[::10,::10],"outputs/propagate-test.npy","EXIT WAVE")
 
