@@ -158,7 +158,7 @@ class WFData(Signal):
         npta,nt,nkx,nky,nl = self._array.shape # recall, Propagate flattens the first two, and adds time,layers: nc*npt,num_frames,x,y,nl indice
         intermediate = xp.reshape(self._array,(nc,nptp,nt,nkx,nky,nl))
         nx,ny = len(self.probe.probe_xs),len(self.probe.probe_ys)
-        return xp.reshape(intermediate,(nc,nx,ny,nt,nkx,nky,nl))
+        return xp.reshape(intermediate,(nc,ny,nx,nt,nkx,nky,nl)).swapaxes(1,2)
 
     @array.setter
     def array(self, value):

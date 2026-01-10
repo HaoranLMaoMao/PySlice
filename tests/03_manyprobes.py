@@ -20,11 +20,14 @@ trajectory=trajectory.slice_positions([0,10*a],[0,10*b])
 xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=0.1,slice_thickness=0.5)
 
 # GENERATE PROBE (ENSURE 00_PROBE.PY PASSES BEFORE RUNNING)
-probe=Probe(xs,ys,mrad=30,eV=100e3)
-x,y=np.meshgrid(np.linspace(a,3*a,16),np.linspace(b,3*b,16))
-xy=np.reshape([x,y],(2,len(x.flat))).T
+#probe=Probe(xs,ys,mrad=30,eV=100e3)
+xsp = np.linspace(a,3*a,16)
+ysp = np.linspace(b,3*b,16)
+#x,y=np.meshgrid(xs,ys)
+#xy=np.reshape([x,y],(2,len(x.flat))).T
 #print(xy)
-probes_many=create_batched_probes(probe,xy)
+#probes_many=create_batched_probes(probe,xy) # we stopped recommending create_batched_probes many commits ago
+probes_many=Probe(xs,ys,mrad=30,eV=100e3,probe_xs=xsp,probe_ys=ysp) # creates a flattened list of probes, each shifted to center on each x,y point
 
 # GENERATE THE POTENTIAL (ENSURE 01_POTENTIAL.PY PASSES BEFORE RUNNING)
 positions = trajectory.positions[0]
@@ -66,7 +69,7 @@ fig, ax = plt.subplots()
 fft=np.fft.fft2(ary,axes=(1,2)) ; fft[:,q<2]=0 # mask in reciprocal space (keep only high scattering angles)
 #ax.imshow(np.absolute(np.fft.fftshift(fft[0]))**.1, cmap="inferno")
 #plt.show()
-HAADF=np.sum(np.absolute(fft),axis=(1,2)).reshape((len(x),len(y)))
+HAADF=np.sum(np.absolute(fft),axis=(1,2)).reshape((len(xsp),len(ysp)))
 ax.imshow(HAADF, cmap="inferno")
 plt.savefig("outputs/figs/03_manyprobes.png")
 

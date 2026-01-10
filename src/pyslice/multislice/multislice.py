@@ -107,10 +107,10 @@ class Probe:
         self.probe_ys = probe_ys
         self.probe_positions = probe_positions
 
-        # Preferred to pass probe_xs and probe_ys from which we will define a grid
+        # Preferred to pass probe_xs and probe_ys from which we will define a grid. copied from probe_grid (no defunct)
         if self.probe_xs is not None and self.probe_ys is not None:
-            x,y = np.meshgrid(self.probe_xs,self.probe_ys,indexing='ij')
-            self.probe_positions = np.asarray(list(zip(x.flat,y.flat)))
+            x,y = np.meshgrid(self.probe_xs,self.probe_ys)
+            self.probe_positions = np.reshape([x,y],(2,len(x.flat))).T
 
         # Set up default probe position if not provided
         if self.probe_positions is None:
@@ -148,6 +148,8 @@ class Probe:
             #   self._array[i,0,:,:] = self.generate_single_probe(mrad,w,gaussianVOA,preview=preview)
             self._array = zeros((1,1,nx,ny),dtype=complex_dtype)
             self._array[0,0,:,:] = self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)
+
+        self.applyShifts()
 
     def generate_single_probe(self,mrad,wavelength,gaussianVOA,preview=False):
         nx,ny = len(self.kxs) , len(self.kys)
@@ -229,7 +231,7 @@ class Probe:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
         # calling self.array should convert to CPU/numpy
-        array = np.mean(np.absolute(self.array[:,:,:,:]),axis=0)[0,:,:] # summable,positional,x,y indices
+        array = np.mean(np.absolute(self.array[:,:,:,:]),axis=1)[0,:,:] # positional,summable,x,y indices
         array=array.T # imshow convention: y,x. our convention: x,y
         plot_array = np.absolute(array)**.25
 
@@ -316,7 +318,7 @@ class Probe:
             self.applyShifts()
 
     def applyShifts(self):
-        nc,npt,nx,ny = self._array.shape #; print("applyShifts shape was",nc,npt,nx,ny)
+        nc,npt,nx,ny = self._array.shape ; print("applyShifts shape was",nc,npt,nx,ny)
         if npt>1: # TODO ALSO NEED SOMETHING TO DETERMINE IF SHIFTS HAVE ALREADY BEEN APPLIED. EG A LIST WHICH IS ALWAYS UPDATED WHEN ARRAY IS RESET?
             return
         self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
@@ -324,7 +326,7 @@ class Probe:
             if px-self.lx/2 == 0 and py-self.ly/2 == 0:
                     continue
             # Create shifted probe using phase ramp in k-space
-            probe_k = xp.fft.fft2(self._array[:,i,:,:]) # summable,positional,x,y
+            probe_k = xp.fft.fft2(self._array[:,i,:,:]) # positional,summable,x,y
 
             # Apply phase ramp for spatial shift
             kx_shift = xp.exp(2j * xp.pi * self.kxs[None,:, None] * (px-self.lx/2) )
@@ -333,7 +335,7 @@ class Probe:
 
             # Convert back to real space
             self._array[:,i,:,:] = xp.fft.ifft2(probe_k_shifted)
-        nc,npt,nx,ny = self._array.shape #; print("applyShifts expands to",nc,npt,nx,ny)
+        nc,npt,nx,ny = self._array.shape ; print("applyShifts expands to",nc,npt,nx,ny)
 
     def aberrate(self,aberrations):
         dP = aberrationFunction(self.kxs,self.kys,self.wavelength,aberrations)
@@ -389,9 +391,9 @@ def aberrationFunction(kxs,kys,wavelength,aberrations): # aberrations should be 
             xp.cos( m * (theta-phi0) )
     return xp.exp(-1j * dPhi)
 
-def probe_grid(xlims,ylims,n,m):
-	x,y=np.meshgrid(np.linspace(*xlims,n),np.linspace(*ylims,m))
-	return np.reshape([x,y],(2,len(x.flat))).T
+#def probe_grid(xlims,ylims,n,m):
+#	x,y=np.meshgrid(np.linspace(*xlims,n),np.linspace(*ylims,m))
+#	return np.reshape([x,y],(2,len(x.flat))).T
 
 
 def create_batched_probes(base_probe, probe_positions, device=None):
@@ -471,6 +473,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         raise ImportError("PyTorch not available. Please install PyTorch.")
     
     # Initialize wavefunction with probe(s) - shape: (n_probes, nx, ny)
+    print(probe._array.shape)
     nc,npt,nx,ny = probe._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
     array = probe._array.reshape((nc*npt,nx,ny)) # "flatten" first two indices
     probe_wavelengths = probe.wavelengths[:,None]*ones(npt)[None,:] # also expand wavelengths and eVs arrays to cover all probe positions npt
@@ -483,9 +486,9 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     sigma = (2 * np.pi) / (probe_wavelengths * probe_eVs) * \
             (E0_eV + probe_eVs) / (2 * E0_eV + probe_eVs) # wavelength and eVs now have length of n_probes
 
-    if TORCH_AVAILABLE:
-        #sigma_dtype = torch.float32 if device.type == 'mps' else torch.float64
-        sigma = torch.tensor(sigma, dtype=float_dtype, device=device)
+    #if TORCH_AVAILABLE:
+    #    #sigma_dtype = torch.float32 if device.type == 'mps' else torch.float64
+    #    sigma = torch.tensor(sigma, dtype=float_dtype, device=device)
     
     # Get slice thickness
     dz = potential.zs[1] - potential.zs[0] if len(potential.zs) > 1 else 0.5
@@ -551,7 +554,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     #array = array.reshape((nc,npt,nx,ny))
 
     # Return single probe result if input was single, otherwise return batch
-    #if array.shape[0] == 1:
-    #    return array.squeeze(0)
+    if array.shape[0] == 1:
+        return array.squeeze(0)
     return array # okay for Propagate to return a Tensor. we probably don't want to move things off-gpu yet
 
