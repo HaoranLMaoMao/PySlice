@@ -282,9 +282,9 @@ class MultisliceCalculator:
                         np.save(cache_file, frame_data_cpu)
                     frames_computed += 1
 
-                print(frame_data.shape,self.wavefunction_data.shape)
+                #print(frame_data.shape,self.wavefunction_data.shape)
                 cropped = frame_data[:,self.i1:self.i2,self.j1:self.j2,:,0]
-                print(cropped.shape)
+                #print(cropped.shape)
                 self.wavefunction_data[:, frame_idx, :, :, :] = cropped # load p,x,y,l,1 --> p,t,x,y,l indices
                 # Update progress bar for this frame
                 pbar.update(1)

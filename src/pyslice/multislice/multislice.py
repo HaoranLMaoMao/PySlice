@@ -318,7 +318,7 @@ class Probe:
             self.applyShifts()
 
     def applyShifts(self):
-        nc,npt,nx,ny = self._array.shape ; print("applyShifts shape was",nc,npt,nx,ny)
+        nc,npt,nx,ny = self._array.shape #; print("applyShifts shape was",nc,npt,nx,ny)
         if npt>1: # TODO ALSO NEED SOMETHING TO DETERMINE IF SHIFTS HAVE ALREADY BEEN APPLIED. EG A LIST WHICH IS ALWAYS UPDATED WHEN ARRAY IS RESET?
             return
         self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
@@ -335,7 +335,7 @@ class Probe:
 
             # Convert back to real space
             self._array[:,i,:,:] = xp.fft.ifft2(probe_k_shifted)
-        nc,npt,nx,ny = self._array.shape ; print("applyShifts expands to",nc,npt,nx,ny)
+        nc,npt,nx,ny = self._array.shape #; print("applyShifts expands to",nc,npt,nx,ny)
 
     def aberrate(self,aberrations):
         dP = aberrationFunction(self.kxs,self.kys,self.wavelength,aberrations)
@@ -473,7 +473,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         raise ImportError("PyTorch not available. Please install PyTorch.")
     
     # Initialize wavefunction with probe(s) - shape: (n_probes, nx, ny)
-    print(probe._array.shape)
+    #print(probe._array.shape)
     nc,npt,nx,ny = probe._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
     array = probe._array.reshape((nc*npt,nx,ny)) # "flatten" first two indices
     probe_wavelengths = probe.wavelengths[:,None]*ones(npt)[None,:] # also expand wavelengths and eVs arrays to cover all probe positions npt
