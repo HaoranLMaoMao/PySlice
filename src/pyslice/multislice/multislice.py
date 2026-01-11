@@ -227,11 +227,12 @@ class Probe:
         self.complex_dtype = complex_dtype
         return self
 
+    # note: indices of Probe.array are summable,positional,x,y. here we must sum across summable
     def plot(self,filename=None,title=None):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
         # calling self.array should convert to CPU/numpy
-        array = np.mean(np.absolute(self.array[:,:,:,:]),axis=1)[0,:,:] # positional,summable,x,y indices
+        array = np.mean(np.absolute(self.array[:,:,:,:]),axis=0)[0,:,:] # summable,positional,x,y indices
         array=array.T # imshow convention: y,x. our convention: x,y
         plot_array = np.absolute(array)**.25
 
@@ -274,6 +275,7 @@ class Probe:
     # addTemporalDecoherence - creates new standard probes (must come first)
     # addSpatialDecoherence - applies defocus (applies to existing probe(s))
     # create_batched_probes - applied shift to each probe
+    # note: indices of Probe.array are summable,positional,x,y. here we expand along summable
     def addTemporalDecoherence(self,sigma_eV,N):
         nc,npt,nx,ny = self._array.shape #; print("addTemporalDecoherence shape was",nc,npt,nx,ny)
         if self.temporal_decoherence is not None:
@@ -285,16 +287,18 @@ class Probe:
             self.eVs = torch.as_tensor(self.eVs, dtype=self.dtype, device=self.device)
         self.wavelengths = wavelength(self.eVs)
         amplitudes = np.exp(-(eV-self.eVs)**2/sigma_eV**2)
-        self._array = zeros((N,1,nx,ny))
+        self._array = zeros((N,1,nx,ny), dtype=self.complex_dtype, device=self.device)
+        print(self.eVs,amplitudes)
         for n,eV in enumerate(self.eVs):
             self._array[n,0,:,:] = amplitudes[n] * self.generate_single_probe(self.mrad,wavelength(eV),self.gaussianVOA)
-        nc,npt,nx,ny = self._array.shape #; print("addTemporalDecoherence expands to",nc,npt,nx,ny)
+        nc,npt,nx,ny = self._array.shape ; print("addTemporalDecoherence expands to",nc,npt,nx,ny)
         if self.spatial_decoherence is not None:
             self.addSpatialDecoherence(*self.spatial_decoherence)
         nc,npt,nx,ny = self._array.shape
         if npt==1:
             self.applyShifts()
 
+    # note: indices of Probe.array are summable,positional,x,y. here we expand along summable
     def addSpatialDecoherence(self,sigma_dz,N):
         nc,npt,nx,ny = self._array.shape #; print("addSpatialDecoherence shape was",nc,npt,nx,ny)
         if self.temporal_decoherence is not None:
@@ -317,6 +321,7 @@ class Probe:
         if npt==1:
             self.applyShifts()
 
+    # note: indices of Probe.array are summable,positional,x,y. here we expand along positional
     def applyShifts(self):
         nc,npt,nx,ny = self._array.shape #; print("applyShifts shape was",nc,npt,nx,ny)
         if npt>1: # TODO ALSO NEED SOMETHING TO DETERMINE IF SHIFTS HAVE ALREADY BEEN APPLIED. EG A LIST WHICH IS ALWAYS UPDATED WHEN ARRAY IS RESET?
@@ -326,7 +331,7 @@ class Probe:
             if px-self.lx/2 == 0 and py-self.ly/2 == 0:
                     continue
             # Create shifted probe using phase ramp in k-space
-            probe_k = xp.fft.fft2(self._array[:,i,:,:]) # positional,summable,x,y
+            probe_k = xp.fft.fft2(self._array[:,i,:,:]) # summable,positional,x,y
 
             # Apply phase ramp for spatial shift
             kx_shift = xp.exp(2j * xp.pi * self.kxs[None,:, None] * (px-self.lx/2) )

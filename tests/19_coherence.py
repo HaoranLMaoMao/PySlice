@@ -9,7 +9,7 @@ from pyslice import Probe,Loader,MultisliceCalculator,HAADFData
 import numpy as np
 import matplotlib.pyplot as plt
 
-run = "TEM"
+run = sys.argv[-1]
 
 dump="inputs/hBN_truncated.lammpstrj"
 dt=.005
@@ -45,7 +45,7 @@ if run == "probes":
 	#plt.plot(eVs,amplitudes) ; plt.show()
 	# manually stack a list of probes' arrays
 	probes = [ Probe(xs,ys,mrad=30,eV=eV) for eV in eVs ]
-	probe._array = np.mean([ np.absolute(a*p._array) for a,p in zip(amplitudes,probes)],axis=0)[None,:,:,:]
+	probe._array = np.mean([ np.absolute(a*p._array) for a,p in zip(amplitudes,probes)],axis=0)
 	probe.plot(title="manual stack eV")
 	# or, do it automatically:
 	probe = Probe(xs,ys,mrad=30,eV=100e3)
