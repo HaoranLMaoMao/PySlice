@@ -288,10 +288,10 @@ class Probe:
         self.wavelengths = wavelength(self.eVs)
         amplitudes = np.exp(-(eV-self.eVs)**2/sigma_eV**2)
         self._array = zeros((N,1,nx,ny), dtype=self.complex_dtype, device=self.device)
-        print(self.eVs,amplitudes)
+        #print(self.eVs,amplitudes)
         for n,eV in enumerate(self.eVs):
             self._array[n,0,:,:] = amplitudes[n] * self.generate_single_probe(self.mrad,wavelength(eV),self.gaussianVOA)
-        nc,npt,nx,ny = self._array.shape ; print("addTemporalDecoherence expands to",nc,npt,nx,ny)
+        nc,npt,nx,ny = self._array.shape #; print("addTemporalDecoherence expands to",nc,npt,nx,ny)
         if self.spatial_decoherence is not None:
             self.addSpatialDecoherence(*self.spatial_decoherence)
         nc,npt,nx,ny = self._array.shape
