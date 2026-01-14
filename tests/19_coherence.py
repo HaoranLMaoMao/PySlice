@@ -5,13 +5,11 @@ except ModuleNotFoundError:
     print("import failed, falling back to relative paths")
     sys.path.insert(0, '../src')
 start=time.time()
-from pyslice import Probe,Loader,MultisliceCalculator,HAADFData,differ
+from pyslice import Probe,Loader,MultisliceCalculator,HAADFData
 import numpy as np
 import matplotlib.pyplot as plt
 
-run = sys.argv[-1]
-if len(sys.argv)==1:
-	run="probes"
+run = "TEM"
 
 dump="inputs/hBN_truncated.lammpstrj"
 dt=.005
@@ -37,8 +35,8 @@ if run == "probes":
 	xs=np.linspace(0,50,501)
 	ys=np.linspace(0,49,491)
 
-	probe = Probe(xs,ys,mrad=30,eV=100e3,gaussianVOA=.1,preview=False)
-	probe.plot(title="gauss, 30mrad",filename="outputs/figs/19_coherence_vanilla.png")
+	probe = Probe(xs,ys,mrad=30,eV=100e3,gaussianVOA=.1,preview=True)
+	probe.plot(title="gauss, 30mrad")
 
 	probe = Probe(xs,ys,mrad=30,eV=100e3)
 
@@ -47,14 +45,12 @@ if run == "probes":
 	#plt.plot(eVs,amplitudes) ; plt.show()
 	# manually stack a list of probes' arrays
 	probes = [ Probe(xs,ys,mrad=30,eV=eV) for eV in eVs ]
-	probe._array = np.mean([ np.absolute(a*p._array) for a,p in zip(amplitudes,probes)],axis=0)
-	differ(probe.array,"outputs/coherenceEV-test.npy","COHERENCE EV")
-	probe.plot(title="manual stack eV",filename="outputs/figs/19_coherence_eV1.png")
+	probe._array = np.mean([ np.absolute(a*p._array) for a,p in zip(amplitudes,probes)],axis=0)[None,:,:,:]
+	probe.plot(title="manual stack eV")
 	# or, do it automatically:
 	probe = Probe(xs,ys,mrad=30,eV=100e3)
 	probe.addTemporalDecoherence(10e3,25) ; print(probe.array.shape)
-	differ(np.mean(np.absolute(probe.array),axis=(0,1)),"outputs/coherenceEV-test.npy","COHERENCE EV")
-	probe.plot(title="auto stack eV",filename="outputs/figs/19_coherence_eV2.png")
+	probe.plot(title="auto stack eV")
 
 	# spatial decoherence: a range of defocuses?
 	dZ = np.linspace(-400,400,27) ; amplitudes = np.exp(-(dZ)**2/200**2)
@@ -63,19 +59,17 @@ if run == "probes":
 	#[ p.aberrate({"C10":d}) for p,d in zip(probes,dZ) ]
 	[ p.defocus(d) for p,d in zip(probes,dZ) ]
 	probe._array = np.mean([np.absolute(a*p._array) for a,p in zip(amplitudes,probes)],axis=0)
-	differ(probe.array,"outputs/coherenceDZ-test.npy","COHERENCE DZ")
-	probe.plot(title="manual stack dZ",filename="outputs/figs/19_coherence_dZ1.png")
+	probe.plot(title="manual stack dZ")
 	# or, do it automatically:
 	probe = Probe(xs,ys,mrad=30,eV=100e3)
 	probe.addSpatialDecoherence(200,10) ; print(probe.array.shape)
-	differ(np.mean(np.absolute(probe.array),axis=(0,1)),"outputs/coherenceDZ-test.npy","COHERENCE DZ")
-	probe.plot(title="auto stack dZ",filename="outputs/figs/19_coherence_dZ2.png")
+	probe.plot(title="auto stack dZ")
 
 	# Or both, and let's check that order doesn't matter
 	probe = Probe(xs,ys,mrad=30,eV=100e3)
 	probe.addSpatialDecoherence(100,11)
 	probe.addTemporalDecoherence(10e3,9)
-	probe.plot(title="auto decohere eV and dZ",filename="outputs/figs/19_coherence_eVdZ.png")
+	probe.plot(title="auto decohere eV and dZ")
 
 if run == "STEM":
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()

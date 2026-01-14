@@ -428,7 +428,7 @@ def test_haadf_is_signal():
     print("\n--- Testing HAADFData is Signal (with simulation) ---")
 
     from pyslice.io.loader import Loader
-    from pyslice.multislice.multislice import probe_grid
+    #from pyslice.multislice.multislice import probe_grid
     from pyslice.multislice.calculators import MultisliceCalculator
     from pyslice.postprocessing.haadf_data import HAADFData
 
@@ -442,11 +442,13 @@ def test_haadf_is_signal():
     trajectory = Loader(dump, timestep=dt, atom_mapping=types).load()
     trajectory = trajectory.slice_timesteps(ith=10)
 
-    xy = probe_grid([0, 2*a], [0, 2*b], 2, 2)
+    #xy = probe_grid([0, 2*a], [0, 2*b], 2, 2)
+    xs = np.linspace(0,2*a,8)
+    ys = np.linspace(0,2*b,8)
 
     calculator = MultisliceCalculator()
     calculator.setup(trajectory, aperture=30, voltage_eV=100e3, sampling=0.2,
-                     slice_thickness=1.0, probe_positions=xy)
+                     slice_thickness=1.0, probe_xs=xs, probe_ys=ys)
     wf_data = calculator.run()
 
     haadf = HAADFData(wf_data)
