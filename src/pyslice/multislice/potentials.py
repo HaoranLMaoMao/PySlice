@@ -216,6 +216,8 @@ class Potential:
                 positions = torch.tensor(positions, dtype=self.dtype, device=device)
             if array is not None:
                 self._array = torch.tensor(array, dtype=self.dtype, device=device)
+            else:
+                self._array = None
         else:
             if device is not None:
                 raise ImportError("PyTorch not available. Please install PyTorch.")
