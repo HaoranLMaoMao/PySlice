@@ -305,12 +305,12 @@ class SEASerializable(ABC):
         print("to_write.keys()",to_write.keys())
         #to_write[ "data" ]=to_write[ "array" ]
         storage_name_counts: Dict[str, int] = {}
-        #print("to_write",to_write)
+        #print("to_write",to_write.items().keys())
         for key, val in to_write.items():
             #print("name",name,"key",key,"val",val,"type",type(val))
             if key in ["probe","cache_dir"]:
                 continue
-            if key == "array":
+            if key == "_array":
                 key = "data"
             if not hasattr(self, key):
                 continue
@@ -643,7 +643,7 @@ class Dimension(SEASerializable):
     def __init__(self, dimension: Dict|GeneralMetadata|None = None,
                  name: str = 'Unnamed Dimension',
                  space: Literal["position", "scattering", "temporal", "spectral"] | None = None,
-                 scale: float|int|Iterable[float|int]|None = None,
+                 scale: float|int|Iterable[float|int]|None = 1,
                  offset: float|int|Iterable[float|int]|None = None,
                  size: int|Iterable[int]|None = None,
                  units: str|Iterable[str] = '',

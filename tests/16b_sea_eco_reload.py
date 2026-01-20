@@ -1,4 +1,5 @@
 import os,sys
+import matplotlib.pyplot as plt
 
 # Why as an os.system command? I want to ensure no imports remain
 if not os.path.exists("05_tacaw.sea"):
@@ -19,3 +20,9 @@ from pySEA.sea_eco.architecture.base_structure_numpy import SEAFile
 
 loaded = load(file_path='05_tacaw.sea')
 loaded.show_tree()
+
+loaded.show(dims=('frequency','kx'))
+plt.show()
+
+loaded[:,30:35,:,:].show(dims=('kx','ky'))
+plt.show()
