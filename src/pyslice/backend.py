@@ -106,6 +106,8 @@ def asarray(arraylike, dtype=None, device=None):
     return array
 
 def zeros(dims, dtype=DEFAULT_FLOAT_DTYPE, device=DEFAULT_DEVICE):
+    if isinstance(dtype,str):
+        dtype=DEFAULT_FLOAT_DTYPE if dtype=="float" else DEFAULT_COMPLEX_DTYPE
     if xp != np:
         array = xp.zeros(dims, dtype=dtype, device=device)
     else:

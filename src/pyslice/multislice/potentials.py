@@ -2,6 +2,7 @@ import numpy as np
 from pathlib import Path
 import logging,os
 from tqdm import tqdm
+from ..backend import to_cpu,mean
 
 try:
     import torch  ; xp = torch
@@ -215,7 +216,7 @@ class Potential:
             if positions is not None:
                 positions = torch.tensor(positions, dtype=self.dtype, device=device)
             if array is not None:
-                self._array = torch.tensor(array, dtype=self.dtype, device=device)
+                self._array = torch.tensor(array, device=device)
             else:
                 self._array = None
         else:
@@ -379,7 +380,7 @@ class Potential:
         #self._array = None
        
     def build(self,progress=False):
-        if self._array is None:
+        if self._array is not None:
             return
         # Initialize potential array using xp with conditional device
         device_kwargs = {'device': self.device } if self.use_torch else {}
@@ -399,17 +400,15 @@ class Potential:
         # Store tensor version for potential GPU operations
         self._array = potential_real
 
+    def flatten(self):
+        self._array = mean(self._array,axis=2,keepdims=True)
+        self.nz = 1
+        self.zs=self.zs[:1]
+
     @property
     def array(self):
-        return self.to_cpu()
- 
-    def to_cpu(self):
-        """Convert tensors back to CPU NumPy arrays."""
-        if self.use_torch:
-            return self._array.cpu().numpy()
-        else:
-            return self._array
-    
+        return to_cpu(self._array)
+
     def to_device(self, device):
         """Move tensor data to specified device."""
         if hasattr(self, 'array_torch'):

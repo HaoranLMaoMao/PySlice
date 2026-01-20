@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import logging
-from ..backend import zeros,mean,ones
+from ..backend import zeros,mean,ones,to_cpu
 
 try:
     import torch ; xp = torch
@@ -30,17 +30,25 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 m_electron = 9.109383e-31    # mass of an electron, kg
-q_electron = 1.602177e-19    # charge of an electron, J / eV or kg m^2/s^2 / eV  
+q_electron = 1.602177e-19    # charge of an electron, J / eV or kg m^2/s^2 / eV
 c_light = 299792458.0        # speed of light, m / s
 h_planck = 6.62607015e-34    # m^2 kg / s
 
+#what if we use units of Å throughout, instead of m?
+#m_electron = 9.109383e-19   # mass of an electron, nano-gram (ng)
+#q_electron = 1.602177e1      # charge of an electron, kg Å^2/s^2 / eV
+#c_light = 2.99792458e18      # speed of light, Å / s
+#h_planck = 6.62607015e-14    # Å^2 ng / s
 
 def m_effective(eV):
     """Relativistic correction: E=m*c^2, so m=E/c^2, in kg"""
     return m_electron + eV * q_electron / c_light**2
+    # units [ kg ]     [ eV ] [ kg m² s⁻² eV⁻¹ ] [ m⁻² s² ]
 
 def wavelength(eV):
-    return h_planck * c_light / ((eV * q_electron)**2 + 2 * eV * q_electron * m_electron * c_light**2)**0.5 * 1e10
+    # orders of magnitude: -21, 8,    5-19=-14-->-28         5      -19          -31        8-->16
+    return h_planck * c_light / ((eV * q_electron)**2 + 2 * eV * q_electron * m_electron * c_light**2)**0.5*1e10
+    # units: [ m² kg s⁻¹ ] [ m s⁻¹ ] ( [ eV⁻¹ ] [kg⁻¹ m⁻² s² eV ] + [ eV⁻¹ᐟ² ] [kg⁻¹ᐟ² m⁻¹ s¹ eV⁻¹ᐟ² ] [ kg⁻¹ᐟ² ] [ m⁻¹ s¹ ] ) = m
 
 class Probe:
     """
@@ -231,7 +239,7 @@ class Probe:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
         # calling self.array should convert to CPU/numpy
-        array = np.mean(np.absolute(self.array[:,:,:,:]),axis=1)[0,:,:] # positional,summable,x,y indices
+        array = np.mean(np.absolute(self.array[:,:,::-1,:]),axis=1)[0,:,:] # positional,summable,x,y indices
         array=array.T # imshow convention: y,x. our convention: x,y
         plot_array = np.absolute(array)**.25
 
@@ -451,6 +459,12 @@ def create_batched_probes(base_probe, probe_positions, device=None):
 
     return Probe(base_probe.xs, base_probe.ys, base_probe.mrad, base_probe.eV, array=array, device=base_probe.device)
 
+# Given a real-space entrance wave, and a potential (or object), calculate the exit wave: ψ₁ -> O -> ψ₂
+# From Kirkland2010:
+# propagator P = exp(-i π λ dz q²), Eq 6.65
+# transmission function t = exp(i σ O) where O is our object (or potential slice), Eq 6.59
+# ψ₂ = ℱ⁻¹[ P * ℱ[ t * ψ₁ ] ], Eq 6.67, noting the relationship: 𝒞[ f(x),g(x) ] = ℱ⁻¹[ ℱ[f(x)] * ℱ[g(x)] ] = ℱ⁻¹[ f(k) * g(k) ]
+# or as code: array = t * array ; fft_array = fft(array) ; propagated_fft = P * fft_array ; array = ifft(propagated_fft)
 def Propagate(probe, potential, device=None, progress=False, onthefly=True, store_all_slices=False):
     """
     PyTorch-accelerated multislice propagation function.
@@ -473,7 +487,6 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         raise ImportError("PyTorch not available. Please install PyTorch.")
     
     # Initialize wavefunction with probe(s) - shape: (n_probes, nx, ny)
-    #print(probe._array.shape)
     nc,npt,nx,ny = probe._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
     array = probe._array.reshape((nc*npt,nx,ny)) # "flatten" first two indices
     probe_wavelengths = probe.wavelengths[:,None]*ones(npt)[None,:] # also expand wavelengths and eVs arrays to cover all probe positions npt
@@ -485,7 +498,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     E0_eV = m_electron * c_light**2 / q_electron
     sigma = (2 * np.pi) / (probe_wavelengths * probe_eVs) * \
             (E0_eV + probe_eVs) / (2 * E0_eV + probe_eVs) # wavelength and eVs now have length of n_probes
-
+    #print("propagate sigma",sigma)
     #if TORCH_AVAILABLE:
     #    #sigma_dtype = torch.float32 if device.type == 'mps' else torch.float64
     #    sigma = torch.tensor(sigma, dtype=float_dtype, device=device)
@@ -497,7 +510,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     # All tensors should already be on the correct device from creation
     kx_grid, ky_grid = xp.meshgrid(potential.kxs, potential.kys, indexing='ij')
     k_squared = kx_grid**2 + ky_grid**2
-    P = xp.exp(-1j * xp.pi * probe_wavelengths[:,None,None] * dz * k_squared[None,:,:])
+    P = xp.exp(-1j * xp.pi * probe_wavelengths[:,None,None] * dz * k_squared[None,:,:]) # Kirkland2010 Eq 6.65
 
     if progress:
         localtqdm = tqdm
@@ -520,7 +533,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
             potential_slice = potential.calculateSlice(z)
         else:
             potential_slice = potential._array[:, :, z]
-        t = xp.exp(1j * sigma[:,None,None] * potential_slice[None,:,:])
+        t = xp.exp(1j * sigma[:,None,None] * potential_slice[None,:,:]) # Kirkland2010 Eq 6.59
 
         # Apply transmission to all probes: ψ' = t × ψ
         # Broadcasting: t[nx,ny] * array[n_probes,nx,ny] = array[n_probes,nx,ny]
@@ -557,4 +570,69 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     #if array.shape[0] == 1:
     #    return array.squeeze(0)
     return array # okay for Propagate to return a Tensor. we probably don't want to move things off-gpu yet
+
+# Given a real-space entrance and real-space exit wave, calculate the object the wave must have passed through: ψ₁ -> O -> ψ₂, given ψ₁,ψ₂, find O
+# From Kirkland2010:
+# propagator P = exp(-i π λ dz q²), Eq 6.65
+# transmission function t = exp(i σ O) where O is our object (or potential slice), Eq 6.59
+# ψ₂ = ℱ⁻¹[ P * ℱ[ t * ψ₁ ] ], Eq 6.67, noting the relationship: 𝒞[ f(x),g(x) ] = ℱ⁻¹[ ℱ[f(x)] * ℱ[g(x)] ] = ℱ⁻¹[ f(k) * g(k) ]
+# or as code: array = t * array ; fft_array = fft(array) ; propagated_fft = P * fft_array ; array = ifft(propagated_fft)
+# SO, to determine O from ψ₁ and ψ₂:
+# ℱ[ ψ₂ ] = P * ℱ[ t * ψ₁ ]
+# ℱ[ ψ₂ ]/P = ℱ[ t * ψ₁ ]
+# ℱ⁻¹[ ℱ[ ψ₂ ]/P ] = t * ψ₁
+# t = ℱ⁻¹[ ℱ[ ψ₂ ]/P ]/ψ₁
+# exp(i σ O) = ℱ⁻¹[ ℱ[ ψ₂ ]/P ]/ψ₁
+# i σ O = log( ℱ⁻¹[ ℱ[ ψ₂ ]/P ]/ψ₁ )
+# O = log( ℱ⁻¹[ ℱ[ ψ₂ ]/P ]/ψ₁ ) / i / σ
+def calculateObject(probe,exitwave,guessedObject,weighting=.5,dz=0.5,damping=.01):
+
+    import matplotlib.pyplot as plt
+    #fig, axs = plt.subplots(1,2)
+    #axs[0].imshow(to_cpu(xp.absolute(exitwave)), cmap="inferno") ; axs[0].set_title("exit wave")
+    #axs[1].imshow(to_cpu(xp.absolute(probe._array[0,0,:,:])), cmap="inferno") ; axs[1].set_title("entrance wave")
+    #plt.show()
+
+    nc,npt,nx,ny = probe._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
+    psi1 = probe._array[0,0,:,:] # select first probe array only for now!
+    lamda = probe.wavelengths[0]
+    eV = probe.eVs[0]
+
+    # Calculate interaction parameter (Kirkland Eq 5.6)
+    E0_eV = m_electron * c_light**2 / q_electron
+    sigma = (2 * np.pi) / (lamda * eV) * \
+            (E0_eV + eV) / (2 * E0_eV + eV) # wavelength and eVs now have length of n_probes
+
+    # Pre-compute propagation operator in k-space (Fresnel propagation)
+    # All tensors should already be on the correct device from creation
+    kx_grid, ky_grid = xp.meshgrid(probe.kxs, probe.kys, indexing='ij') # TODO use probe.kxs instead, to free ourselves of the need to pass a potential
+    k_squared = kx_grid**2 + ky_grid**2
+
+    P = xp.exp(-1j * xp.pi * lamda * dz * k_squared[:,:]) # P in Kirkland2010 Eq 6.65 is exp(-i...), so to divide by P, we can use Pp, exp(+j...)
+
+    # t = ℱ⁻¹[ ℱ[ ψ₂ ]/P ]/ψ₁
+    t = xp.fft.ifft2(xp.fft.fft2(exitwave)/P)/psi1
+    # t = exp(i σ O) --> O = log(t)/i/σ
+    O = xp.log(t)/1j/sigma
+    # WHAT IS exp(i σ O) REALLY DOING? exp(iϕ) is a sinusoid. an only-real object is applying a phase shift? can we do calculate an angle instead?
+    O = np.angle(t)/sigma
+    # consider:
+    # instead of division, should i multiply by complex conjugate? (not technically the same, but it will deal with near-zeros)
+    # instead of log, should i use: https://en.wikipedia.org/wiki/Complex_logarithm#Calculating_the_principal_value
+    # should I apply a probe amplitude masking function?
+
+    #fig, axs = plt.subplots(1,3)
+    #axs[0].imshow(to_cpu(xp.absolute(exitwave)), cmap="inferno") ; axs[0].set_title("exit wave")
+    #axs[1].imshow(to_cpu(xp.absolute(probe._array[0,0,:,:])), cmap="inferno") ; axs[1].set_title("entrance wave")
+    #axs[2].imshow(to_cpu(xp.absolute(O)**.1), cmap="inferno") ; axs[2].set_title("object")
+    #plt.show()
+
+    delta=(O-guessedObject)
+
+    # probe amplitude masking function: zeros-out points where probe intensity is zero, without giving probe features as features in your potential
+    delta*=xp.absolute(psi1)/(xp.absolute(psi1)+damping*xp.amax(xp.absolute(psi1)))
+
+    return delta*weighting
+
+
 
