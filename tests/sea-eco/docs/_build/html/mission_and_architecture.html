@@ -1,0 +1,182 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mission and Architecture &mdash; SEA-eco 0.0.1beta documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e02f3e7d"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="SEA-eco Architecture (numpy backend)" href="architecture.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SEA-eco
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Mission and Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mission-statement">Mission statement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#notes-on-the-pysea-namespace">Notes on the <code class="docutils literal notranslate"><span class="pre">pySEA</span></code> namespace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fair-principles-in-practice">FAIR principles in practice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#architectural-overview-numpy-backend">Architectural overview (numpy backend)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-for-data-comparison">Architecture for data comparison</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">SEA-eco Architecture (numpy backend)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="signal_processing.html">Signal Processing Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plotting.html">Plotting Signals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="colors.html">Colors and Color Wheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readers.html">Readers and I/O</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SEA-eco</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Mission and Architecture</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/mission_and_architecture.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mission-and-architecture">
+<h1>Mission and Architecture<a class="headerlink" href="#mission-and-architecture" title="Link to this heading"></a></h1>
+<p>SEA-eco lives inside the <code class="docutils literal notranslate"><span class="pre">pySEA</span></code> (Python Simulation Experiment Analysis)
+namespace and provides the core Simulation Experiment Analysis data model,
+plotting helpers, and signal processing utilities.</p>
+<section id="mission-statement">
+<h2>Mission statement<a class="headerlink" href="#mission-statement" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Empower reproducible Simulation Experiment Analysis by keeping data <strong>Findable, Accessible, Interoperable, and Reusable (FAIR)</strong> from acquisition through publication.</p></li>
+<li><p>Treat the <code class="docutils literal notranslate"><span class="pre">pySEA</span></code> namespace as a shared ecosystem: small, composable primitives rather than monoliths; stable serialization so signals can move between labs, clusters, and notebooks.</p></li>
+<li><p>Make comparison the default: every dataset travels with calibrated dimensions, provenance, and metadata so results can be aligned, re-processed, and peer-reviewed.</p></li>
+</ul>
+</section>
+<section id="notes-on-the-pysea-namespace">
+<h2>Notes on the <code class="docutils literal notranslate"><span class="pre">pySEA</span></code> namespace<a class="headerlink" href="#notes-on-the-pysea-namespace" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">sea_eco</span></code> is published under the <code class="docutils literal notranslate"><span class="pre">pySEA</span></code> namespace package <a class="reference external" href="https://github.com/sea-ecosystem">pySEA</a>. The intent of the namespace is to keep the ecosystem lightweight, modular, and built upon the same architecture for streamlined data analysis workflows.
+Imports therefore take the form <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">pySEA</span> <span class="pre">import</span> <span class="pre">sea_eco</span></code> or
+<code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">pySEA.sea_eco.architecture</span> <span class="pre">import</span> <span class="pre">...</span></code>.
+Packages included in <a class="reference external" href="https://github.com/sea-ecosystem">pySEA</a>:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sea-ecosystem/sea-eco">sea-eco</a>: The base ecosystem implementing the architecture a basic tools</p></li>
+<li><p><a class="reference external" href="https://github.com/sea-ecosystem/rayTEM">rayTEM</a>: A TEM digital-twin enabling automation, infromed (live) isntrument alignment, and instrument infromed SEA objects.</p></li>
+<li><p><a class="reference external" href="https://github.com/h-walk/PySlice">PySlice</a>: electron multislice simulation software with built in ML-MD universal potenetials to include realistic lattice motion.</p></li>
+</ul>
+</section>
+<section id="fair-principles-in-practice">
+<h2>FAIR principles in practice<a class="headerlink" href="#fair-principles-in-practice" title="Link to this heading"></a></h2>
+<p>We strive to implement the principles established by <a class="reference external" href="https://www.go-fair.org/fair-principles/">FAIR org</a></p>
+<ul class="simple">
+<li><p><strong>Findable:</strong> SEA files (<code class="docutils literal notranslate"><span class="pre">*.sea</span></code>) embed human-readable metadata, SEA type tags, and UUIDs for signals and acquisitions.</p></li>
+<li><p><strong>Accessible:</strong> HDF5-backed storage keeps data portable; helper utilities expose quick tree views (<code class="docutils literal notranslate"><span class="pre">get_tree_html</span></code>, <code class="docutils literal notranslate"><span class="pre">show_tree</span></code>) for inspection.</p></li>
+<li><p><strong>Interoperable:</strong> Calibrated <code class="docutils literal notranslate"><span class="pre">Dimension</span></code> objects and unit-aware plotting/processing make cross-instrument comparisons predictable.</p></li>
+<li><p><strong>Reusable:</strong> Serialization/deserialization (<code class="docutils literal notranslate"><span class="pre">to_sea</span></code>, <code class="docutils literal notranslate"><span class="pre">from_sea</span></code>) preserve dimensions, metadata, and relationships between signals and sets.</p></li>
+</ul>
+</section>
+<section id="architectural-overview-numpy-backend">
+<h2>Architectural overview (numpy backend)<a class="headerlink" href="#architectural-overview-numpy-backend" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>SEASerializable:</strong> Base class that provides <code class="docutils literal notranslate"><span class="pre">.to_dict()</span></code>, <code class="docutils literal notranslate"><span class="pre">.to_sea()</span></code>, and <code class="docutils literal notranslate"><span class="pre">.from_hdf5_group()</span></code> for lossless round-tripping to SEA-formatted HDF5.</p></li>
+<li><p><strong>Metadata:</strong> Nested, mergeable metadata container that keeps provenance close to the data.</p></li>
+<li><p><strong>Dimension / Dimensions:</strong> Calibrated axes with names, units, scales, offsets, and navigation/signal role tracking.</p></li>
+<li><p><strong>Signal:</strong> N-dimensional array + <code class="docutils literal notranslate"><span class="pre">Dimensions</span></code> + <code class="docutils literal notranslate"><span class="pre">Metadata</span></code>, with plotting helpers and numpy-like ufunc dispatch via decorators.</p></li>
+<li><p><strong>SignalProcessingMixin:</strong> Adds basic signal processing utilities (correlation, shifts, maxima search) that keep dimension metadata synchronized.</p></li>
+<li><p><strong>SignalCollection:</strong> Container for Signals and SignalSets with shared metadata.</p></li>
+<li><p><strong>SignalSet:</strong> Group related signals with shared dimensions; can decompose/merge detector metadata.</p></li>
+<li><p><strong>SEAFile:</strong> Top-level container mirroring a <code class="docutils literal notranslate"><span class="pre">.sea</span></code> file with Simulations/Experiments/Analysis collections and global metadata.</p></li>
+</ul>
+</section>
+<section id="architecture-for-data-comparison">
+<h2>Architecture for data comparison<a class="headerlink" href="#architecture-for-data-comparison" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Dimension-first alignment:</strong> Comparisons run through <code class="docutils literal notranslate"><span class="pre">Dimensions.get_dims_as_int</span></code> so operations can refer to axes by name or index.</p></li>
+<li><p><strong>Calibrated shifting/correlation:</strong> <code class="docutils literal notranslate"><span class="pre">SignalProcessingMixin</span></code> exposes shift/correlation helpers that return calibrated lag dimensions for inspection and downstream use.</p></li>
+<li><p><strong>SEA file provenance:</strong> Every persisted object records <code class="docutils literal notranslate"><span class="pre">sea_type</span></code> and UUIDs, allowing heterogeneous datasets to be compared while retaining lineage.</p></li>
+<li><p><strong>Tree introspection:</strong> HTML and string tree renderers make it simple to audit an object’s structure before combining or comparing datasets.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="getting_started.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="architecture.html" class="btn btn-neutral float-right" title="SEA-eco Architecture (numpy backend)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, SEA-eco contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

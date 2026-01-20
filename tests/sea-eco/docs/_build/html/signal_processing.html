@@ -1,0 +1,191 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signal Processing Guide &mdash; SEA-eco 0.0.1beta documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e02f3e7d"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Plotting Signals" href="plotting.html" />
+    <link rel="prev" title="SEA-eco Architecture (numpy backend)" href="architecture.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SEA-eco
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_and_architecture.html">Mission and Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">SEA-eco Architecture (numpy backend)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Signal Processing Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#correlation-and-alignment">Correlation and alignment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#shifting-data">Shifting data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#maxima-search">Maxima search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#lower-level-primitives">Lower-level primitives</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="plotting.html">Plotting Signals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="colors.html">Colors and Color Wheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readers.html">Readers and I/O</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SEA-eco</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Signal Processing Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/signal_processing.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="signal-processing-guide">
+<h1>Signal Processing Guide<a class="headerlink" href="#signal-processing-guide" title="Link to this heading"></a></h1>
+<p>Signal processing utilities live primarily in
+<code class="docutils literal notranslate"><span class="pre">pySEA.sea_eco.mixins.signal_mixins.SignalProcessingMixin</span></code> and the
+<code class="docutils literal notranslate"><span class="pre">pySEA.sea_eco._signal_processing</span></code> module. The mixin is attached to
+<code class="docutils literal notranslate"><span class="pre">Signal</span></code>, so you can call these methods directly on signals.</p>
+<section id="correlation-and-alignment">
+<h2>Correlation and alignment<a class="headerlink" href="#correlation-and-alignment" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pySEA.sea_eco.architecture.base_structure_numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dimension</span><span class="p">,</span> <span class="n">Dimensions</span><span class="p">,</span> <span class="n">Signal</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">Dimension</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="n">sig</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span> <span class="mi">256</span><span class="p">)),</span> <span class="n">dimensions</span><span class="o">=</span><span class="n">Dimensions</span><span class="p">([</span><span class="n">Dimension</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;scan&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s2">&quot;idx&quot;</span><span class="p">),</span> <span class="n">t</span><span class="p">]),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;frames&quot;</span><span class="p">)</span>
+
+<span class="c1"># Autocorrelation along the time axis</span>
+<span class="n">corr_sig</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">autocorrelate</span><span class="p">(</span><span class="n">dims</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Lag-aware shifts from autocorrelation peaks</span>
+<span class="n">shifts</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">get_shifts_autocorrelate</span><span class="p">(</span><span class="n">dims</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">cumlative</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Cross-correlation against a reference</span>
+<span class="n">ref</span> <span class="o">=</span> <span class="n">sig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># first frame</span>
+<span class="n">lags_sig</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">correlate_1D_in_ND</span><span class="p">(</span><span class="n">ref_sig</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">dims</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Features:</p>
+<ul class="simple">
+<li><p>Dimension-aware: specify axes by index or name; outputs include calibrated lag
+dimensions when possible.</p></li>
+<li><p>Normalization and lag computation handled via SciPy (<code class="docutils literal notranslate"><span class="pre">scipy.signal.correlate</span></code>).</p></li>
+<li><p>Shifts can be cumulative or per-frame; use <code class="docutils literal notranslate"><span class="pre">cumlative=False</span></code> to get
+frame-to-frame deltas.</p></li>
+</ul>
+</section>
+<section id="shifting-data">
+<h2>Shifting data<a class="headerlink" href="#shifting-data" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Apply a calibrated shift along time</span>
+<span class="n">shifted</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">shifts</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">shifts_calibrated</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dims</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">interpolate_method</span><span class="o">=</span><span class="s2">&quot;cubic&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Accepts scalar or per-sample shift arrays (broadcasted to the data shape).</p></li>
+<li><p>Supports <code class="docutils literal notranslate"><span class="pre">'linear'</span></code> or <code class="docutils literal notranslate"><span class="pre">'cubic'</span></code> interpolation, or a custom callable.</p></li>
+<li><p>Preserves metadata and dimensions on the returned <code class="docutils literal notranslate"><span class="pre">Signal</span></code>.</p></li>
+</ul>
+</section>
+<section id="maxima-search">
+<h2>Maxima search<a class="headerlink" href="#maxima-search" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">peaks</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">maxND</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="s2">&quot;signal&quot;</span><span class="p">)</span>  <span class="c1"># returns indices + max value along signal dims</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Returns an array where the last entries are the indices of maxima (optionally
+calibrated) followed by the maximum value.</p></li>
+</ul>
+</section>
+<section id="lower-level-primitives">
+<h2>Lower-level primitives<a class="headerlink" href="#lower-level-primitives" title="Link to this heading"></a></h2>
+<p>For library authors or batch workflows, the raw functions in
+<code class="docutils literal notranslate"><span class="pre">pySEA.sea_eco._signal_processing</span></code> are available:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">unfold_dims</span></code>, <code class="docutils literal notranslate"><span class="pre">maxND</span></code>, <code class="docutils literal notranslate"><span class="pre">shift</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">correlate_1D_in_ND</span></code>, <code class="docutils literal notranslate"><span class="pre">autocorrelate</span></code>, <code class="docutils literal notranslate"><span class="pre">get_shifts_autocorrelate</span></code></p></li>
+</ul>
+<p>See <code class="docutils literal notranslate"><span class="pre">examples/Signal_processing/correlation_and_alignment.ipynb</span></code> for a fuller
+walkthrough including plotting of correlation peaks and applied shifts.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="architecture.html" class="btn btn-neutral float-left" title="SEA-eco Architecture (numpy backend)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="plotting.html" class="btn btn-neutral float-right" title="Plotting Signals" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, SEA-eco contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
