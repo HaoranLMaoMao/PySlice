@@ -7,7 +7,7 @@ from pathlib import Path
 import logging
 from .wf_data import WFData
 from ..data import Signal, Dimensions, Dimension, GeneralMetadata
-from ..backend import zeros
+from ..backend import zeros,to_cpu
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,7 @@ class HAADFData(Signal):
     @property
     def array(self):
         """Alias for adf (backward compatibility)."""
-        return self._array
+        return to_cpu(self._array)
 
     def __getattr__(self, name):
         """Auto-convert coordinate arrays from tensor to numpy on access."""
@@ -231,16 +231,9 @@ class HAADFData(Signal):
             raise RuntimeError("calculateADF() must be called before plotting")
 
         fig, ax = plt.subplots()
-        array = self._array.T  # imshow convention: y,x. our convention: x,y
-
-        if TORCH_AVAILABLE and hasattr(array, 'cpu'):
-            array = array.cpu().numpy()
-        if TORCH_AVAILABLE and hasattr(self._xs, 'cpu'):
-            xs = self._xs.cpu().numpy()
-            ys = self._ys.cpu().numpy()
-        else:
-            xs = np.asarray(self._xs)
-            ys = np.asarray(self._ys)
+        array = self.array.T[::-1,:]  # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
+        xs = to_cpu(self._xs)
+        ys = to_cpu(self._ys)
 
         extent = (np.amin(xs), np.amax(xs), np.amin(ys), np.amax(ys))
         ax.imshow(array, cmap="inferno", extent=extent)
