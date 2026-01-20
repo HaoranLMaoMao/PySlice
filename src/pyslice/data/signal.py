@@ -310,7 +310,7 @@ class SEASerializable(ABC):
             #print("name",name,"key",key,"val",val,"type",type(val))
             if key in ["probe","cache_dir"]:
                 continue
-            if "wf_array" in key:
+            if key == "array":
                 key = "data"
             if not hasattr(self, key):
                 continue
