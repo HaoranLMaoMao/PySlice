@@ -1,0 +1,419 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pySEA.sea_eco.mixins.signal_mixins &mdash; SEA-eco 0.0.1beta documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=e02f3e7d"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            SEA-eco
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../mission_and_architecture.html">Mission and Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../architecture.html">SEA-eco Architecture (numpy backend)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../signal_processing.html">Signal Processing Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plotting.html">Plotting Signals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../colors.html">Colors and Color Wheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readers.html">Readers and I/O</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">SEA-eco</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pySEA.sea_eco.mixins.signal_mixins</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pySEA.sea_eco.mixins.signal_mixins</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Signal processing mixins for SEA-eco Signal objects.&quot;&quot;&quot;</span>
+
+<span class="c1">#Imports: Typing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pySEA.sea_eco.architecture.base_structure_numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dimensions</span><span class="p">,</span> <span class="n">Signal</span>
+
+<span class="c1">#Imports: External</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">wraps</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1">#Imports: Internal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pySEA.sea_eco.architecture</span><span class="w"> </span><span class="kn">import</span> <span class="n">signal_method</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pySEA.sea_eco._signal_processing</span><span class="w"> </span><span class="kn">import</span> <span class="n">maxND</span><span class="p">,</span> <span class="n">shift</span><span class="p">,</span> <span class="n">correlate_1D_in_ND</span><span class="p">,</span> <span class="n">autocorrelate</span><span class="p">,</span> <span class="n">get_shifts_autocorrelate</span>
+
+<span class="n">dims_set_maps</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;signal&#39;</span><span class="p">:</span><span class="s1">&#39;sig_dimensions&#39;</span><span class="p">,</span> <span class="s1">&#39;navigation&#39;</span><span class="p">:</span><span class="s1">&#39;nav_dimensions&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;temporal&#39;</span><span class="p">:</span><span class="s1">&#39;temporal_dimension&#39;</span><span class="p">,</span> <span class="s1">&#39;spectral&#39;</span><span class="p">:</span><span class="s1">&#39;spectral_dimension&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;position&#39;</span><span class="p">:</span><span class="s1">&#39;position_dimensions&#39;</span><span class="p">,</span> <span class="s1">&#39;scattering&#39;</span><span class="p">:</span><span class="s1">&#39;scattering_dimensions&#39;</span><span class="p">}</span>
+<span class="n">dims_set_Lit</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;signal&#39;</span><span class="p">,</span> <span class="s1">&#39;navigation&#39;</span><span class="p">,</span> <span class="s1">&#39;temporal&#39;</span><span class="p">,</span> <span class="s1">&#39;spectral&#39;</span><span class="p">,</span> <span class="s1">&#39;position&#39;</span><span class="p">,</span> <span class="s1">&#39;scattering&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="get_corr_dimensions">
+<a class="viewcode-back" href="../../../../api_reference.html#pySEA.sea_eco.mixins.signal_mixins.get_corr_dimensions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_corr_dimensions</span><span class="p">(</span><span class="n">signal</span><span class="p">:</span> <span class="n">Signal</span><span class="p">,</span> <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+                        <span class="n">lags</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">corr</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dimensions</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update dimension metadata with lag offsets and sizes.&quot;&quot;&quot;</span>
+    <span class="n">sig_dims</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">dim</span><span class="p">,</span><span class="n">lag</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="n">lags</span><span class="p">):</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">sig_dims</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">scale</span>
+        <span class="n">sig_dims</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span>  <span class="n">scale</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">lag</span><span class="p">)</span>
+        <span class="n">sig_dims</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">corr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">sig_dims</span></div>
+
+
+<div class="viewcode-block" id="SignalProcessingMixin">
+<a class="viewcode-back" href="../../../../api_reference.html#pySEA.sea_eco.mixins.signal_mixins.SignalProcessingMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SignalProcessingMixin</span><span class="p">:</span>
+
+<div class="viewcode-block" id="SignalProcessingMixin.maxND">
+<a class="viewcode-back" href="../../../../api_reference.html#pySEA.sea_eco.mixins.signal_mixins.SignalProcessingMixin.maxND">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">maxND</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span> <span class="o">|</span> <span class="n">dims_set_Lit</span> <span class="o">=</span> <span class="s1">&#39;signal&#39;</span><span class="p">,</span> 
+              <span class="n">calibrated</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+              <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find the maxium value and its index in a set of dimensions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dims : tuple, optional</span>
+<span class="sd">            Axes to find the max within, by default (-2,-1)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        max_values: NDArray</span>
+<span class="sd">            Maximum values with the shape (*data.shape,len(dims)+1) with non-dims removed. The last dimension coresponds to the dims indicies and the max value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">dims</span> <span class="ow">in</span> <span class="n">dims_set_maps</span><span class="p">:</span>
+                <span class="n">dims</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">dims_set_maps</span><span class="p">[</span><span class="n">dims</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;dims takes an </span><span class="si">{</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">dims_set_Lit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">dims</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">d</span> <span class="k">if</span> <span class="n">d</span><span class="o">&gt;=</span><span class="mi">0</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">)</span>
+
+        <span class="n">max_info</span> <span class="o">=</span> <span class="n">maxND</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="n">dims</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">calibrated</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">max_info</span><span class="p">[</span><span class="o">...</span><span class="p">,:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dims</span><span class="p">):</span> <span class="n">pos</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">get_calibrated_value</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">max_info</span><span class="p">[</span><span class="o">...</span><span class="p">,:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">pos</span>
+        <span class="k">return</span> <span class="n">max_info</span></div>
+
+
+<div class="viewcode-block" id="SignalProcessingMixin.shift">
+<a class="viewcode-back" href="../../../../api_reference.html#pySEA.sea_eco.mixins.signal_mixins.SignalProcessingMixin.shift">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shifts</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span>
+              <span class="n">shifts_calibrated</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+              <span class="n">dims</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+              <span class="n">interpolate_method</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="s1">&#39;cubic&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;cubic&#39;</span><span class="p">,</span>
+              <span class="n">kwargs_interpolate</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
+              <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Signal</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Shift an array along one or more dimensions using interpolation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        shifts : NDArray | Sequence[NDArray | float | int]</span>
+<span class="sd">            Shift amounts. For multiple ``dims`` supply a sequence aligned to</span>
+<span class="sd">            ``dims``; each element can be scalar or array broadcastable to the data</span>
+<span class="sd">            shape (or broadcastable after expanding singleton dimensions).</span>
+<span class="sd">        dims : int | Sequence[int], optional</span>
+<span class="sd">            Dimension(s) (axis/axes) to shift along, by default -1.</span>
+<span class="sd">        interpolate_method : Callable | Literal[&#39;linear&#39;, &#39;cubic&#39;], optional</span>
+<span class="sd">            Interpolation selector. Strings map to standard options; callables are</span>
+<span class="sd">            instantiated directly. Defaults to &#39;cubic&#39;.</span>
+<span class="sd">        kwargs_interpolate : dict | None, optional</span>
+<span class="sd">            Extra keyword arguments passed to the interpolation routine.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Signal</span>
+<span class="sd">            Shifted signal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span> <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">dims</span><span class="p">]</span>
+        <span class="n">scales</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">scale</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">shifts_calibrated</span><span class="p">:</span>
+            <span class="n">shifts</span> <span class="o">/=</span> <span class="n">scales</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">shift</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">shifts</span><span class="p">,</span>
+                     <span class="n">dims</span><span class="o">=</span><span class="n">dims</span><span class="p">,</span>
+                     <span class="n">interpolate_method</span><span class="o">=</span><span class="n">interpolate_method</span><span class="p">,</span>
+                     <span class="n">kwargs_interpolate</span><span class="o">=</span><span class="n">kwargs_interpolate</span><span class="p">)</span>
+        
+        <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deepcopy_with_new_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">sig</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> shifted&#39;</span>
+        <span class="k">return</span> <span class="n">sig</span></div>
+
+
+<div class="viewcode-block" id="SignalProcessingMixin.correlate_1D_in_ND">
+<a class="viewcode-back" href="../../../../api_reference.html#pySEA.sea_eco.mixins.signal_mixins.SignalProcessingMixin.correlate_1D_in_ND">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">correlate_1D_in_ND</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_sig</span> <span class="p">:</span> <span class="n">Signal</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">,</span>
+                           <span class="n">dims</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                           <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">kwargs_correlate</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+                           <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Signal</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform 1D cross-correlation across a ND signal.</span>
+<span class="sd">        If the signal has shifted positive with respect tothe reference then the correlation will return a positive lag.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ref_sig : Signal | NDArray</span>
+<span class="sd">            Refference dataset to correlate against.</span>
+<span class="sd">        dims : int, optional</span>
+<span class="sd">            Dimension to correlate along. By default -1</span>
+<span class="sd">        normalize : bool, optional</span>
+<span class="sd">            Perfrom normalized cross-correlation. By default True.</span>
+<span class="sd">        kwargs_correlate : dict, optional</span>
+<span class="sd">            kwargs for scipy.signal.correlate, by default {}</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Correlations: Signal</span>
+<span class="sd">            Correlation coefficients.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        scipy.signal.correlate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">lags</span><span class="p">,</span> <span class="n">corr</span> <span class="o">=</span> <span class="n">correlate_1D_in_ND</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">ref_sig</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                                        <span class="n">dims</span><span class="o">=</span><span class="n">dims</span><span class="p">,</span>
+                                        <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span> <span class="n">kwargs_correlate</span><span class="o">=</span><span class="n">kwargs_correlate</span><span class="p">)</span>
+        <span class="n">off1</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">dims</span><span class="p">]</span><span class="o">.</span><span class="n">offset</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">dims</span><span class="p">]</span><span class="o">.</span><span class="n">scale</span>
+        
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ref_sig</span><span class="p">,</span> <span class="s1">&#39;dimensions&#39;</span><span class="p">):</span>
+            <span class="n">off2</span> <span class="o">=</span> <span class="n">ref_sig</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="n">dims</span><span class="p">]</span><span class="o">.</span><span class="n">offset</span>
+        <span class="k">else</span><span class="p">:</span> <span class="n">off2</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">sig_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">()</span>
+        <span class="n">sig_dims</span><span class="p">[</span><span class="n">dims</span><span class="p">]</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span>  <span class="n">scale</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">lags</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">off2</span><span class="o">-</span><span class="n">off1</span><span class="p">)</span>
+        <span class="n">sig_dims</span><span class="p">[</span><span class="n">dims</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">corr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">dims</span><span class="p">]</span>
+
+        <span class="n">corr_sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_child_signal</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span>
+                                               <span class="n">name</span><span class="o">=</span> <span class="s1">&#39;Correlation coefficients&#39;</span><span class="p">,</span>
+                                               <span class="n">dimensions</span><span class="o">=</span> <span class="n">sig_dims</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">corr_sig</span></div>
+
+    
+<div class="viewcode-block" id="SignalProcessingMixin.autocorrelate">
+<a class="viewcode-back" href="../../../../api_reference.html#pySEA.sea_eco.mixins.signal_mixins.SignalProcessingMixin.autocorrelate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">autocorrelate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                       <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                       <span class="n">kwargs_correlate</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+                       <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Measure autocorrelation of a signal across specified dimensions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dims : Sequence[int] | int, optional</span>
+<span class="sd">            Dimension(s) to correlate along, by default -1</span>
+<span class="sd">        normalize : bool, optional</span>
+<span class="sd">            Perform normalized cross-correlation, by default True</span>
+<span class="sd">        kwargs_correlate : dict, optional</span>
+<span class="sd">            Keyword arguments passed to scipy.signal.correlate, by default {}</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        lags : list[NDArray]</span>
+<span class="sd">            Lag arrays for each dimension.</span>
+<span class="sd">        corr : NDArray</span>
+<span class="sd">            Autocorrelation coefficients.</span>
+<span class="sd">        &quot;&quot;&quot;</span> 
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span> <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">dims</span><span class="p">]</span>
+        <span class="n">lags</span><span class="p">,</span> <span class="n">corr</span> <span class="o">=</span> <span class="n">autocorrelate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="n">dims</span><span class="p">,</span>
+                                    <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span> 
+                                    <span class="n">kwargs_correlate</span><span class="o">=</span><span class="n">kwargs_correlate</span><span class="p">)</span>
+        
+        <span class="n">sig_dims</span> <span class="o">=</span> <span class="n">get_corr_dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dims</span><span class="p">,</span> <span class="n">lags</span><span class="p">,</span> <span class="n">corr</span><span class="p">)</span>
+
+        <span class="n">corr_sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_child_signal</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span>
+                                               <span class="n">name</span><span class="o">=</span> <span class="s1">&#39;Correlation coefficients&#39;</span><span class="p">,</span>
+                                               <span class="n">dimensions</span><span class="o">=</span> <span class="n">sig_dims</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">corr_sig</span></div>
+
+    
+<div class="viewcode-block" id="SignalProcessingMixin.get_shifts_autocorrelate">
+<a class="viewcode-back" href="../../../../api_reference.html#pySEA.sea_eco.mixins.signal_mixins.SignalProcessingMixin.get_shifts_autocorrelate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_shifts_autocorrelate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                             <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> 
+                             <span class="n">cumlative</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                             <span class="n">kwargs_correlate</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+                             <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">NDArray</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">NDArray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Measure autocorrelated shift of a signal across specified dimensions.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dims : Sequence[int] | int, optional</span>
+<span class="sd">            Dimension(s) to correlate along, by default -1</span>
+<span class="sd">        normalize : bool, optional</span>
+<span class="sd">            Perform normalized cross-correlation, by default True</span>
+<span class="sd">        cumlative: bool, optional</span>
+<span class="sd">            Treat the shift as a cumlative shift from the first frame, by default True</span>
+<span class="sd">        kwargs_correlate : dict, optional</span>
+<span class="sd">            Keyword arguments passed to scipy.signal.correlate, by default {}</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        shfit : NDArray</span>
+<span class="sd">            Autocorrelation shift.</span>
+<span class="sd">        &quot;&quot;&quot;</span> 
+        <span class="n">dims</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">d</span> <span class="k">if</span> <span class="n">d</span><span class="o">&gt;=</span><span class="mi">0</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">)</span>
+        
+        <span class="n">corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">autocorrelate</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="n">dims</span><span class="p">,</span> 
+                                  <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span>
+                                  <span class="n">kwargs_correlate</span><span class="o">=</span><span class="n">kwargs_correlate</span><span class="p">)</span>
+                
+        <span class="n">sig_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">dims</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">sig_dims</span><span class="o">.</span><span class="n">remove_dimension</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        
+        
+        <span class="n">shifts</span> <span class="o">=</span> <span class="n">corr</span><span class="o">.</span><span class="n">maxND</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="n">dims</span><span class="p">)[</span><span class="o">...</span><span class="p">,:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">shifts</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">cumlative</span><span class="p">:</span> <span class="n">shifts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">shifts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="c1">#? Should this always be `axis=zero`?</span>
+
+        <span class="n">shift_sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_child_signal</span><span class="p">(</span><span class="n">shifts</span><span class="p">,</span>
+                                    <span class="n">name</span><span class="o">=</span> <span class="s1">&#39;Autocorrelated shifts&#39;</span><span class="p">,</span>
+                                    <span class="n">dimensions</span><span class="o">=</span> <span class="n">sig_dims</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">shift_sig</span></div>
+
+    
+<div class="viewcode-block" id="SignalProcessingMixin.get_shifts_correlate_1D_in_ND">
+<a class="viewcode-back" href="../../../../api_reference.html#pySEA.sea_eco.mixins.signal_mixins.SignalProcessingMixin.get_shifts_correlate_1D_in_ND">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_shifts_correlate_1D_in_ND</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_sig</span> <span class="p">:</span> <span class="n">Signal</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">,</span>
+                                      <span class="n">dims</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                                      <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> 
+                                      <span class="n">kwargs_correlate</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                      <span class="n">avg_corr_dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">[],</span>
+                                      <span class="n">cumlative</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+                                      <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Signal</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform 1D cross-correlation across a ND signal.</span>
+<span class="sd">        If the signal has shifted positive with respect tothe reference then the correlation will return a positive lag.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ref_sig : Signal | NDArray</span>
+<span class="sd">            Refference dataset to correlate against.</span>
+<span class="sd">        dims : int, optional</span>
+<span class="sd">            Dimension to correlate along. By default -1</span>
+<span class="sd">        normalize : bool, optional</span>
+<span class="sd">            Perfrom normalized cross-correlation. By default True.</span>
+<span class="sd">        kwargs_correlate : dict, optional</span>
+<span class="sd">            kwargs for scipy.signal.correlate, by default None</span>
+<span class="sd">        cumlative: bool, optional</span>
+<span class="sd">            Treat the shift as a cumlative shift from the first frame, by default True</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Correlations: Signal</span>
+<span class="sd">            Correlation coefficients.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        scipy.signal.correlate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">avg_corr_dims</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span> 
+            <span class="n">avg_corr_dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">avg_corr_dims</span><span class="p">]</span>
+        <span class="n">dim_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">get_names</span><span class="p">()</span>
+        <span class="n">avg_corr_dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">dim_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">avg_corr_dims</span><span class="p">]</span>
+    
+        <span class="n">corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">correlate_1D_in_ND</span><span class="p">(</span><span class="n">ref_sig</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="n">dims</span><span class="p">,</span>
+                                       <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span>
+                                       <span class="n">kwargs_correlate</span><span class="o">=</span><span class="n">kwargs_correlate</span>
+                                       <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">avg_corr_dims</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">avg_corr_dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">corr</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">get_index_from_name</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">avg_corr_dims</span><span class="p">]</span>
+            <span class="n">corr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">avg_corr_dims</span><span class="p">)</span>
+        
+        <span class="n">shifts</span> <span class="o">=</span> <span class="n">corr</span><span class="o">.</span><span class="n">maxND</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="n">dims</span><span class="p">])[</span><span class="o">...</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">cumlative</span><span class="p">:</span> <span class="n">shifts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">shifts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="c1">#? Should this always be `axis=zero`?</span>
+
+        <span class="c1"># shift_sig = shifts.generate_child_signal(shifts,</span>
+        <span class="c1">#                             name= &#39;Correlated shifts&#39;)</span>
+
+        <span class="k">return</span> <span class="n">shifts</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, SEA-eco contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

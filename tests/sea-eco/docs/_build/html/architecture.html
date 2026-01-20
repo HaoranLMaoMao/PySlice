@@ -1,0 +1,211 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEA-eco Architecture (numpy backend) &mdash; SEA-eco 0.0.1beta documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e02f3e7d"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Signal Processing Guide" href="signal_processing.html" />
+    <link rel="prev" title="Mission and Architecture" href="mission_and_architecture.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SEA-eco
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mission_and_architecture.html">Mission and Architecture</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">SEA-eco Architecture (numpy backend)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#core-building-blocks">Core building blocks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sea-hdf5-layout-sea">SEA HDF5 layout (<code class="docutils literal notranslate"><span class="pre">*.sea</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#useful-patterns-mirrors-basic-usage-ipynb">Useful patterns (mirrors “Basic usage.ipynb”)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dimension-aware-comparisons">Dimension-aware comparisons</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="signal_processing.html">Signal Processing Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plotting.html">Plotting Signals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="colors.html">Colors and Color Wheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readers.html">Readers and I/O</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SEA-eco</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">SEA-eco Architecture (numpy backend)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/architecture.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="sea-eco-architecture-numpy-backend">
+<h1>SEA-eco Architecture (numpy backend)<a class="headerlink" href="#sea-eco-architecture-numpy-backend" title="Link to this heading"></a></h1>
+<p>This page expands on the <code class="docutils literal notranslate"><span class="pre">pySEA.sea_eco.architecture.base_structure_numpy</span></code>
+module. For a runnable walkthrough see <code class="docutils literal notranslate"><span class="pre">examples/Basic</span> <span class="pre">usage.ipynb</span></code>.</p>
+<section id="core-building-blocks">
+<h2>Core building blocks<a class="headerlink" href="#core-building-blocks" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>SEASerializable</strong>: Base mixin that provides <code class="docutils literal notranslate"><span class="pre">.to_dict()</span></code>, <code class="docutils literal notranslate"><span class="pre">.to_sea()</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">.from_hdf5_group()</span></code> for lossless round-tripping to SEA-formatted HDF5.</p></li>
+<li><p><strong>Metadata</strong>: Nested, mergeable metadata container that keeps provenance close
+to the data.</p></li>
+<li><p><strong>Dimension</strong>: A calibrated axis with <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">size</span></code>, <code class="docutils literal notranslate"><span class="pre">units</span></code>, <code class="docutils literal notranslate"><span class="pre">scale</span></code>,
+<code class="docutils literal notranslate"><span class="pre">offset</span></code>, optional <code class="docutils literal notranslate"><span class="pre">values</span></code>, and flags for navigation/signal roles.</p></li>
+<li><p><strong>Dimensions</strong>: Ordered collection of <code class="docutils literal notranslate"><span class="pre">Dimension</span></code> objects with helpers to:</p>
+<ul>
+<li><p>Map between names/indices (<code class="docutils literal notranslate"><span class="pre">get_index_from_name</span></code>, <code class="docutils literal notranslate"><span class="pre">get_dims_as_int</span></code>)</p></li>
+<li><p>Track navigation vs signal dimensions (<code class="docutils literal notranslate"><span class="pre">nav_dimensions</span></code>, <code class="docutils literal notranslate"><span class="pre">sig_dimensions</span></code>)</p></li>
+<li><p>Manage extents and calibrated values (<code class="docutils literal notranslate"><span class="pre">get_extent</span></code>, <code class="docutils literal notranslate"><span class="pre">get_extents</span></code>)</p></li>
+<li><p>Add/remove dimensions while keeping role bookkeeping in sync.</p></li>
+</ul>
+</li>
+<li><p><strong>Signal</strong>: N-dimensional array + <code class="docutils literal notranslate"><span class="pre">Dimensions</span></code> + <code class="docutils literal notranslate"><span class="pre">Metadata</span></code>:</p>
+<ul>
+<li><p>NumPy ufunc passthrough that preserves metadata/dimensions</p></li>
+<li><p>HDF5 serialization via the SEA format (<code class="docutils literal notranslate"><span class="pre">to_sea</span></code>, <code class="docutils literal notranslate"><span class="pre">from_sea</span></code>)</p></li>
+<li><p>Plotting helpers (<code class="docutils literal notranslate"><span class="pre">show</span></code>, <code class="docutils literal notranslate"><span class="pre">image</span></code>) that infer sensible axes</p></li>
+<li><p>Dimension-aware reshape utilities (<code class="docutils literal notranslate"><span class="pre">unfold_axes</span></code>, <code class="docutils literal notranslate"><span class="pre">fold_axes</span></code>)</p></li>
+<li><p>Child factory (<code class="docutils literal notranslate"><span class="pre">generate_child_signal</span></code>) to keep lineage (<code class="docutils literal notranslate"><span class="pre">uuid</span></code>) intact.</p></li>
+</ul>
+</li>
+<li><p><strong>SignalCollection</strong>: Container for Signals and SignalSets with shared
+metadata; supports add/remove, SEA serialization, and metadata merging.</p></li>
+<li><p><strong>SignalSet</strong>: Specialized collection that enforces shared dimensions across
+signals and can decompose/merge detector metadata.</p></li>
+<li><p><strong>SEAFile</strong>: Top-level container mirroring a <code class="docutils literal notranslate"><span class="pre">.sea</span></code> file; bundles
+<code class="docutils literal notranslate"><span class="pre">Simulations</span></code>, <code class="docutils literal notranslate"><span class="pre">Experiments</span></code>, and <code class="docutils literal notranslate"><span class="pre">Analysis</span></code> collections plus global metadata.</p></li>
+</ul>
+</section>
+<section id="sea-hdf5-layout-sea">
+<h2>SEA HDF5 layout (<code class="docutils literal notranslate"><span class="pre">*.sea</span></code>)<a class="headerlink" href="#sea-hdf5-layout-sea" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Each SEA object serializes into an HDF5 group tagged with <code class="docutils literal notranslate"><span class="pre">sea_type</span></code>.</p></li>
+<li><p>Attributes are stored as HDF5 attributes when scalar/short; arrays use datasets.</p></li>
+<li><p>Nested SEA objects (signals, dimensions, metadata) become child groups,
+preserving structure and traversal order.</p></li>
+<li><p>UUIDs are generated via <code class="docutils literal notranslate"><span class="pre">generate_uuid()</span></code> and embedded alongside objects to
+support provenance and comparisons across files.</p></li>
+</ul>
+</section>
+<section id="useful-patterns-mirrors-basic-usage-ipynb">
+<h2>Useful patterns (mirrors “Basic usage.ipynb”)<a class="headerlink" href="#useful-patterns-mirrors-basic-usage-ipynb" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pySEA.sea_eco.architecture.base_structure_numpy</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Dimension</span><span class="p">,</span> <span class="n">Dimensions</span><span class="p">,</span> <span class="n">Signal</span><span class="p">,</span> <span class="n">SignalSet</span><span class="p">,</span> <span class="n">SEAFile</span>
+<span class="p">)</span>
+
+<span class="c1"># 1) Build a calibrated signal</span>
+<span class="n">energy</span> <span class="o">=</span> <span class="n">Dimension</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s2">&quot;eV&quot;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="n">sig</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">2048</span><span class="p">),</span>
+             <span class="n">dimensions</span><span class="o">=</span><span class="n">Dimensions</span><span class="p">([</span><span class="n">energy</span><span class="p">]),</span>
+             <span class="n">name</span><span class="o">=</span><span class="s2">&quot;EELS spectrum&quot;</span><span class="p">)</span>
+
+<span class="c1"># 2) Duplicate signals while keeping lineage</span>
+<span class="n">denoised</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">deepcopy_with_new_data</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">/</span><span class="mi">5</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">))</span>
+<span class="n">denoised</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;EELS spectrum (smoothed)&quot;</span>
+
+<span class="c1"># 3) Bundle signals for comparison</span>
+<span class="n">sig_set</span> <span class="o">=</span> <span class="n">SignalSet</span><span class="p">(</span><span class="n">signals</span><span class="o">=</span><span class="p">[</span><span class="n">sig</span><span class="p">,</span> <span class="n">denoised</span><span class="p">],</span> <span class="n">main_signal</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">merge_dimensions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># 4) Persist and reload via SEA HDF5</span>
+<span class="n">sea_file</span> <span class="o">=</span> <span class="n">SEAFile</span><span class="p">(</span><span class="n">experiments</span><span class="o">=</span><span class="p">[</span><span class="n">sig_set</span><span class="p">])</span>
+<span class="n">sea_file</span><span class="o">.</span><span class="n">to_sea</span><span class="p">(</span><span class="s2">&quot;bundle.sea&quot;</span><span class="p">)</span>
+<span class="n">reloaded</span> <span class="o">=</span> <span class="n">SEAFile</span><span class="p">()</span>
+<span class="n">reloaded</span><span class="o">.</span><span class="n">from_sea</span><span class="p">(</span><span class="s2">&quot;bundle.sea&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="dimension-aware-comparisons">
+<h2>Dimension-aware comparisons<a class="headerlink" href="#dimension-aware-comparisons" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">Dimensions.get_dims_as_int</span></code> to allow API calls by name or index.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Signal.deepcopy_with_reduced_data_dim</span></code> keeps navigation/signal role
+bookkeeping in sync when projections reduce dimensionality.</p></li>
+<li><p>Tree inspection (<code class="docutils literal notranslate"><span class="pre">get_tree_html</span></code>, <code class="docutils literal notranslate"><span class="pre">show_tree</span></code>) is helpful before merging or
+comparing datasets from different instruments.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mission_and_architecture.html" class="btn btn-neutral float-left" title="Mission and Architecture" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="signal_processing.html" class="btn btn-neutral float-right" title="Signal Processing Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, SEA-eco contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

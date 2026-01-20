@@ -283,6 +283,8 @@ class SEASerializable(ABC):
         """Save object to SEA formated HDF5 group."""
 
         sea_type = type(self).__name__ # Get the SEA class type
+        if sea_type in ["TACAWData","WFData"]: # TWP 20260120: sea-eco appears to not know about TACAWData, so let's treat parent classes (not Dimensions and friends) as Signals
+            sea_type = 'Signal'
 
         # Handle group name: use provided name, fall back to object's name attribute, or default
         if name is None:
@@ -303,7 +305,7 @@ class SEASerializable(ABC):
         storage_name_counts: Dict[str, int] = {}
         #print("to_write",to_write)
         for key, val in to_write.items():
-            print("name",name,"key",key,"val",val,"type",type(val))
+            #print("name",name,"key",key,"val",val,"type",type(val))
             if key in ["probe","cache_dir"]:
                 continue
             if not hasattr(self, key):
@@ -344,7 +346,7 @@ class SEASerializable(ABC):
         file.attrs['file_type'] = 'SEA-eco HDF5 file'.encode('utf-8')
         file.attrs['file_version'] = '0.0'.encode('utf-8')
         file.attrs['sea_type'] = type(self).__name__.encode('utf-8')
-
+        #print("file.attrs",[ (k,file.attrs[k]) for k in file.attrs.keys() ])
         self.to_hdf5_group(parent_group=file, force_datasets=force_datasets)
 
         file.close()

@@ -1,0 +1,556 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pySEA.sea_eco.io &mdash; SEA-eco 0.0.1beta documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=e02f3e7d"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            SEA-eco
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mission_and_architecture.html">Mission and Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture.html">SEA-eco Architecture (numpy backend)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../signal_processing.html">Signal Processing Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Signals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../colors.html">Colors and Color Wheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readers.html">Readers and I/O</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">SEA-eco</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pySEA.sea_eco.io</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pySEA.sea_eco.io</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;I/O helpers for SEA-eco signals and metadata.&quot;&quot;&quot;</span>
+
+<span class="c1">#Imports: Typing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+
+<span class="c1">#Imports: External</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">glob</span><span class="w"> </span><span class="kn">import</span> <span class="n">glob</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">h5py</span><span class="w"> </span><span class="kn">import</span> <span class="n">File</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">zipfile</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1">#Imports: Internal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pySEA.sea_eco.architecture.base_structure_numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">SEASerializable</span><span class="p">,</span> <span class="n">Metadata</span><span class="p">,</span> <span class="n">Dimension</span><span class="p">,</span> <span class="n">Dimensions</span><span class="p">,</span> <span class="n">Signal</span><span class="p">,</span> <span class="n">SignalSet</span><span class="p">,</span> <span class="n">SignalCollection</span><span class="p">,</span> <span class="n">SEAFile</span>
+
+
+<div class="viewcode-block" id="load_memmap_from_npz">
+<a class="viewcode-back" href="../../../api_reference.html#pySEA.sea_eco.io.load_memmap_from_npz">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_memmap_from_npz</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load an array inside an ``npz`` as a read-only memmap.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    NumPy cannot directly memmap arrays embedded in ``npz`` archives; this is a</span>
+<span class="sd">    lightweight workaround adapted from</span>
+<span class="sd">    https://github.com/numpy/numpy/issues/5976.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">zf</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">zf</span><span class="o">.</span><span class="n">NameToInfo</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.npy&#39;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">info</span><span class="o">.</span><span class="n">compress_type</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="n">zf</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.npy&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">_orig_compress_start</span>
+
+    <span class="n">fp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">fp</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">read_magic</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">version</span> <span class="ow">in</span> <span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">shape</span><span class="p">,</span> <span class="n">fortran_order</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">read_array_header_1_0</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">version</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">shape</span><span class="p">,</span> <span class="n">fortran_order</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">read_array_header_2_0</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+    <span class="n">data_offset</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span> <span class="c1"># file position will be left at beginning of data</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+                     <span class="n">order</span><span class="o">=</span><span class="s1">&#39;F&#39;</span> <span class="k">if</span> <span class="n">fortran_order</span> <span class="k">else</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span>
+                     <span class="n">offset</span><span class="o">=</span><span class="n">data_offset</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="parse_file_path">
+<a class="viewcode-back" href="../../../api_reference.html#pySEA.sea_eco.io.parse_file_path">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split a file path into directory, stem, and extension.</span>
+
+<span class="sd">    If no extension is present, attempt to infer one matching ``.n*`` patterns.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">directory</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="n">name</span><span class="p">,</span> <span class="n">extension</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">extension</span><span class="o">==</span><span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">extension</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">file_path</span><span class="o">+</span><span class="s1">&#39;.n*&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">directory</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">extension</span></div>
+
+
+<div class="viewcode-block" id="collect_swift_file">
+<a class="viewcode-back" href="../../../api_reference.html#pySEA.sea_eco.io.collect_swift_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">collect_swift_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load Swift-generated data/metadata, handling multiple container types.&quot;&quot;&quot;</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">file_extension</span> <span class="o">=</span> <span class="n">parse_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file_path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">file_extension</span> <span class="o">==</span> <span class="s1">&#39;.npy&#39;</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="o">+</span><span class="s1">&#39;.json&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_path</span><span class="o">+</span><span class="s1">&#39;.npy&#39;</span><span class="p">,</span> <span class="n">mmap_mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">file_extension</span> <span class="ow">in</span> <span class="p">[</span> <span class="s1">&#39;.ndata1&#39;</span><span class="p">,</span> <span class="s1">&#39;.ndata&#39;</span> <span class="p">]:</span>
+        <span class="n">file</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_path</span><span class="o">+</span><span class="n">file_extension</span><span class="p">,</span> <span class="n">mmap_mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file</span><span class="p">[</span><span class="s1">&#39;metadata.json&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">load_memmap_from_npz</span><span class="p">(</span><span class="n">file_path</span><span class="o">+</span><span class="n">file_extension</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span>
+    <span class="c1">#elif file_extension == &#39;.ndata&#39;:</span>
+    <span class="c1">#    file = np.load(file_path+&#39;.ndata&#39;, mmap_mode=&#39;r&#39;)</span>
+    <span class="c1">#    meta = json.loads(file[&#39;metadata.json&#39;].decode())</span>
+    <span class="c1">#    data = load_memmap_from_npz(file_path+&#39;.ndata&#39;, &#39;data&#39;)</span>
+    <span class="k">elif</span> <span class="n">file_extension</span> <span class="o">==</span> <span class="s1">&#39;.h5&#39;</span><span class="p">:</span>
+        <span class="n">opened</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span><span class="n">file_path</span><span class="o">+</span><span class="s1">&#39;.h5&#39;</span><span class="p">)</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">opened</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">])</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">opened</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The Swift files could not be collected.</span><span class="se">\n</span><span class="s1">A file with extension `.npy`, `.ndata1`, `.ndata`, or `h5` was not found or provided.</span><span class="se">\n</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">meta</span><span class="p">,</span> <span class="n">data</span></div>
+
+        
+<div class="viewcode-block" id="swift_to_sea_metadata">
+<a class="viewcode-back" href="../../../api_reference.html#pySEA.sea_eco.io.swift_to_sea_metadata">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">swift_to_sea_metadata</span><span class="p">(</span><span class="n">swift_metadata</span><span class="p">:</span><span class="n">Metadata</span><span class="p">,</span> 
+                           <span class="n">signal_type</span><span class="p">:</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;2D-EELS&#39;</span><span class="p">,</span><span class="s1">&#39;1D-EELS&#39;</span><span class="p">,</span><span class="s1">&#39;Diffraction&#39;</span><span class="p">,</span><span class="s1">&#39;Image&#39;</span><span class="p">]</span><span class="o">|</span><span class="kc">None</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">file_path</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                           <span class="n">print_missed</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">read_aberrations</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert Metadata object constructed from swift metadata to the SEA format of metadata.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    swift_metadata : Metadata</span>
+<span class="sd">        Metadata object constructed from swift json metadata that will be converted to the SEA format of metadata.</span>
+<span class="sd">    signal_type : Literal[&#39;2D-EELS&#39;,&#39;1D-EELS&#39;,&#39;Diffraction&#39;,&#39;Image&#39;] | None, optional</span>
+<span class="sd">        The type of signal, by default None</span>
+<span class="sd">    file_path : str, optional</span>
+<span class="sd">        File path to the original file, by default None</span>
+<span class="sd">    print_missed : bool, optional</span>
+<span class="sd">        Print if the metadata attribute was not found, by default False</span>
+<span class="sd">    read_aberrations : bool, optional</span>
+<span class="sd">        Read the instrument aberrations, by default False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Metadata</span>
+<span class="sd">        SEA format of metadata</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">file_directory</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">file_extension</span> <span class="o">=</span> <span class="n">parse_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">file_directory</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">file_extension</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">map_general</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span>  <span class="s1">&#39;title&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;uuid&#39;</span><span class="p">:</span> <span class="s1">&#39;uuid&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;timestamp_original&#39;</span><span class="p">:</span> <span class="s1">&#39;datetime_original/local_datetime&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;timestamp_modified&#39;</span><span class="p">:</span> <span class="s1">&#39;datetime_modified/local_datetime&#39;</span><span class="p">}</span>
+    <span class="n">map_dimensions</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;is_series&#39;</span><span class="p">:</span>   <span class="s1">&#39;is_sequence&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;nav_ndim&#39;</span><span class="p">:</span>    <span class="s1">&#39;collection_dimension_count&#39;</span><span class="p">,</span> <span class="c1">#I do not think this includes time. A (t,x,y,E) set has nav=2. is_scan might not be necessary.</span>
+                <span class="s1">&#39;sig_ndim&#39;</span><span class="p">:</span>    <span class="s1">&#39;datum_dimension_count&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;dimensions&#39;</span><span class="p">:</span>        <span class="p">[</span><span class="s1">&#39;spatial_calibrations&#39;</span><span class="p">,</span><span class="s1">&#39;dimensional_calibrations&#39;</span><span class="p">],</span>
+             <span class="p">}</span>
+
+    <span class="n">map_instrument</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;beam_energy&#39;</span><span class="p">:</span>   <span class="s1">&#39;metadata/instrument/high_tension&#39;</span><span class="p">,</span> <span class="c1">#in keV need to /1e3</span>
+                      <span class="p">}</span>
+    <span class="n">map_gun</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;beam_energy&#39;</span><span class="p">:</span>   <span class="s1">&#39;metadata/instrument/high_tension&#39;</span><span class="p">,</span> <span class="c1">#in keV need to /1e3</span>
+               <span class="p">}</span>
+    
+    <span class="n">map_C_gen</span>  <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;state_name&#39;</span><span class="p">:</span> <span class="s1">&#39;metadata/instrument/condenser_setting&#39;</span><span class="p">}</span>
+    <span class="n">map_C_eles</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;C1 ConstW&#39;</span><span class="p">:</span> <span class="s1">&#39;metadata/instrument/ImageScanned/C1 ConstW&#39;</span><span class="p">}</span>
+    <span class="n">abb_C</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;10&#39;</span><span class="p">,</span> <span class="s1">&#39;12.a&#39;</span><span class="p">,</span> <span class="s1">&#39;12.b&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;21.a&#39;</span><span class="p">,</span> <span class="s1">&#39;21.b&#39;</span><span class="p">,</span> <span class="s1">&#39;23.a&#39;</span><span class="p">,</span><span class="s1">&#39;23.b&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;30&#39;</span><span class="p">,</span> <span class="s1">&#39;32.a&#39;</span><span class="p">,</span> <span class="s1">&#39;32.b&#39;</span><span class="p">,</span> <span class="s1">&#39;34.a&#39;</span><span class="p">,</span> <span class="s1">&#39;34.b&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;41.a&#39;</span><span class="p">,</span> <span class="s1">&#39;41.b&#39;</span><span class="p">,</span> <span class="s1">&#39;43.a&#39;</span><span class="p">,</span><span class="s1">&#39;43.b&#39;</span><span class="p">,</span> <span class="s1">&#39;45.a&#39;</span><span class="p">,</span><span class="s1">&#39;45.b&#39;</span><span class="p">,]</span>
+    <span class="n">map_C_abb</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;C</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;metadata/instrument/</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">/C</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ImageScanned&#39;</span><span class="p">,</span> <span class="s1">&#39;ImageRonchigram&#39;</span><span class="p">]]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">abb_C</span><span class="p">}</span>
+
+    <span class="n">map_detector</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:[</span><span class="s1">&#39;metadata/hardware_source/channel_name&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;metadata/hardware_source/hardware_source_name&#39;</span><span class="p">],</span> 
+                    <span class="s1">&#39;exposure&#39;</span><span class="p">:</span> <span class="s1">&#39;metadata/hardware_source/exposure&#39;</span><span class="p">,</span> 
+                    <span class="s1">&#39;readout_area&#39;</span><span class="p">:</span> <span class="p">[</span>
+                                    <span class="s1">&#39;metadata/hardware_source/camera_processing_parameters/readout_area&#39;</span><span class="p">,</span> 
+                                    <span class="c1">#&#39;metadata/hardware_source/sensor_readout_area_tlbr&#39;</span>
+                                    <span class="p">],</span> 
+                    <span class="s1">&#39;binning&#39;</span><span class="p">:</span> <span class="p">[</span>
+                                <span class="s1">&#39;metadata/hardware_source/binning&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;metadata/hardware_source/camera_processing_parameters/binning&#39;</span><span class="p">,</span> <span class="c1">#[t,l,b,r]#&#39;properties/binning&#39;</span>
+                                <span class="p">],</span>
+                    <span class="s1">&#39;flip_x&#39;</span><span class="p">:</span> <span class="s1">&#39;metadata/hardware_source/camera_processing_parameters/flip_l_r&#39;</span><span class="p">}</span>
+    <span class="n">map_stage</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span>       <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;metadata/instrument/</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">/StageOutX&#39;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ImageScanned&#39;</span><span class="p">,</span> <span class="s1">&#39;ImageRonchigram&#39;</span><span class="p">]],</span> 
+                 <span class="s1">&#39;y&#39;</span><span class="p">:</span>       <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;metadata/instrument/</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">/StageOutY&#39;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ImageScanned&#39;</span><span class="p">,</span> <span class="s1">&#39;ImageRonchigram&#39;</span><span class="p">]],</span> 
+                 <span class="s1">&#39;z&#39;</span><span class="p">:</span>       <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;metadata/instrument/</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">/StageOutZ&#39;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ImageScanned&#39;</span><span class="p">,</span> <span class="s1">&#39;ImageRonchigram&#39;</span><span class="p">]],</span> 
+                 <span class="s1">&#39;alpha&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;metadata/instrument/</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">/StageOutA&#39;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ImageScanned&#39;</span><span class="p">,</span> <span class="s1">&#39;ImageRonchigram&#39;</span><span class="p">]],</span> 
+                 <span class="s1">&#39;beta&#39;</span><span class="p">:</span>    <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;metadata/instrument/</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">/StageOutB&#39;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ImageScanned&#39;</span><span class="p">,</span> <span class="s1">&#39;ImageRonchigram&#39;</span><span class="p">]],</span> <span class="p">}</span>
+    <span class="n">map_scan</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;scan_rotation&#39;</span><span class="p">:</span> <span class="s1">&#39;metadata/scan/rotation_deg&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;scan_uuid&#39;</span><span class="p">:</span> <span class="s1">&#39;metadata/scan/scan_id&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;dwell_time&#39;</span><span class="p">:</span> <span class="s1">&#39;metadata/scan/scan_device_parameters/pixel_time_us&#39;</span><span class="p">,</span>
+                 <span class="p">}</span>
+
+    <span class="n">map_spectrometer_gen</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;state_name&#39;</span><span class="p">:</span> <span class="s1">&#39;metadata/instrument/ImageScanned/S_EELS&#39;</span><span class="p">}</span>
+    
+    <span class="n">maps</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;General&#39;</span><span class="p">:</span> <span class="n">map_general</span><span class="p">,</span>
+            <span class="s1">&#39;Instrument&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;_&#39;</span><span class="p">:</span> <span class="n">map_instrument</span><span class="p">,</span>
+                           <span class="s1">&#39;Gun&#39;</span><span class="p">:</span> <span class="n">map_gun</span><span class="p">,</span>
+                           <span class="s1">&#39;Condensers&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;_&#39;</span><span class="p">:</span><span class="n">map_C_gen</span><span class="p">,</span>
+                                          <span class="s1">&#39;Aberrations&#39;</span><span class="p">:</span><span class="n">map_C_abb</span><span class="p">,</span>
+                                          <span class="s1">&#39;Elements&#39;</span><span class="p">:</span> <span class="n">map_C_eles</span>
+                                          <span class="p">},</span>
+                           <span class="s1">&#39;Detectors&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;Detector&quot;</span><span class="p">:</span><span class="n">map_detector</span><span class="p">},</span>
+                           <span class="s1">&#39;Stage&#39;</span><span class="p">:</span> <span class="n">map_stage</span><span class="p">,</span>
+                           <span class="s2">&quot;Scan&quot;</span><span class="p">:</span> <span class="n">map_scan</span><span class="p">},</span>
+            <span class="s1">&#39;Dimensions&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;_&#39;</span><span class="p">:</span><span class="n">map_dimensions</span><span class="p">},</span>
+             <span class="p">}</span>
+    
+    <span class="n">is_scan</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">swift_metadata</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="s1">&#39;scan&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_scan</span><span class="p">:</span> <span class="n">maps</span><span class="p">[</span><span class="s1">&#39;Instrument&#39;</span><span class="p">][</span><span class="s1">&#39;Scan&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">map_scan</span>
+    <span class="k">if</span> <span class="n">read_aberrations</span><span class="p">:</span> <span class="n">maps</span><span class="p">[</span><span class="s1">&#39;Instrument&#39;</span><span class="p">][</span><span class="s1">&#39;Aberrations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">map_C_abb</span> <span class="c1">#TODO: Need to conver these from ab to complex</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">recurse_maps</span><span class="p">(</span><span class="n">d</span><span class="p">:</span><span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">meta_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;_&#39;</span><span class="p">:</span>
+                    <span class="n">sub_map</span> <span class="o">=</span> <span class="n">recurse_maps</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                    <span class="n">meta_map</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sub_map</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">v_out</span> <span class="o">=</span> <span class="n">recurse_maps</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;_&#39;</span><span class="p">:</span>
+                    <span class="n">sub_map</span> <span class="o">=</span> <span class="n">recurse_sub_maps</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="p">)</span>
+                    <span class="n">meta_map</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sub_map</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">v_out</span> <span class="o">=</span> <span class="n">recurse_sub_maps</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="n">meta_map</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_out</span>
+
+        <span class="k">return</span> <span class="n">meta_map</span><span class="c1">#, dimensions</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">recurse_sub_maps</span><span class="p">(</span><span class="n">k</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span><span class="n">List</span><span class="o">|</span><span class="nb">str</span><span class="o">|</span><span class="n">Metadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loops through an end level map to parse strings and get values.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k : str</span>
+<span class="sd">            Key of the sub map.</span>
+<span class="sd">        v : Any</span>
+<span class="sd">            Object being parsed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Any</span>
+<span class="sd">            _description_</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span> <span class="n">v</span><span class="o">=</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
+            <span class="n">v_out</span> <span class="o">=</span> <span class="n">swift_metadata</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">):</span> <span class="n">v_out</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v_out</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span><span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v_out</span><span class="p">,</span> <span class="n">Metadata</span><span class="p">):</span>
+                <span class="n">v_out</span> <span class="o">=</span> <span class="n">v_out</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="s1">&#39;spatial_calibrations&#39;</span><span class="p">:</span> <span class="n">v_out</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;dimension_</span><span class="si">{</span><span class="n">k2</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">v2</span> <span class="k">for</span> <span class="n">k2</span><span class="p">,</span> <span class="n">v2</span> <span class="ow">in</span> <span class="n">v_out</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="k">if</span> <span class="n">v_out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="k">break</span>
+            <span class="c1">#return v_out</span>
+        <span class="k">if</span> <span class="n">v_out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="k">return</span> <span class="n">v_out</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">print_missed</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Could not find </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> key in </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">. Setting to None.&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="c1">#if not v_out: return None</span>
+            <span class="c1"># except:</span>
+            <span class="c1">#     if print_missed: print(f&#39;Could not find {i} key in {k}. Setting to None.&#39;)</span>
+            <span class="c1">#     return None</span>
+
+    <span class="n">meta</span> <span class="o">=</span> <span class="n">recurse_maps</span><span class="p">(</span><span class="n">maps</span><span class="p">)</span>
+    <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;Dimensions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;is_scan&#39;</span><span class="p">:</span> <span class="n">is_scan</span><span class="p">,</span> <span class="o">**</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;Dimensions&#39;</span><span class="p">]}</span>
+    <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;General&#39;</span><span class="p">][</span><span class="s1">&#39;signal_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">signal_type</span> <span class="c1"># Note that we do not infer the signal type because this should be a restructure of the swift metadata just restructured.</span>
+    <span class="n">det_name</span> <span class="o">=</span> <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;Instrument&#39;</span><span class="p">][</span><span class="s1">&#39;Detectors&#39;</span><span class="p">][</span><span class="s1">&#39;Detector&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">det_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">det_name</span> <span class="o">=</span> <span class="s1">&#39;Unknown&#39;</span>
+    <span class="k">else</span><span class="p">:</span> <span class="n">det_name</span> <span class="o">=</span> <span class="n">det_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+    <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;Instrument&#39;</span><span class="p">][</span><span class="s1">&#39;Detectors&#39;</span><span class="p">][</span><span class="n">det_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;Instrument&#39;</span><span class="p">][</span><span class="s1">&#39;Detectors&#39;</span><span class="p">][</span><span class="s1">&#39;Detector&#39;</span><span class="p">]</span>
+    <span class="k">del</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;Instrument&#39;</span><span class="p">][</span><span class="s1">&#39;Detectors&#39;</span><span class="p">][</span><span class="s1">&#39;Detector&#39;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">file_directory</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">file_extension</span> <span class="o">=</span> <span class="n">parse_file_path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">meta_file</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;orignal_file_path&#39;</span><span class="p">:</span>      <span class="n">file_path</span><span class="o">+</span><span class="n">file_extension</span><span class="p">,</span>
+                     <span class="s1">&#39;orignal_file_directory&#39;</span><span class="p">:</span> <span class="n">file_directory</span><span class="p">,</span>
+                     <span class="s1">&#39;orignal_file_name&#39;</span><span class="p">:</span>      <span class="n">file_name</span><span class="p">,</span>
+                     <span class="s1">&#39;orignal_file_extension&#39;</span><span class="p">:</span> <span class="n">file_extension</span><span class="p">}</span>
+        <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;General&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">meta_file</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Metadata</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span></div>
+
+
+    <span class="c1">#TODO: convert mapped values to complex as below.</span>
+    <span class="c1">### Snipet from old funciton. </span>
+    <span class="c1">#def read_abberations(self):</span>
+    <span class="c1">#     if self.meta[&#39;metadata&#39;][&#39;instrument&#39;].get(&#39;ImageScanned&#39;) is None:</span>
+    <span class="c1">#         return None</span>
+    <span class="c1">#     aber = {k:v for k,v in self.meta[&#39;metadata&#39;][&#39;instrument&#39;][&#39;ImageScanned&#39;].items() if k[0]==&#39;C&#39; and k[1:3].isdigit()}</span>
+    <span class="c1">#     aber_c = {}</span>
+    <span class="c1">#     #mags = {}</span>
+    <span class="c1">#     #angs = {}</span>
+    <span class="c1">#     for k,v in aber.items():</span>
+    <span class="c1">#         ab = k[:3]</span>
+    <span class="c1">#         if k[0]==&#39;C&#39; and k[-1]!=&#39;b&#39;:</span>
+    <span class="c1">#             if k[-1] == &#39;a&#39;:</span>
+    <span class="c1">#                 aber_c[ab] = aber[ab+&#39;.a&#39;]+1j*aber[ab+&#39;.b&#39;]</span>
+    <span class="c1">#             else:</span>
+    <span class="c1">#                 aber_c[ab] = v</span>
+    <span class="c1">#    return #aber_c</span>
+
+<div class="viewcode-block" id="infer_dimensions">
+<a class="viewcode-back" href="../../../api_reference.html#pySEA.sea_eco.io.infer_dimensions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">infer_dimensions</span><span class="p">(</span><span class="n">dimensions_meta</span><span class="p">:</span><span class="n">Metadata</span><span class="o">|</span><span class="n">Dict</span><span class="p">,</span> <span class="n">data_shape</span><span class="p">:</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">signal_type</span><span class="p">:</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;2D-EELS&#39;</span><span class="p">,</span><span class="s1">&#39;1D-EELS&#39;</span><span class="p">,</span><span class="s1">&#39;Diffraction&#39;</span><span class="p">,</span><span class="s1">&#39;Image&#39;</span><span class="p">]</span><span class="o">|</span><span class="kc">None</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">small_angle</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="o">|</span><span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dimensions_meta</span><span class="p">,</span> <span class="n">Metadata</span><span class="p">):</span> <span class="n">dimensions_meta</span> <span class="o">=</span> <span class="n">dimensions_meta</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">small_angle</span><span class="p">:</span> <span class="n">s_pre</span> <span class="o">=</span> <span class="s1">&#39;q&#39;</span>
+    <span class="k">else</span><span class="p">:</span> <span class="n">s_pre</span> <span class="o">=</span> <span class="s1">&#39;θ&#39;</span>
+    
+    <span class="n">dimensions</span> <span class="o">=</span> <span class="n">dimensions_meta</span><span class="p">[</span><span class="s1">&#39;dimensions&#39;</span><span class="p">]</span>    <span class="c1">#[meta[f&#39;dimension_{i}&#39;] for i in range(ndim)]</span>
+    <span class="n">ndim</span> <span class="o">=</span> <span class="n">dimensions_meta</span><span class="p">[</span><span class="s1">&#39;nav_ndim&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">dimensions_meta</span><span class="p">[</span><span class="s1">&#39;sig_ndim&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">dimensions_meta</span><span class="p">[</span><span class="s1">&#39;is_series&#39;</span><span class="p">]:</span>
+        <span class="n">ndim</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;frame&#39;</span>
+    
+
+    <span class="c1"># Infer dimensions space</span>
+    <span class="n">pos_dimensions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">scat_dimensions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dimensions</span><span class="p">):</span>
+        <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_shape</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;um&#39;</span><span class="p">,</span><span class="s1">&#39;nm&#39;</span><span class="p">,</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="s1">&#39;pm&#39;</span><span class="p">):</span>
+            <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;position&#39;</span>
+            <span class="n">pos_dimensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;rad&#39;</span><span class="p">:</span> 
+            <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;scattering&#39;</span>
+            <span class="n">scat_dimensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;eV&#39;</span><span class="p">:</span>
+            <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;spectral&#39;</span>
+        <span class="k">elif</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;frame&#39;</span><span class="p">:</span>
+            <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;temporal&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="c1"># Name dimensions</span>
+    <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">dimensions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ax</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;position&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos_dimensions</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;x&#39;</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos_dimensions</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;yx&#39;</span><span class="p">[</span><span class="n">pos_dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ax</span><span class="p">))]</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos_dimensions</span><span class="p">)</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;zyx&#39;</span><span class="p">[</span><span class="n">pos_dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ax</span><span class="p">))]</span>
+            <span class="k">else</span><span class="p">:</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;pos</span><span class="si">{</span><span class="n">pos_dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ax</span><span class="p">))</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">elif</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;scattering&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">scat_dimensions</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_pre</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">scat_dimensions</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_pre</span><span class="o">+</span><span class="s1">&#39;yx&#39;</span><span class="p">[</span><span class="n">scat_dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ax</span><span class="p">))]</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">scat_dimensions</span><span class="p">)</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_pre</span><span class="o">+</span><span class="s1">&#39;zyx&#39;</span><span class="p">[</span><span class="n">scat_dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ax</span><span class="p">))]</span>
+            <span class="k">else</span><span class="p">:</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;scat</span><span class="si">{</span><span class="n">scat_dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ax</span><span class="p">))</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">elif</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;spectral&#39;</span><span class="p">:</span>
+            <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;E&#39;</span>
+        <span class="k">elif</span> <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;temporal&#39;</span><span class="p">:</span>
+            <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;t&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;dimension_</span><span class="si">{</span><span class="n">dimensions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    
+    <span class="c1"># Infer signal type if not provided</span>
+    <span class="k">if</span> <span class="n">signal_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dimensions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;spectral&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dimensions_meta</span><span class="p">[</span><span class="s1">&#39;sig_ndim&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+                <span class="n">signal_type</span> <span class="o">=</span> <span class="s1">&#39;2D-EELS&#39;</span>
+            <span class="k">elif</span> <span class="n">dimensions_meta</span><span class="p">[</span><span class="s1">&#39;sig_ndim&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">signal_type</span> <span class="o">=</span> <span class="s1">&#39;1D-EELS&#39;</span>
+        <span class="k">elif</span> <span class="n">dimensions_meta</span><span class="p">[</span><span class="s1">&#39;sig_ndim&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">2</span> <span class="ow">and</span> <span class="n">dimensions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;scattering&#39;</span> <span class="ow">and</span> <span class="n">dimensions</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;scattering&#39;</span><span class="p">:</span>
+            <span class="n">signal_type</span> <span class="o">==</span> <span class="s1">&#39;Diffraction&#39;</span>
+        <span class="k">elif</span> <span class="n">dimensions_meta</span><span class="p">[</span><span class="s1">&#39;sig_ndim&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">2</span> <span class="ow">and</span> <span class="n">dimensions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;position&#39;</span> <span class="ow">and</span> <span class="n">dimensions</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;position&#39;</span><span class="p">:</span>
+            <span class="n">signal_type</span> <span class="o">==</span> <span class="s1">&#39;Image&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Warning</span><span class="p">(</span><span class="s1">&#39;Signal_type was provided but not recognized. The signal will be set as provided, but no signal dimension inference is provided.&#39;</span><span class="p">)</span>
+    
+
+    <span class="c1"># Force dimensions based upon signal type</span>
+    <span class="k">if</span> <span class="n">signal_type</span><span class="o">==</span><span class="s1">&#39;2D-EELS&#39;</span><span class="p">:</span>
+        <span class="n">dimensions</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_pre</span><span class="o">+</span><span class="sa">r</span><span class="s1">&#39;∥&#39;</span>
+        <span class="n">dimensions</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;px&#39;</span>
+        <span class="n">dimensions</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;space&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;scattering&#39;</span>
+    <span class="c1"># else:</span>
+    <span class="c1">#     print(f&#39;No signal inference is provided for signal_type of {signal_type}&#39;)</span>
+    
+    <span class="k">return</span> <span class="n">signal_type</span></div>
+
+
+<div class="viewcode-block" id="load_swift_to_sea">
+<a class="viewcode-back" href="../../../api_reference.html#pySEA.sea_eco.io.load_swift_to_sea">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_swift_to_sea</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span>
+                       <span class="n">signal_type</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lazy</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="c1"># name:str=None,</span>
+                       <span class="n">print_missed</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">read_aberrations</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+    <span class="n">swift_meta</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">collect_swift_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="c1">#TODO: Only collect json</span>
+
+    <span class="n">swift_meta</span> <span class="o">=</span> <span class="n">Metadata</span><span class="p">(</span><span class="n">swift_meta</span><span class="p">)</span>
+
+    <span class="n">meta</span> <span class="o">=</span> <span class="n">swift_to_sea_metadata</span><span class="p">(</span><span class="n">swift_meta</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(),</span> <span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">,</span>
+                                 <span class="n">signal_type</span><span class="o">=</span><span class="n">signal_type</span><span class="p">,</span> <span class="n">print_missed</span><span class="o">=</span><span class="n">print_missed</span><span class="p">,</span> <span class="n">read_aberrations</span><span class="o">=</span><span class="n">read_aberrations</span><span class="p">)</span>
+    <span class="n">signal_type</span> <span class="o">=</span> <span class="n">infer_dimensions</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">Dimensions</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">signal_type</span><span class="o">=</span><span class="n">signal_type</span><span class="p">)</span>
+
+    <span class="n">nav_dimensions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="n">meta</span><span class="o">.</span><span class="n">Dimensions</span><span class="o">.</span><span class="n">nav_ndim</span><span class="o">-</span><span class="n">meta</span><span class="o">.</span><span class="n">Dimensions</span><span class="o">.</span><span class="n">sig_ndim</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="n">meta</span><span class="o">.</span><span class="n">Dimensions</span><span class="o">.</span><span class="n">sig_ndim</span><span class="p">))</span> <span class="k">if</span> <span class="n">meta</span><span class="o">.</span><span class="n">Dimensions</span><span class="o">.</span><span class="n">nav_ndim</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">sig_dimensions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="n">meta</span><span class="o">.</span><span class="n">Dimensions</span><span class="o">.</span><span class="n">sig_ndim</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span>
+    <span class="n">dimensions</span> <span class="o">=</span> <span class="n">Dimensions</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">Dimensions</span><span class="o">.</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">nav_dimensions</span><span class="o">=</span><span class="n">nav_dimensions</span><span class="p">,</span> <span class="n">sig_dimensions</span><span class="o">=</span><span class="n">sig_dimensions</span><span class="p">)</span>
+    <span class="k">del</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">Dimensions</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">lazy</span><span class="p">:</span> <span class="ne">Warning</span><span class="p">(</span><span class="s1">&#39;Lazy implementation needs introduced.&#39;</span><span class="p">)</span>
+    <span class="c1">#mmap = &#39;c&#39; if kwargs.get(&#39;lazy&#39;) else None</span>
+    <span class="c1">#data = np.load(file_path+&#39;.npy&#39;, mmap_mode=mmap)</span>
+
+    <span class="n">signal</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span> <span class="n">dimensions</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">General</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">uuid</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">General</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span>
+                    <span class="n">signal_type</span><span class="o">=</span><span class="n">signal_type</span><span class="p">,</span>
+                    <span class="n">original_metadata</span><span class="o">=</span><span class="n">swift_meta</span><span class="p">)</span>
+    <span class="k">del</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">General</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
+    <span class="k">del</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">General</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
+    <span class="k">del</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">General</span><span class="o">.</span><span class="n">signal_type</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">signal</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_and_convert_numpy</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert numpy scalars/arrays to native Python containers.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_check_and_convert_numpy</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">_check_and_convert_numpy</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">tolist</span><span class="p">()]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="n">converted</span> <span class="o">=</span> <span class="p">[</span><span class="n">_check_and_convert_numpy</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)(</span><span class="n">converted</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span>
+
+
+<div class="viewcode-block" id="safe_decode">
+<a class="viewcode-back" href="../../../api_reference.html#pySEA.sea_eco.io.safe_decode">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">safe_decode</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Safely decode bytes and numpy values to native Python objects.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">UnicodeDecodeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">value</span>
+    <span class="k">return</span> <span class="n">_check_and_convert_numpy</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load">
+<a class="viewcode-back" href="../../../api_reference.html#pySEA.sea_eco.io.load">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SEASerializable</span><span class="p">:</span>
+    <span class="n">file_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">file_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s1">&#39;.sea&#39;</span> <span class="ow">or</span> <span class="n">file_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_path</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;.sea&#39;</span>
+        <span class="n">file</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">!=</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The hdf5 file contains multiple groups so can not be loaded directly. Consider using `from_hdf5_group` instead to append to the current class.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">main_group</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;sea_type&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">main_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not locate an SEA group matching this object.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sea_type</span> <span class="o">=</span> <span class="n">safe_decode</span><span class="p">(</span><span class="n">main_group</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sea_type&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sea_type</span><span class="p">)()</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">from_sea</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">obj</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, SEA-eco contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
