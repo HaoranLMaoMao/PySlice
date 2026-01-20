@@ -422,7 +422,7 @@ class Potential:
 
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
-        array = np.sum(np.absolute(self.array),axis=2).T # imshow convention: y,x. our convention: x,y
+        array = np.sum(np.absolute(self.array),axis=2).T[::-1,:] # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
         # Convert to CPU if on GPU/MPS device
         #if hasattr(array, 'cpu'):
         #    array = array.cpu()
