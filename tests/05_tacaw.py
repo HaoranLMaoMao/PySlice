@@ -55,6 +55,8 @@ tacaw = TACAWData(exitwaves)
 Z = tacaw.spectral_diffraction(30) ; print(Z.shape)
 tacaw.plot(Z**.1,"kx","ky",filename="outputs/figs/05_tacaw_30THz.png")
 
+tacaw.to_sea("05_tacaw.sea")
+
 #differ(Z[:,:]**.1,"outputs/tacaw-test.npy","TACAW SLICE")
 
 # OR THE DISPERSION:

@@ -271,6 +271,7 @@ class SEASerializable(ABC):
                 if deep: value = type(value)([v.to_dict(hidden=hidden, properties=properties, deep=deep) for v in value]) #keep the iterable type and loop it converting each element to a dict\
                 result[key] = value
             else:
+                #print("TODICT",key,value)
                 result[key] = value
         return result
 
@@ -300,7 +301,11 @@ class SEASerializable(ABC):
         to_write = {**{k:v for k,v in to_write.items() if '_' not in str(k)},
                     **{k:v for k,v in to_write.items() if '_' in str(k)}}
         storage_name_counts: Dict[str, int] = {}
+        #print("to_write",to_write)
         for key, val in to_write.items():
+            print("name",name,"key",key,"val",val,"type",type(val))
+            if key in ["probe","cache_dir"]:
+                continue
             if not hasattr(self, key):
                 continue
             storage_key = key[1:] if key.startswith('_') else key
