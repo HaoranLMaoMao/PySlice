@@ -5,8 +5,8 @@ import numpy as np
 from typing import Optional, Tuple, Dict, Any, List, Union
 from pathlib import Path
 import logging, os
-from .wf_data import WFData
-from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from .wf_data import WFData, Signal, Dimensions, Dimension, GeneralMetadata
+#from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 from pyslice.backend import to_cpu,fft,fftshift,mean
 from tqdm import tqdm
 
@@ -35,7 +35,7 @@ except ImportError:
     float_dtype = np.float64
 
 
-class TACAWData(Signal):
+class TACAWData():
     """
     Data structure for storing TACAW EELS results with format: probe_positions, frequency, kx, ky.
 
@@ -101,44 +101,54 @@ class TACAWData(Signal):
         kxs_arr = to_numpy(self._kxs)
         kys_arr = to_numpy(self._kys)
 
-        dimensions = Dimensions([
-            Dimension(name='probe', space='position',
-                     values=np.arange(len(self.probe_positions))),
-            Dimension(name='frequency', space='spectral', units='THz',
-                     values=freq_arr),
-            Dimension(name='kx', space='scattering', units='Å⁻¹',
-                     values=kxs_arr),
-            Dimension(name='ky', space='scattering', units='Å⁻¹',
-                     values=kys_arr),
-        ], nav_dimensions=[0, 1], sig_dimensions=[2, 3])
+        if Dimensions is not None:
 
-        # Build metadata
-        metadata_dict = {
-            'General': {
-                'title': 'TACAW Intensity',
-                'signal_type': 'TACAW'
-            },
-            'Simulation': {
-                'voltage_eV': float(self.probe.eV),
-                'wavelength_A': float(self.probe.wavelength),
-                'aperture_mrad': float(self.probe.mrad),
-                'probe_positions': [list(p) for p in self.probe_positions],
+            dimensions = Dimensions([
+                Dimension(name='probe', space='position',
+                        values=np.arange(len(self.probe_positions))),
+                Dimension(name='frequency', space='spectral', units='THz',
+                        values=freq_arr),
+                Dimension(name='kx', space='scattering', units='Å⁻¹',
+                        values=kxs_arr),
+                Dimension(name='ky', space='scattering', units='Å⁻¹',
+                        values=kys_arr),
+            ], nav_dimensions=[0, 1], sig_dimensions=[2, 3])
+
+            # Build metadata
+            metadata_dict = {
+                'General': {
+                    'title': 'TACAW Intensity',
+                    'signal_type': 'TACAW'
+                },
+                'Simulation': {
+                    'voltage_eV': float(self.probe.eV),
+                    'wavelength_A': float(self.probe.wavelength),
+                    'aperture_mrad': float(self.probe.mrad),
+                    'probe_positions': [list(p) for p in self.probe_positions],
+                }
             }
-        }
-        metadata = GeneralMetadata(metadata_dict)
+            metadata = GeneralMetadata(metadata_dict)
 
-        # Initialize Signal base class (this will set self.data = None)
-        super().__init__(
-            data=None,
-            name='TACAWData',
-            dimensions=dimensions,
-            signal_type='2D-EELS',
-            metadata=metadata
-        )
+            # Initialize Signal base class (this will set self.data = None)
+            self.signal = Signal(
+                data=None,
+                name='TACAWData',
+                dimensions=dimensions,
+                signal_type='2D-EELS',
+                metadata=metadata
+            )
 
         # Restore computed values AFTER super().__init__
         self._array = computed_array
         self._frequencies = computed_frequencies
+
+    def to_sea(self,filename):
+        if Signal is not None:
+            self.signal.data = self.array
+            self.signal.to_sea(filename)
+        else:
+            print("ERROR: pySEA is not imported, this feature is unavailable")
+
 
     def __getattr__(self, name):
         """Auto-convert coordinate arrays from tensor to numpy on access."""

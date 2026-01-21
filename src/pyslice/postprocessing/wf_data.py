@@ -4,7 +4,16 @@ Wave function data structure.
 import numpy as np
 from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
-from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+import sys
+sys.path.insert(1,"../../")
+try:
+    from pySEA.sea_eco.architecture.base_structure_numpy import Signal, Dimensions, Dimension
+    from pySEA.sea_eco.architecture.base_structure_numpy import Metadata as GeneralMetadata
+    print("pySEA import successful")
+except Exception as e:
+    Signal, Dimensions, Dimension, GeneralMetadata = None, None, None, None
+    pass
+#from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 from pathlib import Path
 from ..backend import mean,ones,zeros
 
@@ -31,7 +40,7 @@ except ImportError:
     float_dtype = np.float64
 
 
-class WFData(Signal):
+class WFData():
     """
     Data structure for wave function data with format: probe_positions, frame, kx, ky, layer.
 
@@ -90,46 +99,51 @@ class WFData(Signal):
         kys_arr = to_numpy(kys)
         layer_arr = to_numpy(layer) if layer is not None else np.array([0])
 
-        dimensions = Dimensions([
-            Dimension(name='probe', space='position',
-                     values=np.arange(len(probe_positions))),
-            Dimension(name='time', space='temporal', units='ps',
-                     values=time_arr),
-            Dimension(name='kx', space='scattering', units='Å⁻¹',
-                     values=kxs_arr),
-            Dimension(name='ky', space='scattering', units='Å⁻¹',
-                     values=kys_arr),
-            Dimension(name='layer', space='position',
-                     values=layer_arr),
-        ], nav_dimensions=[0, 1], sig_dimensions=[2, 3, 4])
+        if Signal is not None:
+            dimensions = Dimensions([
+                Dimension(name='probe', space='position',
+                        values=np.arange(len(probe_positions))),
+                Dimension(name='time', space='temporal', units='ps',
+                        values=time_arr),
+                Dimension(name='kx', space='scattering', units='Å⁻¹',
+                        values=kxs_arr),
+                Dimension(name='ky', space='scattering', units='Å⁻¹',
+                        values=kys_arr),
+                Dimension(name='layer', space='position',
+                        values=layer_arr),
+            ], nav_dimensions=[0, 1], sig_dimensions=[2, 3, 4])
 
-        # Build metadata from simulation parameters
-        # Flatten probe_positions for HDF5 compatibility, store n_probes to reshape on load
-        pp_array = np.array(probe_positions).flatten().tolist()
-        metadata_dict = {
-            'General': {
-                'title': 'Multislice Wavefunction',
-                'signal_type': 'Wavefunction'
-            },
-            'Simulation': {
-                'voltage_eV': float(probe.eV),
-                'wavelength_A': float(probe.wavelength),
-                'aperture_mrad': float(probe.mrad),
-                'probe_positions': pp_array,
-                'n_probes': len(probe_positions),
+            # Build metadata from simulation parameters
+            # Flatten probe_positions for HDF5 compatibility, store n_probes to reshape on load
+            pp_array = np.array(probe_positions).flatten().tolist()
+            metadata_dict = {
+                'General': {
+                    'title': 'Multislice Wavefunction',
+                    'signal_type': 'Wavefunction'
+                },
+                'Simulation': {
+                    'voltage_eV': float(probe.eV),
+                    'wavelength_A': float(probe.wavelength),
+                    'aperture_mrad': float(probe.mrad),
+                    'probe_positions': pp_array,
+                    'n_probes': len(probe_positions),
+                }
             }
-        }
-        metadata = GeneralMetadata(metadata_dict)
+            metadata = GeneralMetadata(metadata_dict)
 
-        # Initialize Signal base class (must be called before setting _array
-        # because Signal.__init__ sets self.data which calls our setter)
-        super().__init__(
-            data=None,
-            name='WFData',
-            dimensions=dimensions,
-            signal_type='Diffraction',
-            metadata=metadata
-        )
+            # Initialize Signal base class (must be called before setting _array
+            # because Signal.__init__ sets self.data which calls our setter)
+            self.signal = Signal(
+                data=array,
+                name='WFData',
+                dimensions=dimensions,
+                signal_type='Diffraction',
+                metadata=metadata
+            )
+
+        def to_sea(self,filename):
+            self.signal.data = self.array
+            self.signal.to_sea(filename)
 
         # Store array AFTER super().__init__ to avoid being overwritten
         self._array = array

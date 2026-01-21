@@ -5,8 +5,8 @@ import numpy as np
 from typing import Optional, Tuple, Dict, Any, List, Union
 from pathlib import Path
 import logging
-from .wf_data import WFData
-from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from .wf_data import WFData, Signal, Dimensions, Dimension, GeneralMetadata
+#from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 from ..backend import zeros,to_cpu
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ except ImportError:
     float_dtype = np.float64
 
 
-class HAADFData(Signal):
+class HAADFData():
     """
     Data structure for HAADF (High Angle Annular Dark Field) imaging data.
 
@@ -71,35 +71,36 @@ class HAADFData(Signal):
         self._xs = wf_data.probe_xs
         self._ys = wf_data.probe_ys
 
-        # Build placeholder dimensions (will be updated after calculateADF)
-        dimensions = Dimensions([
-            Dimension(name='x', space='position', units='Å', values=np.array([0])),
-            Dimension(name='y', space='position', units='Å', values=np.array([0])),
-        ], nav_dimensions=[0, 1], sig_dimensions=[])
+        if Dimensions is not None:
+            # Build placeholder dimensions (will be updated after calculateADF)
+            dimensions = Dimensions([
+                Dimension(name='x', space='position', units='Å', values=np.array([0])),
+                Dimension(name='y', space='position', units='Å', values=np.array([0])),
+            ], nav_dimensions=[0, 1], sig_dimensions=[])
 
-        # Build metadata
-        metadata_dict = {
-            'General': {
-                'title': 'HAADF Image',
-                'signal_type': 'HAADF'
-            },
-            'Simulation': {
-                'voltage_eV': float(self.probe.eV),
-                'wavelength_A': float(self.probe.wavelength),
-                'aperture_mrad': float(self.probe.mrad),
-                'probe_positions': [list(p) for p in self.probe_positions],
+            # Build metadata
+            metadata_dict = {
+                'General': {
+                    'title': 'HAADF Image',
+                    'signal_type': 'HAADF'
+                },
+                'Simulation': {
+                    'voltage_eV': float(self.probe.eV),
+                    'wavelength_A': float(self.probe.wavelength),
+                    'aperture_mrad': float(self.probe.mrad),
+                    'probe_positions': [list(p) for p in self.probe_positions],
+                }
             }
-        }
-        metadata = GeneralMetadata(metadata_dict)
+            metadata = GeneralMetadata(metadata_dict)
 
-        # Initialize Signal base class
-        super().__init__(
-            data=None,  # We'll override the data property
-            name='HAADFData',
-            dimensions=dimensions,
-            signal_type='Image',
-            metadata=metadata
-        )
+            # Initialize Signal base class
+            self.signal = Signal(
+                data=None,  # We'll override the data property
+                name='HAADFData',
+                dimensions=dimensions,
+                signal_type='Image',
+                metadata=metadata
+            )
 
     @property
     def data(self):

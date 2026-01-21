@@ -1,28 +1,30 @@
-import os,sys
+import os,sys,shutil
 import matplotlib.pyplot as plt
 
-# Why as an os.system command? I want to ensure no imports remain
-if not os.path.exists("05_tacaw.sea"):
-    os.system("python3 05_tacaw.py")
-
-if not os.path.exists("sea-eco"):
+# ensure we have pySEA downloaded
+if not os.path.exists("../../pySEA"):
+    print("downloading pySEA from private github repo")
     u,k=open("/home/qwe/.gitp").readlines() # may need git username and git key for private repo
     u=u.strip() ; k=k.strip()
     os.system("git clone https://"+u+":"+k+"@github.com/sea-ecosystem/sea-eco")
+    shutil.move("sea-eco/src/pySEA","../../")
 
-sys.path.insert(1,"sea-eco/src")
+# make sure the import works before we try anything else....
+sys.path.insert(1,"../../")
 from pySEA.sea_eco.io import load
 from pySEA.sea_eco.architecture.base_structure_numpy import SEAFile
 
-#loaded = SEAFile()
-#loaded.from_sea('05_tacaw.sea')
-#loaded.show_tree()
+# run 05, which should conditionally save a .sea file if pySEA is found
+if not os.path.exists("05_tacaw.sea"):
+    print("sea file does not exist, runing 05_tacaw")
+    os.system("python3 05_tacaw.py")
 
+# attempt to reload and plot it
 loaded = load(file_path='05_tacaw.sea')
 loaded.show_tree()
 
 loaded.show(dims=('frequency','kx'))
 plt.show()
 
-loaded[:,30:35,:,:].show(dims=('kx','ky'))
+loaded.show(dims=('kx','ky'))
 plt.show()
