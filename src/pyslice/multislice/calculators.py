@@ -34,7 +34,7 @@ from .multislice import Probe,Propagate,create_batched_probes
 from .trajectory import Trajectory
 from ..postprocessing.wf_data import WFData
 from .sed import SED
-from ..backend import zeros,expand_dims
+from ..backend import zeros,expand_dims,to_cpu
 
 logger = logging.getLogger(__name__)
 
@@ -195,7 +195,30 @@ class MultisliceCalculator:
             self.complex_dtype = np.complex128
             self.float_dtype = np.float64
 
-        
+    def preview_probes(self):
+        positions = self.trajectory.positions[0]
+        atom_types = self.trajectory.atom_types
+        atom_type_names = []
+        for atom_type in atom_types:
+            if atom_type in self.element_map:
+                atom_type_names.append(self.element_map[atom_type])
+            else:
+                atom_type_names.append(atom_type)
+        potential = Potential(self.xs, self.ys, self.zs, positions, atom_type_names, kind="kirkland", device=self.device, slice_axis=self.slice_axis)
+        potential.build()
+        potential.flatten()
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots()
+        array = np.absolute(to_cpu(potential.array))[:,::-1,0].T # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
+        xs = to_cpu(potential.xs) ; ys = to_cpu(potential.ys)
+        extent = (np.amin(xs),np.amax(xs),np.amin(ys),np.amax(ys))
+        print(extent)
+        ax.imshow(array, cmap="inferno", extent=extent)
+        ax.set_xlabel("x ($\\AA$)") ; ax.set_ylabel("y ($\\AA$)")
+        pp = np.asarray(self.base_probe.probe_positions)
+        ax.scatter(pp[:,0],pp[:,1],c='r')
+        plt.show()
+
     def run(self) -> WFData:
 
 
