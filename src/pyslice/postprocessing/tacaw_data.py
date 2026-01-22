@@ -187,7 +187,7 @@ class TACAWData():
     @property
     def array(self):
         """Alias for intensity (backward compatibility with WFData interface)."""
-        return self._array
+        return to_cpu(self._array)
 
     def _fft_from_wf_data(self, layer_index: int = None):
         """
@@ -295,6 +295,7 @@ class TACAWData():
         Returns:
             Spectrum array (frequency intensity)
         """
+
         if probe_index is None:
             # Average over all probe positions
             all_spectra = []
@@ -437,7 +438,7 @@ class TACAWData():
 
         return spectral_diffraction
 
-    def masked_spectrum(self, mask: np.ndarray, probe_index: int = None) -> np.ndarray:
+    def masked_spectrum(self, mask: np.ndarray|dict|None = None, probe_index: int = None, preview=False) -> np.ndarray:
         """
         Extract spectrum with spatial masking in k-space.
 
@@ -451,38 +452,38 @@ class TACAWData():
         kxs = to_cpu(self.kxs)
         kys = to_cpu(self.kys)
 
-        if mask.shape != (len(kxs), len(kys)):
+        if mask is None:
+            mask = np.zeros((len(kxs),len(kys)))+1
+        elif isinstance(mask,dict):
+            cx,cy=mask.get("center",(0,0))
+            if mask["shape"] == "round":
+                r=mask["radius"]
+                radii = np.sqrt((kxs[:,None]-cx)**2+(kys[None,:]-cy)**2)
+                mask = np.zeros((len(kxs),len(kys)))
+                mask[radii<=r]=1
+
+        elif mask.shape != (len(kxs), len(kys)):
             raise ValueError(f"Mask shape {mask.shape} doesn't match k-space shape ({len(kxs)}, {len(kys)})")
 
         if probe_index is None:
-            # Average over all probe positions
-            all_masked_spectra = []
-            for i in range(len(self.probe_positions)):
-                probe_intensity = self._array[i]  # Shape: (frequency, kx, ky)
-                masked_intensity = probe_intensity * mask[None, :, :]  # Broadcast mask to all frequencies
-                masked_spectrum = xp.sum(masked_intensity, axis=(1, 2))  # Sum over masked k-space
-                all_masked_spectra.append(masked_spectrum)
-
-            # Average all masked spectra
-            if TORCH_AVAILABLE and hasattr(all_masked_spectra[0], 'cpu'):
-                all_masked_spectra = [ms.cpu().numpy() for ms in all_masked_spectra]
-            masked_spectrum = np.mean(all_masked_spectra, axis=0)
-        else:
-            if probe_index >= len(self.probe_positions):
-                raise ValueError(f"Probe index {probe_index} out of range")
-
-            # Extract intensity data for this probe
-            probe_intensity = self._array[probe_index]  # Shape: (frequency, kx, ky)
-
-            # Apply spatial mask in k-space
-            masked_intensity = probe_intensity * mask[None, :, :]  # Broadcast mask to all frequencies
-            masked_spectrum = xp.sum(masked_intensity, axis=(1, 2))  # Sum over masked k-space
-
-            # Convert to numpy if PyTorch tensor
-            if TORCH_AVAILABLE and hasattr(masked_spectrum, 'cpu'):
-                masked_spectrum = masked_spectrum.cpu().numpy()
-
-        return masked_spectrum
+            probe_index = np.arange(len(self.probe_positions))
+        elif isinstance(probe_index,int):
+            probe_index=[probe_index]
+        spectra = []
+        for i in probe_index:
+            masked = self._array[i] * mask[None,:,:]
+            if preview:
+                import matplotlib.pyplot as plt
+                fig, ax = plt.subplots()
+                extent = ( np.amin(kxs) , np.amax(kxs) , np.amin(kys) , np.amax(kys) )
+                ax.imshow(to_cpu(xp.sum(masked,axis=0).T)[::-1,:], cmap="inferno",extent=extent,aspect=1)
+                ax.set_xlabel("kx")
+                ax.set_ylabel("ky")
+                ax.set_title("masked_spectrum - preview")
+                plt.show()
+                preview=False
+            spectra.append(to_cpu(xp.sum(masked,axis=(1,2))))
+        return np.mean(spectra,axis=0)
 
     def dispersion(self, kx_path: np.ndarray, ky_path: np.ndarray, probe_index: int = None, space: str = "reciprocal") -> np.ndarray:
         """
