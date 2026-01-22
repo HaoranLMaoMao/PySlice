@@ -77,7 +77,7 @@ class TACAWData():
 
         # Store reference to source WFData array for FFT computation
         self._wf_array = wf_data._array
-        print("tacaw > wfdata",wf_data._array.shape)
+        #print("tacaw > wfdata",wf_data._array.shape)
 
         # Initialize intensity as None, will be set by fft_from_wf_data
         self._array = None
