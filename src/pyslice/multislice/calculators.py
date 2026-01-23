@@ -267,8 +267,12 @@ class MultisliceCalculator:
                 cache_exists,frame_data = checkCache(cache_file,self.cache_levels)
 
                 if not os.path.exists(self.output_dir / f"kx.npy"):
-                    np.save(self.output_dir / f"kx.npy",self.kxs_uncrop)
-                    np.save(self.output_dir / f"ky.npy",self.kys_uncrop)
+                    np.save(self.output_dir / f"kx.npy",self.kxs)
+                    np.save(self.output_dir / f"ky.npy",self.kys)
+                if len(self.kxs)!=len(self.kxs_uncrop) and not os.path.exists(self.output_dir / f"kx_uncrop.npy"):
+                    np.save(self.output_dir / f"kx_uncrop.npy",self.kxs)
+                if len(self.kys)!=len(self.kys_uncrop) and not os.path.exists(self.output_dir / f"ky_uncrop.npy"):
+                    np.save(self.output_dir / f"ky_uncrop.npy",self.kys)
 
                 if cache_exists:
                     frames_cached += 1
