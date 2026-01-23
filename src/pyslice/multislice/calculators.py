@@ -3,7 +3,7 @@ from pathlib import Path
 import logging
 from typing import Optional, Tuple, List
 from tqdm import tqdm
-import time
+import time,os
 import hashlib
 
 try:
@@ -165,14 +165,14 @@ class MultisliceCalculator:
         self.dx = xs[1]-xs[0] ; self.dy = ys[1]-ys[0] ; self.dy = ys[1]-ys[0]
 
         # calculate kxs kys here, so we can crop them, since we'll pre-allocate wavefunction_data below
-        self.kxs = xp.fft.fftshift(xp.fft.fftfreq(self.nx, self.sampling))  # k-space in 1/Å
-        self.kys = xp.fft.fftshift(xp.fft.fftfreq(self.ny, self.sampling))  # k-space in 1/Å
-        self.i1 = xp.argwhere(self.kxs >= -max_kx)[0][0]   # first element >=
-        self.i2 = xp.argwhere(self.kxs <= max_kx)[-1][0]+1 # last element <=, +1, so i1:i2 includes i2
-        self.j1 = xp.argwhere(self.kys >= -max_ky)[0][0]
-        self.j2 = xp.argwhere(self.kys <= max_ky)[-1][0]+1
-        self.kxs = self.kxs[self.i1:self.i2]
-        self.kys = self.kys[self.j1:self.j2]
+        self.kxs_uncrop = xp.fft.fftshift(xp.fft.fftfreq(self.nx, self.sampling))  # k-space in 1/Å
+        self.kys_uncrop = xp.fft.fftshift(xp.fft.fftfreq(self.ny, self.sampling))  # k-space in 1/Å
+        self.i1 = xp.argwhere(self.kxs_uncrop >= -max_kx)[0][0]   # first element >=
+        self.i2 = xp.argwhere(self.kxs_uncrop <= max_kx)[-1][0]+1 # last element <=, +1, so i1:i2 includes i2
+        self.j1 = xp.argwhere(self.kys_uncrop >= -max_ky)[0][0]
+        self.j2 = xp.argwhere(self.kys_uncrop <= max_ky)[-1][0]+1
+        self.kxs = self.kxs_uncrop[self.i1:self.i2]
+        self.kys = self.kys_uncrop[self.j1:self.j2]
         self.nx = self.i2 - self.i1 ; self.ny = self.j2 - self.j1 ; nx = self.nx ; ny = self.ny
 
         # Create probe on the correct device from the start
@@ -265,6 +265,10 @@ class MultisliceCalculator:
 
                 # frame_data should always be shaped: n_probes,nkx,nky,n_layers,1 (idk why there's a trailing 1)
                 cache_exists,frame_data = checkCache(cache_file,self.cache_levels)
+
+                if not os.path.exists(self.output_dir / f"kx.npy"):
+                    np.save(self.output_dir / f"kx.npy",self.kxs_uncrop)
+                    np.save(self.output_dir / f"ky.npy",self.kys_uncrop)
 
                 if cache_exists:
                     frames_cached += 1

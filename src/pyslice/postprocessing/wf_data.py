@@ -141,12 +141,15 @@ class WFData():
                 metadata=metadata
             )
 
-        def to_sea(self,filename):
-            self.signal.data = self.array
-            self.signal.to_sea(filename)
-
         # Store array AFTER super().__init__ to avoid being overwritten
         self._array = array
+
+    def to_sea(self,filename):
+        if Signal is not None:
+            self.signal.data = self.array
+            self.signal.to_sea(filename)
+        else:
+            print("ERROR: pySEA is not imported, this feature is unavailable")
 
     @property
     def data(self):

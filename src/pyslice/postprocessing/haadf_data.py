@@ -102,6 +102,13 @@ class HAADFData():
                 metadata=metadata
             )
 
+    def to_sea(self,filename):
+        if Signal is not None:
+            self.signal.data = self.array
+            self.signal.to_sea(filename)
+        else:
+            print("ERROR: pySEA is not imported, this feature is unavailable")
+
     @property
     def data(self):
         """Lazy conversion to numpy for Signal compatibility."""
@@ -207,15 +214,16 @@ class HAADFData():
         xs_np = to_numpy(self._xs)
         ys_np = to_numpy(self._ys)
 
-        self._local_dimensions = Dimensions([
-            Dimension(name='x', space='position', units='Å', values=xs_np),
-            Dimension(name='y', space='position', units='Å', values=ys_np),
-        ], nav_dimensions=[0, 1], sig_dimensions=[])
+        if Dimensions is not None:
+            self._local_dimensions = Dimensions([
+                Dimension(name='x', space='position', units='Å', values=xs_np),
+                Dimension(name='y', space='position', units='Å', values=ys_np),
+            ], nav_dimensions=[0, 1], sig_dimensions=[])
 
-        # Update metadata with detector settings
-        if hasattr(self.metadata, 'Simulation'):
-            self.metadata.Simulation.inner_mrad = inner_mrad
-            self.metadata.Simulation.outer_mrad = outer_mrad
+            # Update metadata with detector settings
+            if hasattr(self.signal.metadata, 'Simulation'):
+                self.signal.metadata.Simulation.inner_mrad = inner_mrad
+                self.signal.metadata.Simulation.outer_mrad = outer_mrad
 
         return self.data  # Return numpy array for backward compatibility
 

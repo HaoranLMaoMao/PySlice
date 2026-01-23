@@ -8,11 +8,17 @@ if not os.path.exists("../../pySEA"):
     u=u.strip() ; k=k.strip()
     os.system("git clone https://"+u+":"+k+"@github.com/sea-ecosystem/sea-eco")
     shutil.move("sea-eco/src/pySEA","../../")
+    shutil.rmtree("sea-eco")
 
 # make sure the import works before we try anything else....
 sys.path.insert(1,"../../")
 from pySEA.sea_eco.io import load
 from pySEA.sea_eco.architecture.base_structure_numpy import SEAFile
+
+# run 05, which should conditionally save a .sea file if pySEA is found
+if not os.path.exists("04_haadf.sea"):
+    print("sea file does not exist, runing 04_haadf")
+    os.system("python3 04_haadf.py")
 
 # run 05, which should conditionally save a .sea file if pySEA is found
 if not os.path.exists("05_tacaw.sea"):
@@ -27,4 +33,8 @@ loaded.show(dims=('frequency','kx'))
 plt.show()
 
 loaded.show(dims=('kx','ky'))
+plt.show()
+
+loaded = load(file_path='04_haadf.sea')
+loaded.show()
 plt.show()
