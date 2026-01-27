@@ -4,7 +4,13 @@ Wave function data structure.
 import numpy as np
 from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
-from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+try:
+    import sys
+    sys.path.insert(1,"../../")
+    from pySEA.sea_eco.architecture.base_structure_numpy import Signal, Dimensions, Dimension, Metadata
+except Exception as e:
+    Signal,Dimensions,Dimension,Metadata = None,None,None,None
+    print("failed to import pySEA:",e)
 from ..data.pyslice_serial import PySliceSerial
 from pathlib import Path
 from ..backend import mean,ones,zeros
@@ -129,27 +135,10 @@ class WFData(PySliceSerial, Signal):
                     'n_probes': len(probe_positions),
                 }
             }
-            metadata = GeneralMetadata(metadata_dict)
-
-            # Initialize Signal base class (must be called before setting _array
-            # because Signal.__init__ sets self.data which calls our setter)
-            self.signal = Signal(
-                data=array,
-                name='WFData',
-                dimensions=dimensions,
-                signal_type='Diffraction',
-                metadata=metadata
-            )
+            metadata = Metadata(metadata_dict)
 
         # Store array AFTER super().__init__ to avoid being overwritten
         self._array = array
-
-    def to_sea(self,filename):
-        if Signal is not None:
-            self.signal.data = self.array
-            self.signal.to_sea(filename)
-        else:
-            print("ERROR: pySEA is not imported, this feature is unavailable")
 
     @property
     def data(self):

@@ -39,6 +39,7 @@ exitwaves.plot(nuke_zerobeam=True,powerscaling=.125,filename="outputs/figs/05_ta
 
 tacaw = TACAWData(exitwaves)
 
+#tacaw.to_sea("05_tacaw.sea")
 # MANUAL PLOTTING
 #print(tacaw.frequencies, tacaw.frequencies[65])
 #intensity_data = tacaw.intensity[0,65,:,:]**.1

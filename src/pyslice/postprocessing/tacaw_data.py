@@ -5,8 +5,8 @@ import numpy as np
 from typing import Optional, Tuple, Dict, Any, List, Union
 from pathlib import Path
 import logging, os
-from .wf_data import WFData
-from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from .wf_data import WFData, Signal, Dimensions, Dimension, Metadata
+#from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 from ..data.pyslice_serial import PySliceSerial
 from pyslice.backend import to_cpu,fft,fftshift,mean
 from tqdm import tqdm
@@ -112,7 +112,7 @@ class TACAWData(PySliceSerial, Signal):
 
         if Dimensions is not None:
 
-            dimensions = Dimensions([
+            self.dimensions = Dimensions([
                 Dimension(name='probe', space='position',
                         values=np.arange(len(self.probe_positions))),
                 Dimension(name='frequency', space='spectral', units='THz',
@@ -136,28 +136,11 @@ class TACAWData(PySliceSerial, Signal):
                     'probe_positions': [list(p) for p in self.probe_positions],
                 }
             }
-            metadata = GeneralMetadata(metadata_dict)
-
-            # Initialize Signal base class (this will set self.data = None)
-            self.signal = Signal(
-                data=None,
-                name='TACAWData',
-                dimensions=dimensions,
-                signal_type='2D-EELS',
-                metadata=metadata
-            )
+            self.metadata = Metadata(metadata_dict)
 
         # Restore computed values AFTER super().__init__
         self._array = computed_array
         self._frequencies = computed_frequencies
-
-    def to_sea(self,filename):
-        if Signal is not None:
-            self.signal.data = self.array
-            self.signal.to_sea(filename)
-        else:
-            print("ERROR: pySEA is not imported, this feature is unavailable")
-
 
     def __getattr__(self, name):
         """Auto-convert coordinate arrays from tensor to numpy on access."""

@@ -5,8 +5,9 @@ import numpy as np
 from typing import Optional, Tuple, Dict, Any, List, Union
 from pathlib import Path
 import logging
-from .wf_data import WFData
-from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from .wf_data import WFData, Signal, Dimensions, Dimension, Metadata
+#from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from pyslice.backend import zeros,to_cpu
 from ..data.pyslice_serial import PySliceSerial
 
 logger = logging.getLogger(__name__)
@@ -81,7 +82,7 @@ class HAADFData(PySliceSerial, Signal):
 
         if Dimensions is not None:
             # Build placeholder dimensions (will be updated after calculateADF)
-            dimensions = Dimensions([
+            self.dimensions = Dimensions([
                 Dimension(name='x', space='position', units='Å', values=np.array([0])),
                 Dimension(name='y', space='position', units='Å', values=np.array([0])),
             ], nav_dimensions=[0, 1], sig_dimensions=[])
@@ -99,23 +100,7 @@ class HAADFData(PySliceSerial, Signal):
                     'probe_positions': [list(p) for p in self.probe_positions],
                 }
             }
-            metadata = GeneralMetadata(metadata_dict)
-
-            # Initialize Signal base class
-            self.signal = Signal(
-                data=None,  # We'll override the data property
-                name='HAADFData',
-                dimensions=dimensions,
-                signal_type='Image',
-                metadata=metadata
-            )
-
-    def to_sea(self,filename):
-        if Signal is not None:
-            self.signal.data = self.array
-            self.signal.to_sea(filename)
-        else:
-            print("ERROR: pySEA is not imported, this feature is unavailable")
+            self.metadata = Metadata(metadata_dict)
 
     @property
     def data(self):
@@ -229,9 +214,9 @@ class HAADFData(PySliceSerial, Signal):
             ], nav_dimensions=[0, 1], sig_dimensions=[])
 
             # Update metadata with detector settings
-            if hasattr(self.signal.metadata, 'Simulation'):
-                self.signal.metadata.Simulation.inner_mrad = inner_mrad
-                self.signal.metadata.Simulation.outer_mrad = outer_mrad
+            #if hasattr(self.signal.metadata, 'Simulation'):
+            self.metadata.Simulation.inner_mrad = inner_mrad
+            self.metadata.Simulation.outer_mrad = outer_mrad
 
         return self.data  # Return numpy array for backward compatibility
 
