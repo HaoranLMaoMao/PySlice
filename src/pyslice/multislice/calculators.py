@@ -175,6 +175,22 @@ class MultisliceCalculator:
         self.kys = self.kys_uncrop[self.j1:self.j2]
         self.nx = self.i2 - self.i1 ; self.ny = self.j2 - self.j1 ; nx = self.nx ; ny = self.ny
 
+        # Preferred to pass probe_xs and probe_ys from which we will define a grid
+        if self.probe_xs is not None and self.probe_ys is not None:
+            x,y = np.meshgrid(self.probe_xs,self.probe_ys,indexing='ij')
+            self.probe_positions = np.asarray(list(zip(x.flat,y.flat)))
+
+        # If probe_positions provided but not probe_xs/probe_ys, derive them
+        elif self.probe_positions is not None:
+            positions = np.asarray(self.probe_positions)
+            self.probe_xs = sorted(list(set(positions[:, 0])))
+            self.probe_ys = sorted(list(set(positions[:, 1])))
+
+        # Set up default probe position if not provided
+        if self.probe_positions is None:
+            self.probe_positions = [(lx/2, ly/2)]  # Center probe
+            self.probe_xs = [lx/2] ; self.probe_ys = [ly/2]
+
         # Create probe on the correct device from the start
         self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions)
         self.base_probe.applyShifts()
@@ -372,7 +388,7 @@ class MultisliceCalculator:
         # Handle cleanup
         if self.cleanup_temp_files:
             logger.info("Cleaning up cache files...")
-            for frame_idx in range(n_frames):
+            for frame_idx in range(self.n_frames):
                 cache_file = self.output_dir / f"frame_{frame_idx}.npy"
                 if cache_file.exists():
                     cache_file.unlink()

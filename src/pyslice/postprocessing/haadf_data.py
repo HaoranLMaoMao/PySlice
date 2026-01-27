@@ -5,9 +5,9 @@ import numpy as np
 from typing import Optional, Tuple, Dict, Any, List, Union
 from pathlib import Path
 import logging
-from .wf_data import WFData, Signal, Dimensions, Dimension, GeneralMetadata
-#from ..data import Signal, Dimensions, Dimension, GeneralMetadata
-from ..backend import zeros,to_cpu
+from .wf_data import WFData
+from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from ..data.pyslice_serial import PySliceSerial
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ except ImportError:
     float_dtype = np.float64
 
 
-class HAADFData():
+class HAADFData(PySliceSerial, Signal):
     """
     Data structure for HAADF (High Angle Annular Dark Field) imaging data.
 
@@ -48,6 +48,14 @@ class HAADFData():
         probe: Probe object with beam parameters.
         cache_dir: Path to cache directory.
     """
+
+    _sea_config = {
+        'tensor_attrs': ['_kxs', '_kys', '_xs', '_ys', '_array'],
+        'path_attrs': ['cache_dir'],
+        'tuple_list_attrs': ['probe_positions'],
+        'exclude_attrs': ['probe', '_wf_array'],
+        'force_datasets': ['_array', 'probe_positions', '_kxs', '_kys', '_xs', '_ys'],
+    }
 
     def __init__(self, wf_data: WFData) -> None:
         """

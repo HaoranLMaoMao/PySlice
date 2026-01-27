@@ -478,6 +478,143 @@ def test_haadf_is_signal():
     return haadf
 
 
+def test_tacawdata_sea_roundtrip(tacaw):
+    """Test TACAWData .sea serialization round-trip using PySliceSerial mixin."""
+    print("\n--- Testing TACAWData .sea Round-trip (PySliceSerial) ---")
+
+    from pathlib import Path
+    from pyslice.postprocessing.tacaw_data import TACAWData
+    from pyslice.backend import to_cpu
+
+    # Store original values
+    original_array = to_cpu(tacaw._array)
+    original_freqs = to_cpu(tacaw.frequencies)
+    original_positions = list(tacaw.probe_positions)
+    original_cache_dir = tacaw.cache_dir
+
+    # Save using to_sea
+    output_path = 'outputs/test_tacaw_serial.sea'
+    tacaw.to_sea(output_path)
+    assert os.path.exists(output_path)
+    print(f"  Saved TACAWData to: {output_path}")
+
+    # Load using classmethod
+    loaded = TACAWData.load(output_path)
+    assert isinstance(loaded, TACAWData)
+    print("  Loaded TACAWData using TACAWData.load()")
+
+    # Verify data integrity
+    assert np.allclose(loaded._array, original_array), "Array data mismatch"
+    print("  PASSED: Array data matches")
+
+    assert np.allclose(loaded.frequencies, original_freqs), "Frequencies mismatch"
+    print("  PASSED: Frequencies match")
+
+    assert loaded.probe_positions == original_positions, "Probe positions mismatch"
+    assert isinstance(loaded.probe_positions, list), "Probe positions should be list"
+    assert isinstance(loaded.probe_positions[0], tuple), "Probe positions elements should be tuples"
+    print("  PASSED: Probe positions match (list of tuples)")
+
+    assert isinstance(loaded.cache_dir, Path), "cache_dir should be Path"
+    assert str(loaded.cache_dir) == str(original_cache_dir), "cache_dir mismatch"
+    print("  PASSED: cache_dir is Path and matches")
+
+    # Verify kxs, kys are restored
+    assert loaded._kxs is not None, "_kxs should be restored"
+    assert loaded._kys is not None, "_kys should be restored"
+    print("  PASSED: Coordinate arrays restored")
+
+    # Verify excluded attrs are None
+    assert loaded.probe is None, "probe should be None after load"
+    assert loaded._wf_array is None, "_wf_array should be None after load"
+    print("  PASSED: Excluded attrs are None")
+
+    print("  PASSED: TACAWData .sea round-trip complete")
+    return loaded
+
+
+def test_wfdata_sea_roundtrip(wf_data):
+    """Test WFData .sea serialization round-trip using PySliceSerial mixin."""
+    print("\n--- Testing WFData .sea Round-trip (PySliceSerial) ---")
+
+    from pathlib import Path
+    from pyslice.postprocessing.wf_data import WFData
+    from pyslice.backend import to_cpu
+
+    # Store original values
+    original_array = to_cpu(wf_data._array)
+    original_positions = list(wf_data.probe_positions)
+    original_kxs = to_cpu(wf_data.kxs)
+
+    # Save using to_sea
+    output_path = 'outputs/test_wf_serial.sea'
+    wf_data.to_sea(output_path)
+    assert os.path.exists(output_path)
+    print(f"  Saved WFData to: {output_path}")
+
+    # Load using classmethod
+    loaded = WFData.load(output_path)
+    assert isinstance(loaded, WFData)
+    print("  Loaded WFData using WFData.load()")
+
+    # Verify data integrity
+    assert np.allclose(loaded._array, original_array), "Array data mismatch"
+    print("  PASSED: Array data matches")
+
+    assert loaded.probe_positions == original_positions, "Probe positions mismatch"
+    assert isinstance(loaded.probe_positions, list), "Probe positions should be list"
+    print("  PASSED: Probe positions match")
+
+    assert np.allclose(loaded.kxs, original_kxs), "kxs mismatch"
+    print("  PASSED: Coordinate arrays match")
+
+    assert isinstance(loaded.cache_dir, Path), "cache_dir should be Path"
+    print("  PASSED: cache_dir is Path")
+
+    print("  PASSED: WFData .sea round-trip complete")
+    return loaded
+
+
+def test_haadfdata_sea_roundtrip(haadf):
+    """Test HAADFData .sea serialization round-trip using PySliceSerial mixin."""
+    print("\n--- Testing HAADFData .sea Round-trip (PySliceSerial) ---")
+
+    from pathlib import Path
+    from pyslice.postprocessing.haadf_data import HAADFData
+    from pyslice.backend import to_cpu
+
+    # Store original values
+    original_array = to_cpu(haadf._array)
+    original_positions = list(haadf.probe_positions)
+
+    # Save using to_sea
+    output_path = 'outputs/test_haadf_serial.sea'
+    haadf.to_sea(output_path)
+    assert os.path.exists(output_path)
+    print(f"  Saved HAADFData to: {output_path}")
+
+    # Load using classmethod
+    loaded = HAADFData.load(output_path)
+    assert isinstance(loaded, HAADFData)
+    print("  Loaded HAADFData using HAADFData.load()")
+
+    # Verify data integrity
+    assert np.allclose(loaded._array, original_array), "Array data mismatch"
+    print("  PASSED: Array data matches")
+
+    # HAADFData stores probe_positions as array, compare as arrays
+    loaded_positions = np.array(loaded.probe_positions) if isinstance(loaded.probe_positions, list) else loaded.probe_positions
+    original_positions_arr = np.array(original_positions)
+    assert np.allclose(loaded_positions, original_positions_arr), "Probe positions mismatch"
+    print("  PASSED: Probe positions match")
+
+    assert isinstance(loaded.cache_dir, Path), "cache_dir should be Path"
+    print("  PASSED: cache_dir is Path")
+
+    print("  PASSED: HAADFData .sea round-trip complete")
+    return loaded
+
+
 if __name__ == '__main__':
     # Run all tests
     print("=" * 60)
@@ -498,6 +635,13 @@ if __name__ == '__main__':
     wf_data = test_wfdata_is_signal()
     tacaw = test_tacawdata_is_signal(wf_data)
     haadf = test_haadf_is_signal()
+
+    print("\n" + "=" * 60)
+    print("PART 3: PySliceSerial Mixin Tests (.sea round-trips)")
+    print("=" * 60)
+    test_tacawdata_sea_roundtrip(tacaw)
+    test_wfdata_sea_roundtrip(wf_data)
+    test_haadfdata_sea_roundtrip(haadf)
 
     print("\n" + "=" * 60)
     print("All sea-eco integration tests PASSED!")

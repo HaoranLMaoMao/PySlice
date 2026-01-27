@@ -5,8 +5,9 @@ import numpy as np
 from typing import Optional, Tuple, Dict, Any, List, Union
 from pathlib import Path
 import logging, os
-from .wf_data import WFData, Signal, Dimensions, Dimension, GeneralMetadata
-#from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from .wf_data import WFData
+from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from ..data.pyslice_serial import PySliceSerial
 from pyslice.backend import to_cpu,fft,fftshift,mean
 from tqdm import tqdm
 
@@ -35,7 +36,7 @@ except ImportError:
     float_dtype = np.float64
 
 
-class TACAWData():
+class TACAWData(PySliceSerial, Signal):
     """
     Data structure for storing TACAW EELS results with format: probe_positions, frequency, kx, ky.
 
@@ -52,6 +53,14 @@ class TACAWData():
         probe: Probe object with beam parameters.
         cache_dir: Path to cache directory.
     """
+
+    _sea_config = {
+        'tensor_attrs': ['_kxs', '_kys', '_xs', '_ys', '_time', '_layer', '_frequencies', '_array'],
+        'path_attrs': ['cache_dir'],
+        'tuple_list_attrs': ['probe_positions'],
+        'exclude_attrs': ['probe', '_wf_array'],
+        'force_datasets': ['_array', 'probe_positions', '_kxs', '_kys', '_xs', '_ys', '_time', '_layer', '_frequencies'],
+    }
 
     def __init__(self, wf_data: WFData, layer_index: int = None, keep_complex: bool = False, chunkFFT: bool = False) -> None:
         """
@@ -277,6 +286,8 @@ class TACAWData():
         #    else:
         #        self._array = np.abs(wf_fft)**2
 
+        # Ensure cache directory exists (may have been cleaned up by calculator)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
         np.save(self.cache_dir / "tacaw_freq.npy", self._frequencies)
         np.save(self.cache_dir / "tacaw.npy", self._array.detach().cpu().numpy() if TORCH_AVAILABLE and hasattr(self._array, 'cpu') else self._array)
 
@@ -589,7 +600,6 @@ class TACAWData():
             plt.savefig(filename)
         else:
             plt.show()
-
 
 class SEDData(TACAWData):
     """

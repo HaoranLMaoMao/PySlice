@@ -4,16 +4,8 @@ Wave function data structure.
 import numpy as np
 from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
-import sys
-sys.path.insert(1,"../../")
-try:
-    from pySEA.sea_eco.architecture.base_structure_numpy import Signal, Dimensions, Dimension
-    from pySEA.sea_eco.architecture.base_structure_numpy import Metadata as GeneralMetadata
-    print("pySEA import successful")
-except Exception as e:
-    Signal, Dimensions, Dimension, GeneralMetadata = None, None, None, None
-    pass
-#from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from ..data.pyslice_serial import PySliceSerial
 from pathlib import Path
 from ..backend import mean,ones,zeros
 
@@ -40,7 +32,7 @@ except ImportError:
     float_dtype = np.float64
 
 
-class WFData():
+class WFData(PySliceSerial, Signal):
     """
     Data structure for wave function data with format: probe_positions, frame, kx, ky, layer.
 
@@ -58,6 +50,14 @@ class WFData():
         probe: Probe object with beam parameters.
         cache_dir: Path to cache directory.
     """
+
+    _sea_config = {
+        'tensor_attrs': ['_kxs', '_kys', '_xs', '_ys', '_time', '_layer', '_array'],
+        'path_attrs': ['cache_dir'],
+        'tuple_list_attrs': ['probe_positions'],
+        'exclude_attrs': ['probe'],
+        'force_datasets': ['_array', 'probe_positions', '_kxs', '_kys', '_xs', '_ys', '_time', '_layer'],
+    }
 
     def __init__(
         self,
@@ -192,54 +192,6 @@ class WFData():
                 return raw.cpu().numpy()
             return np.asarray(raw)
         raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
-
-    def to_hdf5_group(self, parent_group, force_datasets=['data'], name=None):
-        """Override to convert tensors to numpy and exclude non-serializable attrs."""
-        # Put numpy data directly in __dict__ for serialization
-        # (to_dict pulls from __dict__, not properties)
-        if hasattr(self._array, 'cpu'):
-            self.__dict__['data'] = self._array.cpu().numpy()
-        else:
-            self.__dict__['data'] = np.asarray(self._array)
-
-        # Temporarily remove non-serializable attributes (but keep _array for data property)
-        orig_probe = self.probe
-        orig_cache_dir = self.cache_dir
-        orig_probe_positions = self.probe_positions
-        orig_kxs = self._kxs
-        orig_kys = self._kys
-        orig_time = self._time
-        orig_xs = self._xs
-        orig_ys = self._ys
-        orig_layer = self._layer
-
-        del self.probe
-        del self.cache_dir
-        del self.probe_positions
-        del self._kxs
-        del self._kys
-        del self._time
-        del self._xs
-        del self._ys
-        del self._layer
-        # Note: DON'T delete _array - the data property depends on it for hasattr check
-
-        # Call parent implementation
-        result = super().to_hdf5_group(parent_group, force_datasets=force_datasets, name=name)
-
-        # Restore all original attributes and clean up
-        del self.__dict__['data']  # Remove the temp data from __dict__
-        self.probe = orig_probe
-        self.cache_dir = orig_cache_dir
-        self.probe_positions = orig_probe_positions
-        self._kxs = orig_kxs
-        self._kys = orig_kys
-        self._time = orig_time
-        self._xs = orig_xs
-        self._ys = orig_ys
-        self._layer = orig_layer
-
-        return result
 
     def plot_reciprocal(self,filename=None,whichProbe="mean",whichTimestep="mean",powerscaling=0.25,extent=None,nuke_zerobeam=False):
         import matplotlib.pyplot as plt
