@@ -52,7 +52,7 @@ class HAADFData(PySliceSerial, Signal):
     """
 
     _sea_config = {
-        'tensor_attrs': ['_kxs', '_kys', '_xs', '_ys', '_array'],
+        'tensor_attrs': ['_kxs', '_kys', '_xs', '_ys', '_array', 'data'],
         'path_attrs': ['cache_dir'],
         'tuple_list_attrs': ['probe_positions'],
         'exclude_attrs': ['probe', '_wf_array'],

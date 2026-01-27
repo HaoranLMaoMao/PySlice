@@ -56,7 +56,7 @@ class TACAWData(PySliceSerial, Signal):
     """
 
     _sea_config = {
-        'tensor_attrs': ['_kxs', '_kys', '_xs', '_ys', '_time', '_layer', '_frequencies', '_array'],
+        'tensor_attrs': ['_kxs', '_kys', '_xs', '_ys', '_time', '_layer', '_frequencies', '_array', 'data'],
         'path_attrs': ['cache_dir'],
         'tuple_list_attrs': ['probe_positions'],
         'exclude_attrs': ['probe', '_wf_array'],
@@ -161,9 +161,7 @@ class TACAWData(PySliceSerial, Signal):
         """Lazy conversion to numpy for Signal compatibility."""
         if self._array is None:
             return None
-        if hasattr(self._array, 'cpu'):
-            return self._array.cpu().numpy()
-        return np.asarray(self._array)
+        return to_cpu(self._array)
 
     @data.setter
     def data(self, value):
