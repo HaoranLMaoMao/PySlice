@@ -102,6 +102,7 @@ class HAADFData(PySliceSerial, Signal):
                 }
             }
             self.metadata = Metadata(metadata_dict)
+            self.sea_type="Signal"
 
     @property
     def data(self):

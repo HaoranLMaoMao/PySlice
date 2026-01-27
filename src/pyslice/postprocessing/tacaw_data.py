@@ -138,6 +138,7 @@ class TACAWData(PySliceSerial, Signal):
                 }
             }
             self.metadata = Metadata(metadata_dict)
+            self.sea_type="Signal"
 
         # Restore computed values AFTER super().__init__
         self._array = computed_array
