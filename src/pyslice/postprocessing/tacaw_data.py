@@ -5,9 +5,10 @@ import numpy as np
 from typing import Optional, Tuple, Dict, Any, List, Union
 from pathlib import Path
 import logging, os
-from .wf_data import WFData, Signal, Dimensions, Dimension, Metadata
+from .wf_data import WFData
+from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
-from ..data.pyslice_serial import PySliceSerial
+#from ..data.pyslice_serial import PySliceSerial
 from pyslice.backend import to_cpu,fft,fftshift,mean
 from tqdm import tqdm
 

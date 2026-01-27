@@ -5,10 +5,11 @@ import numpy as np
 from typing import Optional, Tuple, Dict, Any, List, Union
 from pathlib import Path
 import logging
-from .wf_data import WFData, Signal, Dimensions, Dimension, Metadata
+from .wf_data import WFData
+from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 from pyslice.backend import zeros,to_cpu
-from ..data.pyslice_serial import PySliceSerial
+#from ..data.pyslice_serial import PySliceSerial
 
 logger = logging.getLogger(__name__)
 

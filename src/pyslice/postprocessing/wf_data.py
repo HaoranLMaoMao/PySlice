@@ -4,14 +4,7 @@ Wave function data structure.
 import numpy as np
 from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
-try:
-    import sys
-    sys.path.insert(1,"../../")
-    from pySEA.sea_eco.architecture.base_structure_numpy import Signal, Dimensions, Dimension, Metadata
-except Exception as e:
-    Signal,Dimensions,Dimension,Metadata = None,None,None,None
-    print("failed to import pySEA:",e)
-from ..data.pyslice_serial import PySliceSerial
+from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 from pathlib import Path
 from ..backend import mean,ones,zeros
 

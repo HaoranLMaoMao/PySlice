@@ -9,6 +9,13 @@ import numpy as np
 from pathlib import Path
 from h5py import File, Group, Dataset
 
+try:
+    import sys
+    sys.path.insert(1,"../../")
+    from pySEA.sea_eco.architecture.base_structure_numpy import Signal, Dimensions, Dimension, Metadata, safe_decode
+except Exception as e:
+    Signal,Dimensions,Dimension,Metadata = None,None,None,None
+    print("failed to import pySEA:",e)
 
 def _to_numpy(x):
     """Convert tensor or array-like to numpy array."""
@@ -120,7 +127,7 @@ class PySliceSerial:
 
     def from_hdf5_group(self, group):
         """Deserialize from HDF5 group with automatic type conversions."""
-        from .signal import safe_decode, Dimensions, GeneralMetadata
+        #from .signal import safe_decode, Dimensions, GeneralMetadata
 
         config = getattr(self, '_sea_config', {})
 
