@@ -548,3 +548,8 @@ class Trajectory:
             box_matrix=rotated_box_matrix,
             timestep=self.timestep
         )
+
+    # returns an ase object
+    def to_ase():
+        return Atoms(''.join(self.atom_types), positions=self.positions[0], cell=np.diag(self.box_matrix),pbc=True)
+

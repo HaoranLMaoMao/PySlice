@@ -254,6 +254,12 @@ class MultisliceCalculator:
                 # Show detailed progress for single-frame runs
                 show_progress = (frame_idx == 0 and self.n_frames == 1)
 
+                # special case: no frames cached, but we clearly finished and got to tacaw. if so, don't bother regenerating
+                # this allows cache_levels = [] to be used for disk space savings
+                if os.path.exists( self.output_dir / f"tacaw.npy" ) and not os.path.exists( cache_file ):
+                    pbar.update(1)
+                    continue
+
                 positions = self.trajectory.positions[frame_idx]
                 atom_types = self.trajectory.atom_types
                 atom_type_names = []
@@ -270,9 +276,9 @@ class MultisliceCalculator:
                     np.save(self.output_dir / f"kx.npy",to_cpu(self.kxs))
                     np.save(self.output_dir / f"ky.npy",to_cpu(self.kys))
                 if len(self.kxs)!=len(self.kxs_uncrop) and not os.path.exists(self.output_dir / f"kx_uncrop.npy"):
-                    np.save(self.output_dir / f"kx_uncrop.npy",to_cpu(self.kxs))
+                    np.save(self.output_dir / f"kx_uncrop.npy",to_cpu(self.kxs_uncrop))
                 if len(self.kys)!=len(self.kys_uncrop) and not os.path.exists(self.output_dir / f"ky_uncrop.npy"):
-                    np.save(self.output_dir / f"ky_uncrop.npy",to_cpu(self.kys))
+                    np.save(self.output_dir / f"ky_uncrop.npy",to_cpu(self.kys_uncrop))
 
                 if cache_exists:
                     frames_cached += 1
