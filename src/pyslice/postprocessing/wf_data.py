@@ -98,7 +98,7 @@ class WFData(PySliceSerial, Signal):
         kys_arr = to_numpy(kys)
         layer_arr = to_numpy(layer) if layer is not None else np.array([0])
 
-        if Signal is not None:
+        if Dimensions is not None:
             dimensions = Dimensions([
                 Dimension(name='probe', space='position',
                         values=np.arange(len(probe_positions))),
