@@ -17,12 +17,12 @@ from pySEA.sea_eco.architecture.base_structure_numpy import SEAFile
 
 # run 05, which should conditionally save a .sea file if pySEA is found
 if not os.path.exists("04_haadf.sea"):
-    print("sea file does not exist, runing 04_haadf")
+    print("sea file does not exist, running 04_haadf")
     os.system("python3 04_haadf.py")
 
 # run 05, which should conditionally save a .sea file if pySEA is found
 if not os.path.exists("05_tacaw.sea"):
-    print("sea file does not exist, runing 05_tacaw")
+    print("sea file does not exist, running 05_tacaw")
     os.system("python3 05_tacaw.py")
 
 # attempt to reload and plot it
