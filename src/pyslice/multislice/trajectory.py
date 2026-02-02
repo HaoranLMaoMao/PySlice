@@ -416,51 +416,6 @@ class Trajectory:
         plt.show()
 
 
-    def wrap_positions(self) -> 'Trajectory':
-        """
-        Wrap all atomic positions to positive coordinates and create orthogonal box.
-
-        For non-orthogonal boxes (e.g., monoclinic), this first converts to fractional
-        coordinates, wraps them, then converts back to Cartesian with an orthogonal box.
-
-        Returns:
-            New Trajectory with wrapped positions and orthogonal box_matrix
-        """
-        # Convert positions to fractional coordinates
-        # fractional = positions @ inv(box_matrix)
-        box_inv = np.linalg.inv(self.box_matrix.T)  # Transpose because positions are row vectors
-
-        # Reshape for broadcasting: (n_frames, n_atoms, 3) @ (3, 3) -> (n_frames, n_atoms, 3)
-        n_frames, n_atoms, _ = self.positions.shape
-        positions_flat = self.positions.reshape(-1, 3)
-        fractional_flat = positions_flat @ box_inv
-        fractional = fractional_flat.reshape(n_frames, n_atoms, 3)
-
-        # Wrap fractional coordinates to [0, 1)
-        wrapped_fractional = fractional % 1.0
-
-        # Get box dimensions from diagonal of box_matrix for the new orthogonal box
-        box_dims = np.array([self.box_matrix[0, 0],
-                            self.box_matrix[1, 1],
-                            self.box_matrix[2, 2]])
-
-        # Create orthogonal box matrix
-        new_box_matrix = np.diag(box_dims)
-
-        # Convert back to Cartesian coordinates with orthogonal box
-        # cartesian = fractional @ box_matrix
-        wrapped_flat = wrapped_fractional.reshape(-1, 3)
-        cartesian_flat = wrapped_flat @ new_box_matrix.T
-        wrapped_positions = cartesian_flat.reshape(n_frames, n_atoms, 3)
-
-        return Trajectory(
-            atom_types=self.atom_types,
-            positions=wrapped_positions,
-            velocities=self.velocities,
-            box_matrix=new_box_matrix,
-            timestep=self.timestep
-        )
-
     def rotate_to(self, direction: Tuple[int, int, int]) -> 'Trajectory':
         """
         Rotate the structure so that a crystallographic direction aligns with the z-axis.
