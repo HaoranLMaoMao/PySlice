@@ -33,9 +33,7 @@ uv sync
 
 ```python
 from ase.build import bulk
-from pyslice.md import MDCalculator
-from pyslice.multislice.calculators import MultisliceCalculator
-from pyslice.postprocessing.tacaw_data import TACAWData
+from pyslice import MDCalculator,MultisliceCalculator,TACAWData
 
 # 1. Create structure
 atoms = bulk("Si", "diamond", a=5.431, cubic=True) * (10, 10, 2)
@@ -60,28 +58,36 @@ Z = tacaw.spectral_diffraction(15.0)  # Diffraction at 15 THz
 ```python
 from pyslice.io.loader import Loader
 
-# LAMMPS dump file
 trajectory = Loader(
-    "trajectory.lammpstrj",
-    timestep=0.01,  # ps
-    atom_mapping={1: "Si", 2: "Ge"}
+    "hBN.lammpstrj",
+    timestep=0.005,  # ps
+    atom_mapping={1: "B", 2: "N"}
 ).load()
 
 # ASE trajectory or CIF/XYZ file
-trajectory = Loader("structure.cif").load()
+trajectory = Loader("silicon.cif").load()
 ```
 
 ### HAADF-STEM Imaging
 
 ```python
-from pyslice.multislice.multislice import probe_grid
-from pyslice.postprocessing.haadf_data import HAADFData
+from pyslice import Loader,MultisliceCalculator,HAADFData
+import numpy as np
+
+# Load your trajectory
+trajectory = Loader(
+    "hBN.lammpstrj",
+    timestep=0.005,  # ps
+    atom_mapping={1: "B", 2: "N"}
+).load()
+# Optional cropping in time and space
+trajectory = trajectory.get_random_timesteps(5).slice_positions([0,20],[0,20])
 
 # Define probe scan grid
-xy = probe_grid([0, 20], [0, 20], nx=32, ny=32)
+xs = np.linspace(5,12,16) ; ys = np.linspace(5,12,16)
 
 calc = MultisliceCalculator()
-calc.setup(trajectory, aperture=30, voltage_eV=100e3, sampling=0.1, probe_positions=xy)
+calc.setup(trajectory, aperture=30, voltage_eV=100e3, sampling=0.1, probe_xs=xs, probe_ys=ys)
 wf_data = calc.run()
 
 haadf = HAADFData(wf_data)
@@ -92,10 +98,24 @@ haadf.plot()
 ### TEM Diffraction
 
 ```python
+from pyslice import Loader,MultisliceCalculator
+import numpy as np
+
+# Load your trajectory
+trajectory = Loader(
+    "hBN.lammpstrj",
+    timestep=0.005,  # ps
+    atom_mapping={1: "B", 2: "N"}
+).load()
+# Optional cropping in time and space
+trajectory = trajectory.get_random_timesteps(5).slice_positions([0,20],[0,20])
+
 calc = MultisliceCalculator()
 calc.setup(trajectory, aperture=0, voltage_eV=100e3, sampling=0.1)
 wf_data = calc.run()
+
 wf_data.plot(powerscaling=0.125)  # Diffraction pattern
+
 ```
 
 ## Data Flow
