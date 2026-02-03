@@ -7,19 +7,17 @@ requires-python = ">=3.12"
 dependencies = [
     "ase",
     "dataclasses",
-    "ipykernel",
-    "jupyter",
     "matplotlib",
     "numpy",
     "ovito",
     "pathlib",
     "scipy",
-    "seaborn",
     "tqdm",
     "typing-extensions",
 ]
 
 [project.optional-dependencies]
+fast = ["torch","torchvision"]
 test = ["abtem>=1.0.6"]
 md = ["orb-models"]
 
