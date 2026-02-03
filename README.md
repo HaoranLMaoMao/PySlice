@@ -17,8 +17,8 @@ A GPU-accelerated Python package for simulating vibrational electron energy loss
 git clone https://github.com/h-walk/PySlice.git
 cd PySlice
 
-# Install with pip (editable mode)
-pip install -e .
+# Install with pip. -e = editable mode. [fast] will install torch (technically optional, but provides extreme speed improvements)
+pip install -e ".[fast]"
 
 # Install OVITO for trajectory loading
 pip install ovito --find-links https://www.ovito.org/pip/
