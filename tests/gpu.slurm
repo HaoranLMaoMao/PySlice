@@ -12,7 +12,8 @@
 
 module load cuda/11.4.0
 module load gcc
-source deactivate base
-conda activate /home/qwe/.conda/envs/pyslice_env
+# source deactivate base
+# conda activate /home/qwe/.conda/envs/pyslice_env
+source /home/qwe/torchenv/bin/activate # switching to uv venvs
 
 bash runAllTests.sh torchgpu
