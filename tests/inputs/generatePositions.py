@@ -43,7 +43,7 @@ lines=[ "########### "+sys.argv[0]+" "+datetime.now().strftime('%Y/%m/%d %H:%M:%
 [ "Atoms" , "" ] +\
 [ str(n+1)+" 1 "+str(int(a[3]))+" "+str(float(a[0]))+" "+str(float(a[1]))+" "+str(float(a[2])) for n,a in enumerate(atoms) ]
 
-with open("silicon.positions",'w') as f:
+with open("silicon_pos.positions",'w') as f:
 	for l in lines:
 		f.write(l+"\n")
 
@@ -53,13 +53,15 @@ with open("silicon.positions",'w') as f:
 lines=[ str(len(atoms)) , "" ] +\
 [ "Si\t"+str(float(a[0]))+"\t"+str(float(a[1]))+"\t"+str(float(a[2])) for n,a in enumerate(atoms) ]
 
-with open("silicon.xyz",'w') as f:
+with open("silicon_xyz.xyz",'w') as f:
 	for l in lines:
 		f.write(l+"\n")
 
 # CONVERT XYZ TO CIF
 from ase.io import read
-atoms = read("silicon.xyz")
+atoms = read("silicon_xyz.xyz")
+atoms.set_cell([lx, ly, lz])
+atoms.set_pbc(True)
 
 from ase.io import write
-write("silicon.cif",atoms)
+write("silicon_cif.cif", atoms)

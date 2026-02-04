@@ -104,13 +104,18 @@ class Loader:
         return mapped_types
 
     def _get_cache_files(self) -> Dict[str, Path]:
-        """Get paths for cache files."""
-        cache_stem = self.filepath.parent / self.filepath.stem
+        """Get paths for cache files.
+
+        Uses full filename (with extension) as base to avoid collisions between
+        files with the same stem but different extensions (e.g., data.xyz vs data.lammpstrj).
+        """
+        # Use full filename to avoid cache collisions (e.g., data.xyz vs data.positions)
+        cache_base = self.filepath.parent / self.filepath.name
         return {
-            'positions': cache_stem.with_suffix('.positions.npy'),
-            'velocities': cache_stem.with_suffix('.velocities.npy'),
-            'atom_types': cache_stem.with_suffix('.atom_types.npy'),
-            'box_matrix': cache_stem.with_suffix('.box_matrix.npy')
+            'positions': cache_base.with_suffix(cache_base.suffix + '.positions.npy'),
+            'velocities': cache_base.with_suffix(cache_base.suffix + '.velocities.npy'),
+            'atom_types': cache_base.with_suffix(cache_base.suffix + '.atom_types.npy'),
+            'box_matrix': cache_base.with_suffix(cache_base.suffix + '.box_matrix.npy')
         }
 
     def _load_from_cache(self) -> Optional[Trajectory]:
@@ -171,6 +176,7 @@ class Loader:
             return trajectory
 
         # Load via OVITO or ASE
+        # CIF files use ASE because OVITO's CIF parser is limited (e.g., fails on multi-block CIF files)
         if self.filepath.suffix in [".cif"]:
             logger.info(f"Loading {self.filepath.name} via ASE")
             trajectory = self._load_via_ase()
