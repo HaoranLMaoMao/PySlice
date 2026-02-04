@@ -212,7 +212,20 @@ class Loader:
 
         # Import file
         try:
-            pipeline = import_file(str(self.filepath),**self.ovitokwargs)
+            import_kwargs = self.ovitokwargs.copy()
+            # OVITO 3.14+ changed bounding_box default to False for XYZ files
+            # We need the bounding box to infer cell dimensions
+            if self.filepath.suffix.lower() == '.xyz':
+                try:
+                    pipeline = import_file(str(self.filepath), bounding_box=True, **import_kwargs)
+                except KeyError as e:
+                    if 'bounding_box' in str(e):
+                        # OVITO < 3.14 doesn't have this parameter (old behavior is default)
+                        pipeline = import_file(str(self.filepath), **import_kwargs)
+                    else:
+                        raise
+            else:
+                pipeline = import_file(str(self.filepath), **import_kwargs)
         except Exception as e:
             raise RuntimeError(f"OVITO import failed: {e}")
 

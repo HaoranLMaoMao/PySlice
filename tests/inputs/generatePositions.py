@@ -57,11 +57,11 @@ with open("silicon_xyz.xyz",'w') as f:
 	for l in lines:
 		f.write(l+"\n")
 
-# CONVERT XYZ TO CIF
-from ase.io import read
-atoms = read("silicon_xyz.xyz")
-atoms.set_cell([lx, ly, lz])
-atoms.set_pbc(True)
-
+# CREATE SMALL CIF (single unit cell, 8 atoms)
+# Don't convert the large XYZ - the test tiles CIF files, so start small
+from ase import Atoms
 from ase.io import write
-write("silicon_cif.cif", atoms)
+
+si_positions = [[x*a, y*b, z*c] for x,y,z in positionsInUnitCell]
+si_atoms = Atoms('Si8', positions=si_positions, cell=[a, b, c], pbc=True)
+write("silicon_cif.cif", si_atoms)
