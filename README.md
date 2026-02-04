@@ -1,257 +1,323 @@
 # PySlice
 
-A GPU-accelerated Python package for simulating vibrational electron energy loss spectroscopy (EELS) using the **TACAW method** (Time Autocorrelation of Auxiliary Wavefunctions). PySlice integrates molecular dynamics with multislice electron scattering calculations to predict momentum- and energy-resolved phonon spectra directly from atomic trajectories.
+PySlice is a Python package for simulating and analyzing multslice simulations from molecular dynamics trajectories. In addition to standard multislice simulations such as diffraction and HAADF image generation, it implements the **TACAW method** to convert time-domain electron scattering data into frequency-domain spectra. This enables the accurate simulation of momentum-resolved vibrational electron energy loss spectroscopy (q-EELS).
 
-## Features
+# Usage
 
-- **TACAW Analysis**: Convert time-domain electron scattering into frequency-domain phonon spectra
-- **Integrated MD**: Run molecular dynamics with universal ML potentials (ORB, MACE, CHGNet)
-- **GPU Acceleration**: PyTorch backend with automatic CUDA/MPS/CPU selection
-- **Flexible Input**: Load structures from CIF, LAMMPS, XYZ, ASE trajectories, or ASE Atoms objects
-- **STEM Imaging**: HAADF/ADF/BF imaging and 4D-STEM diffraction
+For now, please see the tests folder for a series of basic examples. 
 
-## Installation
+## Generating a basic TEM frozen-phonon diffraction pattern:
+```
+trajectory=Loader(dump,atom_mapping=types).load()   # Load your MD trajectory for frozen phonons, or load in a cif/xyz/etc file and "trajectory = trajectory.generate_random_displacements(N)"
+calculator=MultisliceCalculator()                   # calculator object will handle the multislice calculation
+calculator.setup(trajectory,aperture=0,voltage_eV=100e3,sampling=.1,slice_thickness=.5) # specify beam and multislice parameters: convergence angle, energy, and spatial sampling
+exitwaves = calculator.run()                        # exitwaves object contains reciprocal-space exit wave for each atomic configuration
+exitwaves.plot(powerscaling=.125)                   # sums across frozen-phonon configurations to show the diffraction pattern
+```
 
+## Generating a HAADF image:
+```
+trajectory = Loader(dump,atom_mapping=types).load() # Load your MD trajectory for frozen phonons, or load in a cif/xyz/etc file and "trajectory = trajectory.generate_random_displacements(N)"
+probe_xs = np.linspace(a,3*a,14)                    # pick your scan field of view
+probe_ys = np.linspace(b,3*b,16)
+calculator = MultisliceCalculator()
+calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,cache_levels=[])
+exitwaves = calculator.run()                        # exitwaves object contains reciprocal-space exit wave for each probe position for each atomic configuration
+haadf = HAADFData(exitwaves)                        # ADF calculator sums over collection angles
+ary = haadf.calculateADF(preview=True)
+haadf.plot()
+```
+
+## Generating a vibrational EELS dispersion (via the TACAW method: [DOI 10.1103/PhysRevLett.134.036402](https://doi.org/10.1103/PhysRevLett.134.036402)):
+```
+trajectory = Loader(dump,timestep=dt,atom_mapping=types).load() # Load your MD trajectory, including a timestep duration since we will do a Fourier transform in time later
+calculator = MultisliceCalculator()
+calculator.setup(trajectory,aperture=0,voltage_eV=100e3,sampling=.1,slice_thickness=.5)
+exitwaves = calculator.run()
+tacaw = TACAWData(exitwaves)                        # TACAW object performs the temporal FFT, and stores the data cube (frequency, kx, ky)
+kx = np.asarray(tacaw.kxs) ; kx=kx[kx>=0] ; kx=kx[kx<=4/a] # define a path in reciprocal space
+ky = np.zeros(len(kx))+2/b
+dispersion = tacaw.dispersion( kx , ky )            # returns a phonon dispersion: frequency as a function of position in reciprocal space
+tacaw.plot(dispersion**.125,kx,"omega")
+```
+
+# Installation
+
+## Prerequisites
+- Python 3.12+
+- Virtual environment recommended
+
+## Install Dependencies
+
+**Using pip:**
 ```bash
-# Clone the repository
-git clone https://github.com/h-walk/PySlice.git
-cd PySlice
+# Install core requirements
+pip install -r requirements.txt
 
-# Install with pip. -e = editable mode. [fast] will install torch (technically optional, but provides extreme speed improvements). use [fast,md] if you want to use the integrated MD functionality
-pip install -e ".[fast]"
-
-# Install OVITO for trajectory loading
+# Special installation for OVITO
 pip install ovito --find-links https://www.ovito.org/pip/
+```
 
-# Or using uv (recommended)
+**Using uv (recommended for faster installs):**
+```bash
+# Install dependencies directly
 uv sync
 ```
 
+## Key Dependencies
+- **`numpy>=1.20.0`**: Scientific computing (core)
+- **`ovito>=3.8.0`**: LAMMPS trajectory loading
+- **`matplotlib>=3.5.0`**: Visualization
+- **`ipywidgets`**: Interactive visualization in Jupyter
+- **`torch`**: GPU acceleration (optional but recommended)
+
+
+# System Architecture
+
+## Data Flow Pipeline
+
+```
+LAMMPS Trajectory → TrajectoryLoader → Trajectory Object
+                                            ↓
+                             MultisliceCalculator (PyTorch/NumPy)
+                                            ↓
+                                 WaveFunction Data (WFData)
+                                            ↓
+                                  TACAWData or HAADFData
+                                            ↓
+                                  Analysis & Visualization
+```
+
+## Main Data Structures
+
+### Trajectory
+```python
+@dataclass
+class Trajectory:
+    atom_types: np.ndarray      # Atomic numbers (n_atoms,)
+    positions: np.ndarray       # Atomic positions (n_frames, n_atoms, 3)
+    velocities: np.ndarray      # Atomic velocities (n_frames, n_atoms, 3)
+    box_matrix: np.ndarray      # Simulation box matrix (3, 3)
+    timestep: float            # Timestep in picoseconds
+```
+
+The `Trajectory` class stores molecular dynamics data with:
+- OVITO-based loading from LAMMPS dump files
+- Automatic `.npy` caching for faster subsequent loads
+
+### WFData (Wave Function Data)
+```python
+@dataclass
+class WFData:
+    probe_positions: List[Tuple[float, float]]  # Probe positions in Ångstroms
+    time: np.ndarray                           # Time array in picoseconds
+    kxs: np.ndarray                           # kx sampling vectors (Å⁻¹)
+    kys: np.ndarray                           # ky sampling vectors (Å⁻¹)
+    layer: np.ndarray                         # Layer indices
+    wavefunction_data: np.ndarray             # Complex wavefunctions (probe_positions, time, kx, ky, layer)
+```
+
+### TACAWData (Frequency-Domain Analysis)
+```python
+@dataclass
+class TACAWData(WFData):
+    probe_positions: List[Tuple[float, float]]  # Probe positions in Ångstroms
+    frequencies: np.ndarray                     # Frequencies in THz
+    kxs: np.ndarray                           # kx sampling vectors (Å⁻¹)
+    kys: np.ndarray                           # ky sampling vectors (Å⁻¹)
+    intensity: np.ndarray                     # Intensity data (probe_positions, frequency, kx, ky)
+```
+
+Provides comprehensive analysis methods with automatic probe averaging:
+- **`spectrum(probe_index=None)`**: Extract frequency spectrum (None = average all probes)
+- **`diffraction(probe_index=None)`**: Extract diffraction pattern (summed over frequencies)
+- **`spectral_diffraction(frequency, probe_index=None)`**: Diffraction pattern at specific frequency
+- **`spectrum_image(frequency, probe_indices=None)`**: Real-space intensity map
+- **`masked_spectrum(mask, probe_index=None)`**: Apply k-space masks for selective analysis
+- **`dispersion(kx_path, ky_path, probe_index=None)`**: Extract dispersion relation along k-path
+
+## Multislice Calculators
+
+### MultisliceCalculator (PyTorch/NumPy Implementation)
+
+**Unified high-performance implementation** with automatic backend selection:
+
+```python
+class MultisliceCalculator:
+    def setup(
+        self,
+        trajectory: Trajectory,
+        aperture: float = 0.0,        # Probe aperture in milliradians  
+        voltage_eV: float = 100e3,    # Accelerating voltage in eV
+        slice_thickness: float = 0.5,  # Å per slice
+        sampling: float = 0.1,         # Real space sampling in Å/pixel
+        probe_positions: Optional[List[Tuple[float, float]]] = None,
+        batch_size: int = 10,
+    )
+    
+    def run(self) -> WFData:
+        # Returns WFData object with wavefunction data
+```
+
+Features:
+- **Automatic device selection**: CUDA → MPS → CPU
+- **Kirkland atomic potentials**: Accurate quantum mechanical form factors
+- **Vectorized probe processing**: Efficient multi-probe STEM support
+- **Caching system**: Automatic frame-level caching in `psi_data/`
+
+### Core Physics Classes
+
+The calculator uses modular physics components:
+
+```python
+# Potential generation with Kirkland form factors
+Potential(xs, ys, zs, positions, atom_types, kind="kirkland")
+
+# Probe wavefunction 
+Probe(xs, ys, mrad, eV)
+
+# Multislice propagation algorithm
+Propagate(probe, potential)
+
+# Batched probe creation for STEM
+create_batched_probes(base_probe, positions)
+```
+
+### Caching Strategy
+1. **Trajectory Cache**: `.npy` files avoid repeated OVITO parsing
+2. **Frame Cache**: `psi_data/` stores computed wavefunctions
+3. **Automatic cache key generation**: Based on simulation parameters
+
+
+# Advanced Usage
+
 ## Quick Start
+```bash
+python main.py
+```
 
-### Full TACAW Pipeline (MD → Multislice → Phonon Dispersion)
+## Basic Workflow
 
 ```python
-from ase.build import bulk
-from pyslice import MDCalculator,MultisliceCalculator,TACAWData
+from src.io.loader import TrajectoryLoader
+from src.multislice.calculators import MultisliceCalculator
+from src.postprocessing.tacaw_data import TACAWData
 
-# 1. Create structure
-atoms = bulk("Si", "diamond", a=5.431, cubic=True) * (10, 10, 2)
+# 1. Load trajectory with element name mapping
+atom_mapping = {1: "B", 2: "N"}  # LAMMPS type 1→Boron, 2→Nitrogen
+loader = TrajectoryLoader("trajectory.lammpstrj", timestep=0.005,
+                         atom_mapping=atom_mapping)
+trajectory = loader.load()
 
-# 2. Run molecular dynamics
-md = MDCalculator(model_name="orb-v3-direct-inf-omat")
-md.setup(atoms, temperature=300, timestep=2.0, production_steps=500, save_interval=5)
-trajectory = md.run()
-
-# 3. Run multislice (parallel beam for TACAW)
-calc = MultisliceCalculator()
-calc.setup(trajectory, aperture=0, voltage_eV=100e3, sampling=0.1, slice_thickness=0.5)
-wf_data = calc.run()
-
-# 4. Compute phonon spectrum
-tacaw = TACAWData(wf_data)
-Z = tacaw.spectral_diffraction(15.0)  # Diffraction at 15 THz
-```
-
-### Load Existing Trajectory
-
-```python
-from pyslice.io.loader import Loader
-
-trajectory = Loader(
-    "hBN.lammpstrj",
-    timestep=0.005,  # ps
-    atom_mapping={1: "B", 2: "N"}
-).load()
-
-# ASE trajectory or CIF/XYZ file
-trajectory = Loader("silicon.cif").load()
-```
-
-### HAADF-STEM Imaging
-
-```python
-from pyslice import Loader,MultisliceCalculator,HAADFData
-import numpy as np
-
-# Load your trajectory
-trajectory = Loader(
-    "hBN.lammpstrj",
-    timestep=0.005,  # ps
-    atom_mapping={1: "B", 2: "N"}
-).load()
-# Optional cropping in time and space
-trajectory = trajectory.get_random_timesteps(5).slice_positions([0,20],[0,20])
-
-# Define probe scan grid
-xs = np.linspace(5,12,16) ; ys = np.linspace(5,12,16)
-
-calc = MultisliceCalculator()
-calc.setup(trajectory, aperture=30, voltage_eV=100e3, sampling=0.1, probe_xs=xs, probe_ys=ys)
-wf_data = calc.run()
-
-haadf = HAADFData(wf_data)
-haadf.calculateADF(inner_mrad=60, outer_mrad=200)
-haadf.plot()
-```
-
-### TEM Diffraction
-
-```python
-from pyslice import Loader,MultisliceCalculator
-import numpy as np
-
-# Load your trajectory
-trajectory = Loader(
-    "hBN.lammpstrj",
-    timestep=0.005,  # ps
-    atom_mapping={1: "B", 2: "N"}
-).load()
-# Optional cropping in time and space
-trajectory = trajectory.get_random_timesteps(5).slice_positions([0,20],[0,20])
-
-calc = MultisliceCalculator()
-calc.setup(trajectory, aperture=0, voltage_eV=100e3, sampling=0.1)
-wf_data = calc.run()
-
-wf_data.plot(powerscaling=0.125)  # Diffraction pattern
-
-```
-
-## Data Flow
-
-```
-Input Sources          Processing              Analysis            Output
-─────────────────────────────────────────────────────────────────────────────
-CIF / XYZ / LAMMPS ─┬─→ Loader ─┬─→ MDCalculator ─┐
-ASE Atoms / .traj  ─┘           │   (ORB, MACE)   │
-                                │                 ↓
-                                └───────────→ Trajectory
-                                                  │
-                                                  ↓
-                                          MultisliceCalculator
-                                          (Probe → Potential → Propagate)
-                                                  │
-                                                  ↓
-                                              WFData ψ(k,t)
-                                                  │
-                        ┌─────────────────────────┼─────────────────────────┐
-                        ↓                         ↓                         ↓
-                   TACAWData                 HAADFData                  WFData
-                   FFT(t)→ω                  ∫|ψ|²dΩ                  (direct)
-                        │                         │                         │
-                        ↓                         ↓                         ↓
-                Phonon Dispersion           STEM Image              Diffraction
-                Spectral Diffraction        ADF/HAADF/BF            CBED/LACBED
-                Spectrum Image                                      4D-STEM
-```
-
-## Main Classes
-
-### `Loader`
-Load atomic structures and trajectories from various formats.
-
-```python
-from pyslice.io.loader import Loader
-
-# Supported: CIF, XYZ, LAMMPS dump, ASE .traj, ASE Atoms objects
-traj = Loader("file.cif").load()
-traj = Loader("dump.lammpstrj", timestep=0.01, atom_mapping={1: "B", 2: "N"}).load()
-```
-
-### `MDCalculator`
-Run molecular dynamics with universal ML potentials.
-
-```python
-from pyslice.md import MDCalculator
-
-md = MDCalculator(model_name="orb-v3-direct-inf-omat", device="cuda")
-md.setup(
-    atoms,
-    temperature=300,        # K
-    timestep=2.0,           # fs
-    production_steps=1000,
-    save_interval=5,
+# 2. Setup and run multislice simulation
+calculator = MultisliceCalculator()
+calculator.setup(
+    trajectory=trajectory,
+    aperture=0.0,           # 0.0 mrad = plane wave
+    voltage_eV=100e3,       # 100 keV
+    sampling=0.1,           # 0.1 Å/pixel
+    slice_thickness=0.5,    # 0.5 Å per slice
+    probe_positions=None    # Default: center probe
 )
-trajectory = md.run()
+wf_data = calculator.run()
+
+# 3. Convert to frequency domain using TACAW
+tacaw_data = TACAWData(wf_data)
+
+# 4. Analyze results (None = average over all probes)
+spectrum = tacaw_data.spectrum(probe_index=None)
+diffraction = tacaw_data.diffraction(probe_index=None)
 ```
 
-### `Trajectory`
-Container for atomic dynamics data.
+## STEM Imaging with Multiple Probes
 
 ```python
-trajectory.positions   # (n_frames, n_atoms, 3)
-trajectory.velocities  # (n_frames, n_atoms, 3)
-trajectory.atom_types  # Atomic numbers
-trajectory.box_matrix  # (3, 3) simulation cell
-trajectory.timestep    # Frame spacing in ps
-```
+from src.multislice.multislice import probe_grid
 
-### `MultisliceCalculator`
-Compute exit wavefunctions via multislice algorithm.
-
-```python
-from pyslice.multislice.calculators import MultisliceCalculator
-
-calc = MultisliceCalculator()
-calc.setup(
-    trajectory,
-    aperture=0,           # mrad (0 = parallel beam)
-    voltage_eV=100e3,     # Accelerating voltage
-    sampling=0.1,         # Å/pixel
-    slice_thickness=0.5,  # Å
-    probe_positions=None, # Optional (N,2) array for STEM
+# Create probe grid for STEM
+probe_positions = probe_grid(
+    x_range=[10, 20],  # Å
+    y_range=[10, 20],  # Å  
+    nx=30,  # 30x30 grid
+    ny=30
 )
-wf_data = calc.run()
+
+# Setup calculator with convergent beam
+calculator = MultisliceCalculator()
+calculator.setup(
+    trajectory=trajectory,
+    aperture=30.0,  # 30 mrad convergent beam
+    voltage_eV=100e3,
+    probe_positions=probe_positions
+)
+
+wf_data = calculator.run()
+tacaw_data = TACAWData(wf_data)
+
+# Generate spectrum image at specific frequency
+spec_img = tacaw_data.spectrum_image(frequency=35.0)  # THz
+spec_img_2d = spec_img.reshape(30, 30)  # Reshape to grid
 ```
 
-### `TACAWData`
-Frequency-domain phonon analysis.
+## Phonon Dispersion Analysis
 
 ```python
-from pyslice.postprocessing.tacaw_data import TACAWData
+# Extract dispersion along specific k-path
+kx = np.linspace(0, 10, 1000)  # Å⁻¹
+ky = np.zeros_like(kx)  # Along kx axis
 
-tacaw = TACAWData(wf_data)
+dispersion = tacaw_data.dispersion(kx, ky, probe_index=None)
 
-# Analysis methods
-tacaw.frequencies                        # Available frequencies (THz)
-tacaw.spectral_diffraction(freq_THz)     # k-space intensity at frequency
-tacaw.dispersion(kx_path, ky_path)       # Phonon dispersion along k-path
-tacaw.spectrum_image(freq_THz)           # Real-space map at frequency (STEM)
+# Plot dispersion
+plt.imshow(dispersion**0.1, aspect='auto', 
+           extent=[kx.min(), kx.max(), 
+                   tacaw_data.frequencies.min(), 
+                   tacaw_data.frequencies.max()])
+plt.xlabel('kx (Å⁻¹)')
+plt.ylabel('Frequency (THz)')
 ```
 
-### `HAADFData`
-STEM imaging analysis.
+## Interactive Visualization (Jupyter)
 
 ```python
-from pyslice.postprocessing.haadf_data import HAADFData
+from ipywidgets import interact, IntSlider
 
-haadf = HAADFData(wf_data)
-haadf.calculateADF(inner_mrad=60, outer_mrad=200)
-haadf.plot()
+def tacaw_viewer(tacaw):
+    n_frequencies = len(tacaw.frequencies)
+    
+    def plot_frequency(frequency_index):
+        intensity = tacaw.intensity[0, frequency_index, :, :]**0.25
+        plt.imshow(intensity.T, cmap="inferno")
+        plt.title(f"Frequency: {tacaw.frequencies[frequency_index]:.2f} THz")
+        plt.colorbar(label="Intensity^0.25")
+        plt.show()
+    
+    interact(plot_frequency,
+             frequency_index=IntSlider(value=0, min=0, max=n_frequencies-1))
+
+tacaw_viewer(tacaw_data)
 ```
 
-## Examples
+## Performance Tips
+- Only numpy is required, but PyTorch enables GPU acceleration when available, and PyTorch is still faster even on CPU
+- Process trajectories in batches for memory efficiency
 
-See the `tests/` directory for detailed examples:
-- `00_probe.py` - Probe wavefunction visualization
-- `01_potentials.py` - Atomic potential calculations
-- `04_haadf.py` - HAADF-STEM imaging
-- `05_tacaw.py` - TACAW phonon spectroscopy
-- `06_loaders.py` - Loading various file formats
-- `15_molecular_dynamics.py` - MD with ORB potentials
+# API Reference
 
-## Requirements
+## Core Classes
+- `TrajectoryLoader(filename, timestep, atom_mapping=None)`
+- `MultisliceCalculator()` - Unified calculator with auto backend selection
+- `TACAWData(wfdata)` - Constructor takes WFData, performs FFT automatically
 
-**Core:**
-- Python 3.10+
-- NumPy, SciPy, Matplotlib
-- ASE (Atomic Simulation Environment)
-- OVITO
+## Analysis Methods (all support probe_index=None for averaging)
+- `TACAWData.spectrum(probe_index=None) → np.ndarray`
+- `TACAWData.diffraction(probe_index=None) → np.ndarray`
+- `TACAWData.spectral_diffraction(frequency, probe_index=None) → np.ndarray`
+- `TACAWData.spectrum_image(frequency, probe_indices=None) → np.ndarray`
+- `TACAWData.dispersion(kx_path, ky_path, probe_index=None) → np.ndarray`
+- `TACAWData.masked_spectrum(mask, probe_index=None) → np.ndarray`
 
-**Recommended:**
-- PyTorch (GPU acceleration)
+## Helper Functions
+- `probe_grid(x_range, y_range, nx, ny)` - Generate STEM probe positions
+- `gridFromTrajectory(trajectory, sampling, slice_thickness)` - Setup spatial grids
 
-## License
-
-MIT License - see LICENSE file for details.
