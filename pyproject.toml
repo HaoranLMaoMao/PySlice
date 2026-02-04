@@ -3,23 +3,22 @@ name = "PySlice"
 version = "0.1.0"
 description = "PyTorch based package for EELS calculations"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "ase",
     "dataclasses",
-    "ipykernel",
-    "jupyter",
     "matplotlib",
     "numpy",
     "ovito",
     "pathlib",
     "scipy",
-    "seaborn",
     "tqdm",
     "typing-extensions",
+    "h5py",
 ]
 
 [project.optional-dependencies]
+fast = ["torch","torchvision"]
 test = ["abtem>=1.0.6"]
 md = ["orb-models"]
 
