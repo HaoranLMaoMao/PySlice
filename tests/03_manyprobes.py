@@ -21,8 +21,8 @@ xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=0.1,slice_thickness=0.5
 
 # GENERATE PROBE (ENSURE 00_PROBE.PY PASSES BEFORE RUNNING)
 #probe=Probe(xs,ys,mrad=30,eV=100e3)
-xsp = np.linspace(a,3*a,16)
-ysp = np.linspace(b,3*b,16)
+xsp = np.linspace(10*a-a,10*a-3*a,16)
+ysp = np.linspace(10*b-b,10*b-3*b,16)
 #x,y=np.meshgrid(xs,ys)
 #xy=np.reshape([x,y],(2,len(x.flat))).T
 #print(xy)

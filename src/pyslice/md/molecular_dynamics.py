@@ -128,7 +128,7 @@ class MDCalculator:
     Integrates with PySlice's Trajectory and Loader infrastructure.
     """
 
-    def __init__(self, model_name: str = 'orb-v3-direct-inf-omat', device: str = 'cpu', precision: str = 'float32-high'):
+    def __init__(self, model_name: str = 'orb-v3-direct-inf-omat', device: str = 'cpu', precision: str = 'float32-high', weights_path: Optional[str] = None):
         """
         Initialize MD calculator.
 
@@ -136,10 +136,12 @@ class MDCalculator:
             model_name: ORB model to use
             device: Device for ORB calculations ('cpu', 'cuda', etc.)
             precision: Precision for ORB calculations ('float32-high', 'float32-highest', etc.)
+            weights_path: Optional local path to model weights (bypasses network download)
         """
         self.model_name = model_name
         self.device = device
         self.precision = precision
+        self.weights_path = weights_path
         self.calculator = None
 
         # Available ORB models
@@ -169,15 +171,22 @@ class MDCalculator:
 
             model_func = getattr(pretrained, model_func_name)
 
+            # Build kwargs for model loading
+            model_kwargs = {'precision': self.precision, 'compile': False}
+            if self.weights_path:
+                logger.info(f"Using local weights: {self.weights_path}")
+                model_kwargs['weights_path'] = self.weights_path
+
             # ORB doesn't natively support MPS, so we load on CPU then move
             if self.device == 'mps':
                 logger.info("MPS detected: loading on CPU, converting to float32, moving to MPS...")
                 # compile=False required for MPS (dynamo has float64 issues)
-                orbff = model_func(device='cpu', precision=self.precision, compile=False)
+                orbff = model_func(device='cpu', **model_kwargs)
                 orbff = orbff.float()  # Ensure float32 (MPS doesn't support float64)
                 orbff = orbff.to('mps')
             else:
-                orbff = model_func(device=self.device, precision=self.precision)
+                # compile=False to avoid slow torch.compile on first run
+                orbff = model_func(device=self.device, **model_kwargs)
 
             self.calculator = ORBCalculator(orbff)
 
@@ -552,7 +561,8 @@ class MDCalculator:
 
         # Convert to PySlice Trajectory automatically
         # Use ASE directly to preserve velocities (OVITO strips them)
-        timestep_ps = self.timestep / 1000.0  # Convert fs to ps
+        # Account for save_interval: actual time between frames = timestep * save_interval
+        timestep_ps = self.timestep * self.save_interval / 1000.0  # Convert fs to ps
         logger.info(f"Converting trajectory to PySlice format...")
 
         from ase.io import read as aseread
