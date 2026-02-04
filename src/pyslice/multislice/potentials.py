@@ -2,6 +2,7 @@ import numpy as np
 from pathlib import Path
 import logging,os
 from tqdm import tqdm
+from ..backend import to_cpu,mean
 
 try:
     import torch  ; xp = torch
@@ -186,8 +187,8 @@ def loadKirkland(device='cpu'):
     else:
         kirklandABCDs = np.asarray(kirkland_params)
 
-class Potential:    
-    def __init__(self, xs, ys, zs, positions, atomTypes, kind="kirkland", device=None, slice_axis=2, progress=False, cache_dir=None, frame_idx=None):
+class Potential:
+    def __init__(self, xs, ys, zs, positions=None, atomTypes=None, array=None, kind="kirkland", device=None, slice_axis=2, progress=False, cache_dir=None, frame_idx=None):
         # Set up device and backend first
         if TORCH_AVAILABLE:
             # Auto-detect device if not specified
@@ -212,7 +213,12 @@ class Potential:
             self.xs = torch.tensor(xs, dtype=self.dtype, device=device)
             self.ys = torch.tensor(ys, dtype=self.dtype, device=device)
             self.zs = torch.tensor(zs, dtype=self.dtype, device=device)
-            positions = torch.tensor(positions, dtype=self.dtype, device=device)
+            if positions is not None:
+                positions = torch.tensor(positions, dtype=self.dtype, device=device)
+            if array is not None:
+                self._array = torch.tensor(array, device=device)
+            else:
+                self._array = None
         else:
             if device is not None:
                 raise ImportError("PyTorch not available. Please install PyTorch.")
@@ -223,6 +229,7 @@ class Potential:
             self.xs = xs
             self.ys = ys 
             self.zs = zs
+            self._array = array
 
         self.nx = len(xs)
         self.ny = len(ys)
@@ -255,32 +262,35 @@ class Potential:
         qsq = self.kxs[:, None]**2 + self.kys[None, :]**2
      
         # Convert atom types to atomic numbers if needed
-        unique_atom_types = set(atomTypes)
-        atomic_numbers = []
-        for at in atomTypes:
-            if isinstance(at, str):
-                atomic_numbers.append(getZfromElementName(at))
-            else:
-                atomic_numbers.append(at)
-        if TORCH_AVAILABLE:
-            atomic_numbers = torch.tensor(atomic_numbers, device=device)
-
-        # OPTIMIZATION 1: Compute form factors once per atom type on GPU
-        form_factors = {}
-        for at in unique_atom_types:
-            if kind == "kirkland":
+        if atomTypes is not None:
+            unique_atom_types = set(atomTypes)
+            atomic_numbers = []
+            for at in atomTypes:
                 if isinstance(at, str):
-                    Z = getZfromElementName(at) 
+                    atomic_numbers.append(getZfromElementName(at))
                 else:
-                    Z = at
-                form_factors[at] = kirkland(qsq, Z)
-            elif kind == "gauss":
-                form_factors[at] = torch.exp(-1**2 * qsq / 2)
+                    atomic_numbers.append(at)
+            if TORCH_AVAILABLE:
+                atomic_numbers = torch.tensor(atomic_numbers, device=device)
+
+            # OPTIMIZATION 1: Compute form factors once per atom type on GPU
+            form_factors = {}
+            for at in unique_atom_types:
+                if kind == "kirkland":
+                    if isinstance(at, str):
+                        Z = getZfromElementName(at)
+                    else:
+                        Z = at
+                    form_factors[at] = kirkland(qsq, Z)
+                elif kind == "gauss":
+                    form_factors[at] = torch.exp(-1**2 * qsq / 2)
         
         self.cache_dir = cache_dir
         self.frame_idx = frame_idx
 
         def calculateSlice(slice_idx):
+            if self._array is not None:
+                return self._array[:,:,slice_idx]
             # check for caching
             cache_file = None
             if self.cache_dir is not None:
@@ -367,10 +377,11 @@ class Potential:
             return Z
         
         self.calculateSlice = calculateSlice
-        self._array = None
+        #self._array = None
        
     def build(self,progress=False):
-
+        if self._array is not None:
+            return
         # Initialize potential array using xp with conditional device
         device_kwargs = {'device': self.device } if self.use_torch else {}
         potential_real = xp.zeros((self.nx, self.ny, self.n_slices), dtype=float_dtype, **device_kwargs)
@@ -389,17 +400,15 @@ class Potential:
         # Store tensor version for potential GPU operations
         self._array = potential_real
 
+    def flatten(self):
+        self._array = mean(self._array,axis=2,keepdims=True)
+        self.nz = 1
+        self.zs=self.zs[:1]
+
     @property
     def array(self):
-        return self.to_cpu()
- 
-    def to_cpu(self):
-        """Convert tensors back to CPU NumPy arrays."""
-        if self.use_torch:
-            return self._array.cpu().numpy()
-        else:
-            return self._array
-    
+        return to_cpu(self._array)
+
     def to_device(self, device):
         """Move tensor data to specified device."""
         if hasattr(self, 'array_torch'):
@@ -413,7 +422,7 @@ class Potential:
 
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
-        array = np.sum(np.absolute(self.array),axis=2).T # imshow convention: y,x. our convention: x,y
+        array = np.sum(np.absolute(self.array),axis=2).T[::-1,:] # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
         # Convert to CPU if on GPU/MPS device
         #if hasattr(array, 'cpu'):
         #    array = array.cpu()

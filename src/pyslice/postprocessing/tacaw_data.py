@@ -6,7 +6,9 @@ from typing import Optional, Tuple, Dict, Any, List, Union
 from pathlib import Path
 import logging, os
 from .wf_data import WFData
-from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
+#from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+#from ..data.pyslice_serial import PySliceSerial
 from pyslice.backend import to_cpu,fft,fftshift,mean
 from tqdm import tqdm
 
@@ -35,7 +37,7 @@ except ImportError:
     float_dtype = np.float64
 
 
-class TACAWData(Signal):
+class TACAWData(PySliceSerial, Signal):
     """
     Data structure for storing TACAW EELS results with format: probe_positions, frequency, kx, ky.
 
@@ -52,6 +54,14 @@ class TACAWData(Signal):
         probe: Probe object with beam parameters.
         cache_dir: Path to cache directory.
     """
+
+    _sea_config = {
+        'tensor_attrs': ['_kxs', '_kys', '_xs', '_ys', '_time', '_layer', '_frequencies', '_array', 'data'],
+        'path_attrs': ['cache_dir'],
+        'tuple_list_attrs': ['probe_positions'],
+        'exclude_attrs': ['probe', '_wf_array'],
+        'force_datasets': ['_array', 'probe_positions', '_kxs', '_kys', '_xs', '_ys', '_time', '_layer', '_frequencies'],
+    }
 
     def __init__(self, wf_data: WFData, layer_index: int = None, keep_complex: bool = False, chunkFFT: bool = False) -> None:
         """
@@ -77,7 +87,7 @@ class TACAWData(Signal):
 
         # Store reference to source WFData array for FFT computation
         self._wf_array = wf_data._array
-        print("tacaw > wfdata",wf_data._array.shape)
+        #print("tacaw > wfdata",wf_data._array.shape)
 
         # Initialize intensity as None, will be set by fft_from_wf_data
         self._array = None
@@ -101,40 +111,34 @@ class TACAWData(Signal):
         kxs_arr = to_numpy(self._kxs)
         kys_arr = to_numpy(self._kys)
 
-        dimensions = Dimensions([
-            Dimension(name='probe', space='position',
-                     values=np.arange(len(self.probe_positions))),
-            Dimension(name='frequency', space='spectral', units='THz',
-                     values=freq_arr),
-            Dimension(name='kx', space='scattering', units='Å⁻¹',
-                     values=kxs_arr),
-            Dimension(name='ky', space='scattering', units='Å⁻¹',
-                     values=kys_arr),
-        ], nav_dimensions=[0, 1], sig_dimensions=[2, 3])
+        if Dimensions is not None:
 
-        # Build metadata
-        metadata_dict = {
-            'General': {
-                'title': 'TACAW Intensity',
-                'signal_type': 'TACAW'
-            },
-            'Simulation': {
-                'voltage_eV': float(self.probe.eV),
-                'wavelength_A': float(self.probe.wavelength),
-                'aperture_mrad': float(self.probe.mrad),
-                'probe_positions': [list(p) for p in self.probe_positions],
+            self.dimensions = Dimensions([
+                Dimension(name='probe', space='position',
+                        values=np.arange(len(self.probe_positions))),
+                Dimension(name='frequency', space='spectral', units='THz',
+                        values=freq_arr),
+                Dimension(name='kx', space='scattering', units='Å⁻¹',
+                        values=kxs_arr),
+                Dimension(name='ky', space='scattering', units='Å⁻¹',
+                        values=kys_arr),
+            ], nav_dimensions=[0, 1], sig_dimensions=[2, 3])
+
+            # Build metadata
+            metadata_dict = {
+                'General': {
+                    'title': 'TACAW Intensity',
+                    'signal_type': 'TACAW'
+                },
+                'Simulation': {
+                    'voltage_eV': float(self.probe.eV),
+                    'wavelength_A': float(self.probe.wavelength),
+                    'aperture_mrad': float(self.probe.mrad),
+                    'probe_positions': [list(p) for p in self.probe_positions],
+                }
             }
-        }
-        metadata = GeneralMetadata(metadata_dict)
-
-        # Initialize Signal base class (this will set self.data = None)
-        super().__init__(
-            data=None,
-            name='TACAWData',
-            dimensions=dimensions,
-            signal_type='2D-EELS',
-            metadata=metadata
-        )
+            self.metadata = Metadata(metadata_dict)
+            self.sea_type="Signal"
 
         # Restore computed values AFTER super().__init__
         self._array = computed_array
@@ -157,9 +161,7 @@ class TACAWData(Signal):
         """Lazy conversion to numpy for Signal compatibility."""
         if self._array is None:
             return None
-        if hasattr(self._array, 'cpu'):
-            return self._array.cpu().numpy()
-        return np.asarray(self._array)
+        return to_cpu(self._array)
 
     @data.setter
     def data(self, value):
@@ -177,7 +179,7 @@ class TACAWData(Signal):
     @property
     def array(self):
         """Alias for intensity (backward compatibility with WFData interface)."""
-        return self._array
+        return to_cpu(self._array)
 
     def _fft_from_wf_data(self, layer_index: int = None):
         """
@@ -267,6 +269,8 @@ class TACAWData(Signal):
         #    else:
         #        self._array = np.abs(wf_fft)**2
 
+        # Ensure cache directory exists (may have been cleaned up by calculator)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
         np.save(self.cache_dir / "tacaw_freq.npy", self._frequencies)
         np.save(self.cache_dir / "tacaw.npy", self._array.detach().cpu().numpy() if TORCH_AVAILABLE and hasattr(self._array, 'cpu') else self._array)
 
@@ -285,6 +289,7 @@ class TACAWData(Signal):
         Returns:
             Spectrum array (frequency intensity)
         """
+
         if probe_index is None:
             # Average over all probe positions
             all_spectra = []
@@ -427,7 +432,7 @@ class TACAWData(Signal):
 
         return spectral_diffraction
 
-    def masked_spectrum(self, mask: np.ndarray, probe_index: int = None) -> np.ndarray:
+    def masked_spectrum(self, mask: np.ndarray|dict|None = None, probe_index: int = None, preview=False) -> np.ndarray:
         """
         Extract spectrum with spatial masking in k-space.
 
@@ -441,38 +446,38 @@ class TACAWData(Signal):
         kxs = to_cpu(self.kxs)
         kys = to_cpu(self.kys)
 
-        if mask.shape != (len(kxs), len(kys)):
+        if mask is None:
+            mask = np.zeros((len(kxs),len(kys)))+1
+        elif isinstance(mask,dict):
+            cx,cy=mask.get("center",(0,0))
+            if mask["shape"] == "round":
+                r=mask["radius"]
+                radii = np.sqrt((kxs[:,None]-cx)**2+(kys[None,:]-cy)**2)
+                mask = np.zeros((len(kxs),len(kys)))
+                mask[radii<=r]=1
+
+        elif mask.shape != (len(kxs), len(kys)):
             raise ValueError(f"Mask shape {mask.shape} doesn't match k-space shape ({len(kxs)}, {len(kys)})")
 
         if probe_index is None:
-            # Average over all probe positions
-            all_masked_spectra = []
-            for i in range(len(self.probe_positions)):
-                probe_intensity = self._array[i]  # Shape: (frequency, kx, ky)
-                masked_intensity = probe_intensity * mask[None, :, :]  # Broadcast mask to all frequencies
-                masked_spectrum = xp.sum(masked_intensity, axis=(1, 2))  # Sum over masked k-space
-                all_masked_spectra.append(masked_spectrum)
-
-            # Average all masked spectra
-            if TORCH_AVAILABLE and hasattr(all_masked_spectra[0], 'cpu'):
-                all_masked_spectra = [ms.cpu().numpy() for ms in all_masked_spectra]
-            masked_spectrum = np.mean(all_masked_spectra, axis=0)
-        else:
-            if probe_index >= len(self.probe_positions):
-                raise ValueError(f"Probe index {probe_index} out of range")
-
-            # Extract intensity data for this probe
-            probe_intensity = self._array[probe_index]  # Shape: (frequency, kx, ky)
-
-            # Apply spatial mask in k-space
-            masked_intensity = probe_intensity * mask[None, :, :]  # Broadcast mask to all frequencies
-            masked_spectrum = xp.sum(masked_intensity, axis=(1, 2))  # Sum over masked k-space
-
-            # Convert to numpy if PyTorch tensor
-            if TORCH_AVAILABLE and hasattr(masked_spectrum, 'cpu'):
-                masked_spectrum = masked_spectrum.cpu().numpy()
-
-        return masked_spectrum
+            probe_index = np.arange(len(self.probe_positions))
+        elif isinstance(probe_index,int):
+            probe_index=[probe_index]
+        spectra = []
+        for i in probe_index:
+            masked = self._array[i] * mask[None,:,:]
+            if preview:
+                import matplotlib.pyplot as plt
+                fig, ax = plt.subplots()
+                extent = ( np.amin(kxs) , np.amax(kxs) , np.amin(kys) , np.amax(kys) )
+                ax.imshow(to_cpu(xp.sum(masked,axis=0).T)[::-1,:], cmap="inferno",extent=extent,aspect=1)
+                ax.set_xlabel("kx")
+                ax.set_ylabel("ky")
+                ax.set_title("masked_spectrum - preview")
+                plt.show()
+                preview=False
+            spectra.append(to_cpu(xp.sum(masked,axis=(1,2))))
+        return np.mean(spectra,axis=0)
 
     def dispersion(self, kx_path: np.ndarray, ky_path: np.ndarray, probe_index: int = None, space: str = "reciprocal") -> np.ndarray:
         """
@@ -578,7 +583,6 @@ class TACAWData(Signal):
             plt.savefig(filename)
         else:
             plt.show()
-
 
 class SEDData(TACAWData):
     """
