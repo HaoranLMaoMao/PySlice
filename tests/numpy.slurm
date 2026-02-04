@@ -10,9 +10,8 @@
 
 module load cuda/11.4.0
 module load gcc
-# source deactivate base
-# conda activate /home/qwe/.conda/envs/numpy_env
-source /home/qwe/numpyenv/bin/activate # switching to uv venvs
+source deactivate base
+conda activate /home/qwe/.conda/envs/numpy_env
 
 bash runAllTests.sh numpy
 

@@ -46,19 +46,9 @@ def m_effective(eV):
     # units [ kg ]     [ eV ] [ kg m² s⁻² eV⁻¹ ] [ m⁻² s² ]
 
 def wavelength(eV):
-    """
-    Compute relativistic electron wavelength in Angstroms.
-
-    Uses float64 for intermediate calculations to avoid underflow on MPS/float32.
-    The term m_electron * c_light^2 can underflow in float32 if computed in wrong order.
-    """
-    # Convert to numpy float64 for calculation, then convert back if needed
-    if TORCH_AVAILABLE and isinstance(eV, torch.Tensor):
-        eV_np = eV.detach().cpu().numpy().astype(np.float64)
-        lam_np = h_planck * c_light / ((eV_np * q_electron)**2 + 2 * eV_np * q_electron * m_electron * c_light**2)**0.5 * 1e10
-        return torch.tensor(lam_np, dtype=eV.dtype, device=eV.device)
-    else:
-        return h_planck * c_light / ((eV * q_electron)**2 + 2 * eV * q_electron * m_electron * c_light**2)**0.5 * 1e10
+    # orders of magnitude: -21, 8,    5-19=-14-->-28         5      -19          -31        8-->16
+    return h_planck * c_light / ((eV * q_electron)**2 + 2 * eV * q_electron * m_electron * c_light**2)**0.5*1e10
+    # units: [ m² kg s⁻¹ ] [ m s⁻¹ ] ( [ eV⁻¹ ] [kg⁻¹ m⁻² s² eV ] + [ eV⁻¹ᐟ² ] [kg⁻¹ᐟ² m⁻¹ s¹ eV⁻¹ᐟ² ] [ kg⁻¹ᐟ² ] [ m⁻¹ s¹ ] ) = m
 
 class Probe:
     """
