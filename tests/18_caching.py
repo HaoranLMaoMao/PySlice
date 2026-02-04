@@ -4,7 +4,7 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, '../src')
 
-from pyslice import Loader,probe_grid,MultisliceCalculator,HAADFData,differ
+from pyslice import Loader,MultisliceCalculator,HAADFData,differ
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -51,8 +51,8 @@ if 3 in tests:
     print("3. one timestep, many probes, normal caching")
     traj3=trajectory.get_random_timesteps(1,seed=3)
     calculator=MultisliceCalculator()
-    probe_xs = np.linspace(a,3*a,14)
-    probe_ys = np.linspace(b,3*b,16)
+    probe_xs = np.linspace(10*a-a,10*a-3*a,14)
+    probe_ys = np.linspace(10*b-b,10*b-3*b,16)
     calculator.setup(traj3,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys)
     exitwaves = calculator.run()
     differ(exitwaves.array[::5,:,::5,::5,:],"outputs/caching/03-test.npy","03") # p,t,x,y,l indices
@@ -71,8 +71,8 @@ if 5 in tests:
     print("5. many timesteps, many probes, normal caching")
     traj5=trajectory.get_random_timesteps(5,seed=5)
     calculator=MultisliceCalculator()
-    probe_xs = np.linspace(a,3*a,9)
-    probe_ys = np.linspace(b,3*b,10)
+    probe_xs = np.linspace(10*a-a,10*a-3*a,9)
+    probe_ys = np.linspace(10*b-b,10*b-3*b,10)
     calculator.setup(traj5,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys)
     exitwaves = calculator.run()
     differ(exitwaves.array[:,:,::10,::10,:],"outputs/caching/05-test.npy","05") # p,t,x,y,l indices
@@ -82,8 +82,8 @@ if 5.5 in tests:
     print("5.5 many timesteps, many probes, normal caching, with decoherence added")
     traj55=trajectory.get_random_timesteps(5,seed=5)
     calculator=MultisliceCalculator()
-    probe_xs = np.linspace(a,3*a,9)
-    probe_ys = np.linspace(b,3*b,10)
+    probe_xs = np.linspace(10*a-a,10*a-3*a,9)
+    probe_ys = np.linspace(10*b-b,10*b-3*b,10)
     calculator.setup(traj55,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys)
     calculator.base_probe.addSpatialDecoherence(1000,7)
     exitwaves = calculator.run()
@@ -95,8 +95,8 @@ if 6 in tests:
     print("6. many timesteps, many probes, no caching")
     traj6=trajectory.get_random_timesteps(5,seed=6)
     calculator=MultisliceCalculator()
-    probe_xs = np.linspace(a,3*a,9)
-    probe_ys = np.linspace(b,3*b,10)
+    probe_xs = np.linspace(10*a-a,10*a-3*a,9)
+    probe_ys = np.linspace(10*b-b,10*b-3*b,10)
     calculator.setup(traj6,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,cache_levels=[])
     exitwaves = calculator.run()
     differ(exitwaves.array[:,:,::10,::10,:],"outputs/caching/06-test.npy","06") # p,t,x,y,l indices
@@ -115,8 +115,8 @@ if 8 in tests:
     print("8. many timesteps, many probes, layerwise caching")
     traj8=trajectory.get_random_timesteps(5,seed=8)
     calculator=MultisliceCalculator()
-    probe_xs = np.linspace(a,3*a,6)
-    probe_ys = np.linspace(b,3*b,7)
+    probe_xs = np.linspace(10*a-a,10*a-3*a,6)
+    probe_ys = np.linspace(10*b-b,10*b-3*b,7)
     calculator.setup(traj8,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,cache_levels=["slices"])
     exitwaves = calculator.run()
     differ(exitwaves.array[:,::3,::20,::20,::5],"outputs/caching/08-test.npy","08") # p,t,x,y,l indices
@@ -135,8 +135,8 @@ if 10 in tests:
     print("10. one timestep, many probes, layerwise caching")
     traj10=trajectory.get_random_timesteps(1,seed=10)
     calculator=MultisliceCalculator()
-    probe_xs = np.linspace(a,3*a,9)
-    probe_ys = np.linspace(b,3*b,10)
+    probe_xs = np.linspace(10*a-a,10*a-3*a,9)
+    probe_ys = np.linspace(10*b-b,10*b-3*b,10)
     calculator.setup(traj10,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,cache_levels=["slices"])
     exitwaves = calculator.run()
     differ(exitwaves.array[:,:,::10,::10,::5],"outputs/caching/10-test.npy","10") # p,t,x,y,l indices

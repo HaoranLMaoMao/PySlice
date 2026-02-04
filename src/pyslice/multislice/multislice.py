@@ -337,8 +337,8 @@ class Probe:
             probe_k = xp.fft.fft2(self._array[:,i,:,:]) # positional,summable,x,y
 
             # Apply phase ramp for spatial shift
-            kx_shift = xp.exp(2j * xp.pi * self.kxs[None,:, None] * (px-self.lx/2) )
-            ky_shift = xp.exp(2j * xp.pi * self.kys[None,None, :] * (py-self.ly/2) )
+            kx_shift = xp.exp(-2j * xp.pi * self.kxs[None,:, None] * (px-self.lx/2) )
+            ky_shift = xp.exp(-2j * xp.pi * self.kys[None,None, :] * (py-self.ly/2) )
             probe_k_shifted = probe_k * kx_shift * ky_shift
 
             # Convert back to real space
