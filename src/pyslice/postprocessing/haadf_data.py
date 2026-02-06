@@ -6,8 +6,10 @@ from typing import Optional, Tuple, Dict, Any, List, Union
 from pathlib import Path
 import logging
 from .wf_data import WFData
-from ..data import Signal, Dimensions, Dimension, GeneralMetadata
-from ..backend import zeros
+from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
+#from ..data import Signal, Dimensions, Dimension, GeneralMetadata
+from pyslice.backend import zeros,to_cpu
+#from ..data.pyslice_serial import PySliceSerial
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +36,7 @@ except ImportError:
     float_dtype = np.float64
 
 
-class HAADFData(Signal):
+class HAADFData(PySliceSerial, Signal):
     """
     Data structure for HAADF (High Angle Annular Dark Field) imaging data.
 
@@ -48,6 +50,14 @@ class HAADFData(Signal):
         probe: Probe object with beam parameters.
         cache_dir: Path to cache directory.
     """
+
+    _sea_config = {
+        'tensor_attrs': ['_kxs', '_kys', '_xs', '_ys', '_array', 'data'],
+        'path_attrs': ['cache_dir'],
+        'tuple_list_attrs': ['probe_positions'],
+        'exclude_attrs': ['probe', '_wf_array'],
+        'force_datasets': ['_array', 'probe_positions', '_kxs', '_kys', '_xs', '_ys'],
+    }
 
     def __init__(self, wf_data: WFData) -> None:
         """
@@ -71,35 +81,28 @@ class HAADFData(Signal):
         self._xs = wf_data.probe_xs
         self._ys = wf_data.probe_ys
 
-        # Build placeholder dimensions (will be updated after calculateADF)
-        dimensions = Dimensions([
-            Dimension(name='x', space='position', units='Å', values=np.array([0])),
-            Dimension(name='y', space='position', units='Å', values=np.array([0])),
-        ], nav_dimensions=[0, 1], sig_dimensions=[])
+        if Dimensions is not None:
+            # Build placeholder dimensions (will be updated after calculateADF)
+            self.dimensions = Dimensions([
+                Dimension(name='x', space='position', units='Å', values=np.array([0])),
+                Dimension(name='y', space='position', units='Å', values=np.array([0])),
+            ], nav_dimensions=[0, 1], sig_dimensions=[])
 
-        # Build metadata
-        metadata_dict = {
-            'General': {
-                'title': 'HAADF Image',
-                'signal_type': 'HAADF'
-            },
-            'Simulation': {
-                'voltage_eV': float(self.probe.eV),
-                'wavelength_A': float(self.probe.wavelength),
-                'aperture_mrad': float(self.probe.mrad),
-                'probe_positions': [list(p) for p in self.probe_positions],
+            # Build metadata
+            metadata_dict = {
+                'General': {
+                    'title': 'HAADF Image',
+                    'signal_type': 'HAADF'
+                },
+                'Simulation': {
+                    'voltage_eV': float(self.probe.eV),
+                    'wavelength_A': float(self.probe.wavelength),
+                    'aperture_mrad': float(self.probe.mrad),
+                    'probe_positions': [list(p) for p in self.probe_positions],
+                }
             }
-        }
-        metadata = GeneralMetadata(metadata_dict)
-
-        # Initialize Signal base class
-        super().__init__(
-            data=None,  # We'll override the data property
-            name='HAADFData',
-            dimensions=dimensions,
-            signal_type='Image',
-            metadata=metadata
-        )
+            self.metadata = Metadata(metadata_dict)
+            self.sea_type="Signal"
 
     @property
     def data(self):
@@ -126,7 +129,7 @@ class HAADFData(Signal):
     @property
     def array(self):
         """Alias for adf (backward compatibility)."""
-        return self._array
+        return to_cpu(self._array)
 
     def __getattr__(self, name):
         """Auto-convert coordinate arrays from tensor to numpy on access."""
@@ -195,7 +198,7 @@ class HAADFData(Signal):
             plt.show()
 
         collected = self._wf_array * mask[None,None,None,:,:,None] # c,x,y,t,kx,ky,l indices, mask is kx,ky
-        self._array = xp.mean(xp.sum(xp.absolute(collected),axis=(4,5)),axis=(0,3,4)) # sum over kx,ky, mean over c,t,l
+        self._array = xp.mean(xp.sum(xp.absolute(collected)**2,axis=(4,5)),axis=(0,3,4)) # sum |ψ|² over kx,ky, mean over c,t,l
 
         # Update dimensions with computed xs, ys
         def to_numpy(x):
@@ -206,13 +209,14 @@ class HAADFData(Signal):
         xs_np = to_numpy(self._xs)
         ys_np = to_numpy(self._ys)
 
-        self._local_dimensions = Dimensions([
-            Dimension(name='x', space='position', units='Å', values=xs_np),
-            Dimension(name='y', space='position', units='Å', values=ys_np),
-        ], nav_dimensions=[0, 1], sig_dimensions=[])
+        if Dimensions is not None:
+            self._local_dimensions = Dimensions([
+                Dimension(name='x', space='position', units='Å', values=xs_np),
+                Dimension(name='y', space='position', units='Å', values=ys_np),
+            ], nav_dimensions=[0, 1], sig_dimensions=[])
 
-        # Update metadata with detector settings
-        if hasattr(self.metadata, 'Simulation'):
+            # Update metadata with detector settings
+            #if hasattr(self.signal.metadata, 'Simulation'):
             self.metadata.Simulation.inner_mrad = inner_mrad
             self.metadata.Simulation.outer_mrad = outer_mrad
 
@@ -231,16 +235,9 @@ class HAADFData(Signal):
             raise RuntimeError("calculateADF() must be called before plotting")
 
         fig, ax = plt.subplots()
-        array = self._array.T  # imshow convention: y,x. our convention: x,y
-
-        if TORCH_AVAILABLE and hasattr(array, 'cpu'):
-            array = array.cpu().numpy()
-        if TORCH_AVAILABLE and hasattr(self._xs, 'cpu'):
-            xs = self._xs.cpu().numpy()
-            ys = self._ys.cpu().numpy()
-        else:
-            xs = np.asarray(self._xs)
-            ys = np.asarray(self._ys)
+        array = self.array.T[::-1,:]  # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
+        xs = to_cpu(self._xs)
+        ys = to_cpu(self._ys)
 
         extent = (np.amin(xs), np.amax(xs), np.amin(ys), np.amax(ys))
         ax.imshow(array, cmap="inferno", extent=extent)

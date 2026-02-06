@@ -39,6 +39,7 @@ exitwaves.plot(nuke_zerobeam=True,powerscaling=.125,filename="outputs/figs/05_ta
 
 tacaw = TACAWData(exitwaves)
 
+#tacaw.to_sea("05_tacaw.sea")
 # MANUAL PLOTTING
 #print(tacaw.frequencies, tacaw.frequencies[65])
 #intensity_data = tacaw.intensity[0,65,:,:]**.1
@@ -54,6 +55,8 @@ tacaw = TACAWData(exitwaves)
 # OR PLOT USING BUILT IN TOOLS: AN ENERGY SLICE:
 Z = tacaw.spectral_diffraction(30) ; print(Z.shape)
 tacaw.plot(Z**.1,"kx","ky",filename="outputs/figs/05_tacaw_30THz.png")
+
+tacaw.to_sea("05_tacaw.sea")
 
 #differ(Z[:,:]**.1,"outputs/tacaw-test.npy","TACAW SLICE")
 

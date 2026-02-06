@@ -4,12 +4,12 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, '../src')
 
-from pyslice import Loader,gridFromTrajectory,Potential,MultisliceCalculator,HAADFData,differ
+from pyslice import Loader,gridFromTrajectory,Potential,MultisliceCalculator,HAADFData
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-cif = "inputs/hBN.cif" ; a,b=2.4907733333333337,2.1570729817355123
+cif = "inputs/hBN_cif.cif" ; a,b=2.4907733333333337,2.1570729817355123
 trajectory=Loader(cif).load()
 trajectory = trajectory.tile_positions([5,5,1])
 trajectory = trajectory.generate_random_displacements(n_displacements=20,sigma=.1,seed=0) # PRO TIP: use a random seed so you get repeatable "random" configurations and don't need to re-multislice on subsequent runs

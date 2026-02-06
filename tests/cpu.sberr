@@ -6,4 +6,5 @@ cuda/11.4.0:
    Please note, CUDA/11.4.0 is required if compiling for NVIDIA K80 GPUs.
    Newer toolchain versions will not work for K80's.
 
--------------------------------------------------------------------------------DeprecationWarning: 'source deactivate' is deprecated. Use 'conda deactivate'.
+-------------------------------------------------------------------------------runAllTests.sh: line 5: 2727913 Killed                  python3 $s >> runAllTests-$1.log 2>> runAllTests-$1.log
+slurmstepd: error: Detected 1 oom_kill event in StepId=4581718.batch. Some of the step tasks have been OOM Killed.

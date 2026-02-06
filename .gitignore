@@ -28,6 +28,7 @@ test_results/
 !tests/outputs/figs/*.png
 *.jpg
 *.jpeg
+*.sea
 
 # IDE and editor files
 .vscode/

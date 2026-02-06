@@ -4,6 +4,7 @@ Core trajectory data structure for molecular dynamics data.
 from dataclasses import dataclass
 import numpy as np
 from typing import List, Tuple, Optional
+from ase import Atoms
 
 @dataclass
 class Trajectory:
@@ -329,7 +330,7 @@ class Trajectory:
         na=len(self.positions[0])
         if seed is not None:
             np.random.seed(seed)
-        dxyz=np.random.random(size=(n_displacements,na,3))*sigma
+        dxyz=np.random.normal(0,sigma,size=(n_displacements,na,3))
         positions = self.positions[0]+dxyz
 
         return Trajectory(
@@ -503,3 +504,8 @@ class Trajectory:
             box_matrix=rotated_box_matrix,
             timestep=self.timestep
         )
+
+    # returns an ase object
+    def to_ase(self):
+        return Atoms(''.join(self.atom_types), positions=self.positions[0], cell=np.diag(self.box_matrix),pbc=True)
+

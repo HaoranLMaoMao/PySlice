@@ -29,9 +29,9 @@ calculator=MultisliceCalculator()
 # SET UP GRID OF HAADF SCAN POINTS
 #xy=probe_grid([a,3*a],[b,3*b],14,16)
 #calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_positions=xy,cache_levels=[])
-probe_xs = np.linspace(a,3*a,14)
-probe_ys = np.linspace(b,3*b,16)
-calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,cache_levels=[])
+probe_xs = np.linspace(10*a-a,10*a-3*a,14)
+probe_ys = np.linspace(10*b-b,10*b-3*b,16)
+calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys)#,cache_levels=[])
 # RUN MULTISLICE
 exitwaves = calculator.run()
 
@@ -59,6 +59,8 @@ xs=haadf.xs ; ys=haadf.ys
 #ax.imshow(ary.T, cmap="inferno")
 #plt.show()
 haadf.plot("outputs/figs/04_haadf.png")
+
+haadf.to_sea("04_haadf.sea")
 
 ary=np.asarray(ary)
 differ(ary[::4,::4],"outputs/haadf-test.npy","HAADF")

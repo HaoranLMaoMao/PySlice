@@ -3,7 +3,7 @@ from pathlib import Path
 import logging
 from typing import Optional, Tuple, List
 from tqdm import tqdm
-import time
+import time,os
 import hashlib
 
 try:
@@ -34,7 +34,7 @@ from .multislice import Probe,Propagate,create_batched_probes
 from .trajectory import Trajectory
 from ..postprocessing.wf_data import WFData
 from .sed import SED
-from ..backend import zeros,expand_dims
+from ..backend import zeros,expand_dims,to_cpu
 
 logger = logging.getLogger(__name__)
 
@@ -165,15 +165,31 @@ class MultisliceCalculator:
         self.dx = xs[1]-xs[0] ; self.dy = ys[1]-ys[0] ; self.dy = ys[1]-ys[0]
 
         # calculate kxs kys here, so we can crop them, since we'll pre-allocate wavefunction_data below
-        self.kxs = xp.fft.fftshift(xp.fft.fftfreq(self.nx, self.sampling))  # k-space in 1/Å
-        self.kys = xp.fft.fftshift(xp.fft.fftfreq(self.ny, self.sampling))  # k-space in 1/Å
-        self.i1 = xp.argwhere(self.kxs >= -max_kx)[0][0]   # first element >=
-        self.i2 = xp.argwhere(self.kxs <= max_kx)[-1][0]+1 # last element <=, +1, so i1:i2 includes i2
-        self.j1 = xp.argwhere(self.kys >= -max_ky)[0][0]
-        self.j2 = xp.argwhere(self.kys <= max_ky)[-1][0]+1
-        self.kxs = self.kxs[self.i1:self.i2]
-        self.kys = self.kys[self.j1:self.j2]
+        self.kxs_uncrop = xp.fft.fftshift(xp.fft.fftfreq(self.nx, self.sampling))  # k-space in 1/Å
+        self.kys_uncrop = xp.fft.fftshift(xp.fft.fftfreq(self.ny, self.sampling))  # k-space in 1/Å
+        self.i1 = xp.argwhere(self.kxs_uncrop >= -max_kx)[0][0]   # first element >=
+        self.i2 = xp.argwhere(self.kxs_uncrop <= max_kx)[-1][0]+1 # last element <=, +1, so i1:i2 includes i2
+        self.j1 = xp.argwhere(self.kys_uncrop >= -max_ky)[0][0]
+        self.j2 = xp.argwhere(self.kys_uncrop <= max_ky)[-1][0]+1
+        self.kxs = self.kxs_uncrop[self.i1:self.i2]
+        self.kys = self.kys_uncrop[self.j1:self.j2]
         self.nx = self.i2 - self.i1 ; self.ny = self.j2 - self.j1 ; nx = self.nx ; ny = self.ny
+
+        # Preferred to pass probe_xs and probe_ys from which we will define a grid
+        if self.probe_xs is not None and self.probe_ys is not None:
+            x,y = np.meshgrid(self.probe_xs,self.probe_ys,indexing='ij')
+            self.probe_positions = np.asarray(list(zip(x.flat,y.flat)))
+
+        # If probe_positions provided but not probe_xs/probe_ys, derive them
+        elif self.probe_positions is not None:
+            positions = np.asarray(self.probe_positions)
+            self.probe_xs = sorted(list(set(positions[:, 0])))
+            self.probe_ys = sorted(list(set(positions[:, 1])))
+
+        # Set up default probe position if not provided
+        if self.probe_positions is None:
+            self.probe_positions = [(lx/2, ly/2)]  # Center probe
+            self.probe_xs = [lx/2] ; self.probe_ys = [ly/2]
 
         # Create probe on the correct device from the start
         self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions)
@@ -195,7 +211,30 @@ class MultisliceCalculator:
             self.complex_dtype = np.complex128
             self.float_dtype = np.float64
 
-        
+    def preview_probes(self):
+        positions = self.trajectory.positions[0]
+        atom_types = self.trajectory.atom_types
+        atom_type_names = []
+        for atom_type in atom_types:
+            if atom_type in self.element_map:
+                atom_type_names.append(self.element_map[atom_type])
+            else:
+                atom_type_names.append(atom_type)
+        potential = Potential(self.xs, self.ys, self.zs, positions, atom_type_names, kind="kirkland", device=self.device, slice_axis=self.slice_axis)
+        potential.build()
+        potential.flatten()
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots()
+        array = np.absolute(to_cpu(potential.array))[:,::-1,0].T # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
+        xs = to_cpu(potential.xs) ; ys = to_cpu(potential.ys)
+        extent = (np.amin(xs),np.amax(xs),np.amin(ys),np.amax(ys))
+        print(extent)
+        ax.imshow(array, cmap="inferno", extent=extent)
+        ax.set_xlabel("x ($\\AA$)") ; ax.set_ylabel("y ($\\AA$)")
+        pp = np.asarray(self.base_probe.probe_positions)
+        ax.scatter(pp[:,0],pp[:,1],c='r')
+        plt.show()
+
     def run(self) -> WFData:
 
 
@@ -231,6 +270,12 @@ class MultisliceCalculator:
                 # Show detailed progress for single-frame runs
                 show_progress = (frame_idx == 0 and self.n_frames == 1)
 
+                # special case: no frames cached, but we clearly finished and got to tacaw. if so, don't bother regenerating
+                # this allows cache_levels = [] to be used for disk space savings
+                if os.path.exists( self.output_dir / f"tacaw.npy" ) and not os.path.exists( cache_file ):
+                    pbar.update(1)
+                    continue
+
                 positions = self.trajectory.positions[frame_idx]
                 atom_types = self.trajectory.atom_types
                 atom_type_names = []
@@ -242,6 +287,14 @@ class MultisliceCalculator:
 
                 # frame_data should always be shaped: n_probes,nkx,nky,n_layers,1 (idk why there's a trailing 1)
                 cache_exists,frame_data = checkCache(cache_file,self.cache_levels)
+
+                if not os.path.exists(self.output_dir / f"kx.npy"):
+                    np.save(self.output_dir / f"kx.npy",to_cpu(self.kxs))
+                    np.save(self.output_dir / f"ky.npy",to_cpu(self.kys))
+                if len(self.kxs)!=len(self.kxs_uncrop) and not os.path.exists(self.output_dir / f"kx_uncrop.npy"):
+                    np.save(self.output_dir / f"kx_uncrop.npy",to_cpu(self.kxs_uncrop))
+                if len(self.kys)!=len(self.kys_uncrop) and not os.path.exists(self.output_dir / f"ky_uncrop.npy"):
+                    np.save(self.output_dir / f"ky_uncrop.npy",to_cpu(self.kys_uncrop))
 
                 if cache_exists:
                     frames_cached += 1
@@ -335,7 +388,7 @@ class MultisliceCalculator:
         # Handle cleanup
         if self.cleanup_temp_files:
             logger.info("Cleaning up cache files...")
-            for frame_idx in range(n_frames):
+            for frame_idx in range(self.n_frames):
                 cache_file = self.output_dir / f"frame_{frame_idx}.npy"
                 if cache_file.exists():
                     cache_file.unlink()
