@@ -198,7 +198,7 @@ class HAADFData(PySliceSerial, Signal):
             plt.show()
 
         collected = self._wf_array * mask[None,None,None,:,:,None] # c,x,y,t,kx,ky,l indices, mask is kx,ky
-        self._array = xp.mean(xp.sum(xp.absolute(collected),axis=(4,5)),axis=(0,3,4)) # sum over kx,ky, mean over c,t,l
+        self._array = xp.mean(xp.sum(xp.absolute(collected)**2,axis=(4,5)),axis=(0,3,4)) # sum |ψ|² over kx,ky, mean over c,t,l
 
         # Update dimensions with computed xs, ys
         def to_numpy(x):

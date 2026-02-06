@@ -329,7 +329,7 @@ class Trajectory:
         na=len(self.positions[0])
         if seed is not None:
             np.random.seed(seed)
-        dxyz=np.random.random(size=(n_displacements,na,3))*sigma
+        dxyz=np.random.normal(0,sigma,size=(n_displacements,na,3))
         positions = self.positions[0]+dxyz
 
         return Trajectory(

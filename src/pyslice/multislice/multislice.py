@@ -29,6 +29,33 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+def antialias_aperture(kxs, kys, cutoff_fraction=2/3, taper_width=0.02):
+    """Compute a 2/3 Nyquist anti-aliasing aperture in k-space.
+
+    Bandwidth-limits to ``cutoff_fraction`` of k_max with a smooth cosine
+    taper to avoid ringing from a hard cutoff.  Returns a 2D real-valued
+    array (1 inside, tapers to 0 outside).
+    """
+    kx_max = xp.amax(xp.abs(kxs))
+    ky_max = xp.amax(xp.abs(kys))
+    k_max = min(float(kx_max), float(ky_max))  # Nyquist = 1/(2*sampling)
+    k_cutoff = cutoff_fraction * k_max
+
+    kx_grid, ky_grid = xp.meshgrid(kxs, kys, indexing='ij')
+    k_r = xp.sqrt(kx_grid**2 + ky_grid**2)
+
+    # Smooth cosine taper from (k_cutoff - taper) to k_cutoff, strictly zero above k_cutoff
+    taper = taper_width * k_max
+    aperture = xp.ones_like(k_r)
+    mask_taper = (k_r > k_cutoff - taper) & (k_r < k_cutoff)
+    mask_outer = k_r >= k_cutoff
+    if TORCH_AVAILABLE and hasattr(k_r, 'device'):
+        aperture[mask_taper] = 0.5 * (1 + torch.cos(torch.pi * (k_r[mask_taper] - k_cutoff + taper) / taper))
+    else:
+        aperture[mask_taper] = 0.5 * (1 + np.cos(np.pi * (k_r[mask_taper] - k_cutoff + taper) / taper))
+    aperture[mask_outer] = 0.0
+    return aperture
+
 m_electron = 9.109383e-31    # mass of an electron, kg
 q_electron = 1.602177e-19    # charge of an electron, J / eV or kg m^2/s^2 / eV
 c_light = 299792458.0        # speed of light, m / s
@@ -346,7 +373,7 @@ class Probe:
             # Create shifted probe using phase ramp in k-space
             probe_k = xp.fft.fft2(self._array[:,i,:,:]) # positional,summable,x,y
 
-            # Apply phase ramp for spatial shift
+            # Apply phase ramp for spatial shift (negative sign = shift right)
             kx_shift = xp.exp(-2j * xp.pi * self.kxs[None,:, None] * (px-self.lx/2) )
             ky_shift = xp.exp(-2j * xp.pi * self.kys[None,None, :] * (py-self.ly/2) )
             probe_k_shifted = probe_k * kx_shift * ky_shift
@@ -452,9 +479,9 @@ def create_batched_probes(base_probe, probe_positions, device=None):
         # Create shifted probe using phase ramp in k-space
         probe_k = xp.fft.fft2(base_probe._array)
 
-        # Apply phase ramp for spatial shift
-        kx_shift = xp.exp(2j * xp.pi * base_probe.kxs[:, None] * (px-lx/2) )
-        ky_shift = xp.exp(2j * xp.pi * base_probe.kys[None, :] * (py-ly/2) )
+        # Apply phase ramp for spatial shift (negative sign = shift right)
+        kx_shift = xp.exp(-2j * xp.pi * base_probe.kxs[:, None] * (px-lx/2) )
+        ky_shift = xp.exp(-2j * xp.pi * base_probe.kys[None, :] * (py-ly/2) )
         probe_k_shifted = probe_k * kx_shift * ky_shift
         
         # Convert back to real space
@@ -520,7 +547,12 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     # All tensors should already be on the correct device from creation
     kx_grid, ky_grid = xp.meshgrid(potential.kxs, potential.kys, indexing='ij')
     k_squared = kx_grid**2 + ky_grid**2
-    P = xp.exp(-1j * xp.pi * probe_wavelengths[:,None,None] * dz * k_squared[None,:,:]) # Kirkland2010 Eq 6.65
+
+    # Precompute 2/3 Nyquist anti-aliasing aperture for bandwidth-limiting transmission functions
+    aa_aperture = antialias_aperture(potential.kxs, potential.kys)
+
+    # Fold anti-aliasing aperture into propagator to bandwidth-limit wavefunction at every slice
+    P = xp.exp(-1j * xp.pi * probe_wavelengths[:,None,None] * dz * k_squared[None,:,:]) * aa_aperture[None,:,:] # Kirkland2010 Eq 6.65
 
     if progress:
         localtqdm = tqdm
@@ -545,8 +577,12 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
             potential_slice = potential._array[:, :, z]
         t = xp.exp(1j * sigma[:,None,None] * potential_slice[None,:,:]) # Kirkland2010 Eq 6.59
 
+        # Bandwidth-limit the transmission function to 2/3 Nyquist to prevent aliasing
+        kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
+        t = xp.fft.ifft2(xp.fft.fft2(t, **kwarg) * aa_aperture[None,:,:], **kwarg)
+
         # Apply transmission to all probes: ψ' = t × ψ
-        # Broadcasting: t[nx,ny] * array[n_probes,nx,ny] = array[n_probes,nx,ny]
+        # Broadcasting: t[n_probes,nx,ny] * array[n_probes,nx,ny] = array[n_probes,nx,ny]
         array = t * array
 
         # Store wavefunction at this slice if requested (after transmission)
