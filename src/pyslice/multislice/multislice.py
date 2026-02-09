@@ -577,10 +577,6 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
             potential_slice = potential._array[:, :, z]
         t = xp.exp(1j * sigma[:,None,None] * potential_slice[None,:,:]) # Kirkland2010 Eq 6.59
 
-        # Bandwidth-limit the transmission function to 2/3 Nyquist to prevent aliasing
-        kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
-        t = xp.fft.ifft2(xp.fft.fft2(t, **kwarg) * aa_aperture[None,:,:], **kwarg)
-
         # Apply transmission to all probes: ψ' = t × ψ
         # Broadcasting: t[n_probes,nx,ny] * array[n_probes,nx,ny] = array[n_probes,nx,ny]
         array = t * array

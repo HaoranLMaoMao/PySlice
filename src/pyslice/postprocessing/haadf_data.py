@@ -239,7 +239,9 @@ class HAADFData(PySliceSerial, Signal):
         xs = to_cpu(self._xs)
         ys = to_cpu(self._ys)
 
-        extent = (np.amin(xs), np.amax(xs), np.amin(ys), np.amax(ys))
+        dx = (xs[-1] - xs[0]) / (len(xs) - 1) if len(xs) > 1 else 0
+        dy = (ys[-1] - ys[0]) / (len(ys) - 1) if len(ys) > 1 else 0
+        extent = (np.amin(xs) - dx/2, np.amax(xs) + dx/2, np.amin(ys) - dy/2, np.amax(ys) + dy/2)
         ax.imshow(array, cmap="inferno", extent=extent)
         ax.set_xlabel("x ($\\AA$)")
         ax.set_ylabel("y ($\\AA$)")
