@@ -8,7 +8,7 @@ import logging
 from .wf_data import WFData
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
-from pyslice.backend import zeros,to_cpu
+from pyslice.backend import zeros,to_cpu,mean,sum,absolute
 #from ..data.pyslice_serial import PySliceSerial
 
 logger = logging.getLogger(__name__)
@@ -158,13 +158,13 @@ class HAADFData(PySliceSerial, Signal):
         # Use float_dtype to ensure MPS compatibility (float32 on MPS, float64 otherwise)
         #self._xs = xp.asarray(sorted(list(set(self.probe_positions[:,0]))), dtype=float_dtype)
         #self._ys = xp.asarray(sorted(list(set(self.probe_positions[:,1]))), dtype=float_dtype)
-        self._array = xp.zeros((len(self._xs), len(self._ys)), dtype=float_dtype)
+        self._array = zeros((len(self._xs), len(self._ys)), type_match = self._wf_array)
 
         q = xp.sqrt(self._kxs[:,None]**2 + self._kys[None,:]**2)
         radius_inner = (inner_mrad * 1e-3) / self.probe.wavelength
         radius_outer = (outer_mrad * 1e-3) / self.probe.wavelength
 
-        mask = zeros(q.shape, device=self._wf_array.device if TORCH_AVAILABLE else None, dtype=float_dtype)
+        mask = zeros(q.shape, type_match = self._wf_array)
         mask[q >= radius_inner] = 1
         mask[q >= radius_outer] = 0
 
@@ -193,12 +193,15 @@ class HAADFData(PySliceSerial, Signal):
         if preview:
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots()
-            preview_data = xp.mean(xp.absolute(self._wf_array),axis=(0,1,2,3,6))**.2 * (1 - mask)
-            ax.imshow(np.asarray(preview_data), cmap="inferno")
+            preview_data = mean(absolute(self._wf_array),axis=(0,1,2,3,6))**.2 * (1 - mask)
+            ax.imshow(absolute(np.asarray(preview_data)), cmap="inferno")
             plt.show()
 
         collected = self._wf_array * mask[None,None,None,:,:,None] # c,x,y,t,kx,ky,l indices, mask is kx,ky
-        self._array = xp.mean(xp.sum(xp.absolute(collected)**2,axis=(4,5)),axis=(0,3,4)) # sum |ψ|² over kx,ky, mean over c,t,l
+        #self._array = xp.mean(xp.sum(xp.absolute(collected),axis=(4,5)),axis=(0,3,4)) # sum over kx,ky, mean over c,t,l
+        for i in range(len(self._xs)): # looping doesn't blow up ram when we absolute it
+            for j in range(len(self._ys)):
+                self._array[i,j] = mean(sum(absolute(collected[:,i,j,:,:,:,:]),axis=(2,3)),axis=(0,1,2)) # sum over kx,ky, mean over c,t,l
 
         # Update dimensions with computed xs, ys
         def to_numpy(x):
@@ -240,7 +243,7 @@ class HAADFData(PySliceSerial, Signal):
         ys = to_cpu(self._ys)
 
         extent = (np.amin(xs), np.amax(xs), np.amin(ys), np.amax(ys))
-        ax.imshow(array, cmap="inferno", extent=extent)
+        ax.imshow(absolute(array), cmap="inferno", extent=extent)
         ax.set_xlabel("x ($\\AA$)")
         ax.set_ylabel("y ($\\AA$)")
 

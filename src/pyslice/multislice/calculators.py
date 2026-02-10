@@ -34,7 +34,7 @@ from .multislice import Probe,Propagate,create_batched_probes
 from .trajectory import Trajectory
 from ..postprocessing.wf_data import WFData
 from .sed import SED
-from ..backend import zeros,expand_dims,to_cpu
+from ..backend import zeros,expand_dims,to_cpu,memmap
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +122,7 @@ class MultisliceCalculator:
         cache_levels: list = ["exitwaves"], # options include: exitwaves, slices, potentials (this replaces store_all_slices)
         max_kx = np.inf,
         max_ky = np.inf,
+        use_memmap = False
     ):
         """
         Set up multislice simulation using PyTorch acceleration.
@@ -155,6 +156,7 @@ class MultisliceCalculator:
         self.cache_levels = cache_levels
         self.max_kx = max_kx
         self.max_ky = max_ky
+        self.use_memmap = use_memmap
                 
         # Set up spatial grids
         xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=sampling,slice_thickness=slice_thickness)
@@ -251,7 +253,11 @@ class MultisliceCalculator:
         self.n_probes = nc*npt
         # Storage: [probe, frame, x, y, layer] - matches WFData expected format
         self.n_layers = self.nz if "slices" in self.cache_levels else 1
-        self.wavefunction_data = zeros((self.n_probes, self.n_frames, self.nx, self.ny, self.n_layers),
+        if self.use_memmap:
+            self.wavefunction_data = memmap((self.n_probes, self.n_frames, self.nx, self.ny, self.n_layers),
+                                                   dtype=self.complex_dtype, filename = self.output_dir / "wdf_memmap.npy" )
+        else:
+            self.wavefunction_data = zeros((self.n_probes, self.n_frames, self.nx, self.ny, self.n_layers),
                                                    dtype=self.complex_dtype, device=self.device)
 
         # Process frames with caching and multiprocessing

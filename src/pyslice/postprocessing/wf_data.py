@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 from pathlib import Path
-from ..backend import mean,ones,zeros
+from ..backend import mean,ones,zeros,reshape
 
 try:
     import torch ; xp = torch
@@ -155,9 +155,9 @@ class WFData(PySliceSerial, Signal):
     def reshaped(self): # where self._array is indices probe,time,kx,ky,layer, we reshape to probe_x,probe_y,time,kx,ky,layer
         nc,nptp,nx,ny = self.probe._array.shape # recall: decoherence creates duplicate probes: num_copies,num_positions,x,y indices
         npta,nt,nkx,nky,nl = self._array.shape # recall, Propagate flattens the first two, and adds time,layers: nc*npt,num_frames,x,y,nl indice
-        intermediate = xp.reshape(self._array,(nc,nptp,nt,nkx,nky,nl))
+        intermediate = reshape(self._array,(nc,nptp,nt,nkx,nky,nl))
         nx,ny = len(self.probe.probe_xs),len(self.probe.probe_ys)
-        return xp.reshape(intermediate,(nc,ny,nx,nt,nkx,nky,nl)).swapaxes(1,2)
+        return reshape(intermediate,(nc,ny,nx,nt,nkx,nky,nl)).swapaxes(1,2)
 
     @array.setter
     def array(self, value):

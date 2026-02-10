@@ -105,14 +105,48 @@ def asarray(arraylike, dtype=None, device=None):
         array = xp.asarray(arraylike, dtype=dtype)
     return array
 
-def zeros(dims, dtype=DEFAULT_FLOAT_DTYPE, device=DEFAULT_DEVICE):
+def zeros(dims, dtype=None, device=None, type_match=None):
+    if type_match is not None: # pass an array, and we either infer dtype from the first element, or you also specified a dtype
+        if dtype is None:
+            dtype = type_match.dtype
+        if device is None and hasattr(type_match,"device"):
+            device = type_match.device
+        if type(type_match) in [ np.memmap, np.ndarray ]:
+            return np.zeros(dims,dtype=dtype)
+    # default in dtype and device (None in function declaration allows inferring whether it was passed for type_match)
+    if dtype is None:
+        dtype=DEFAULT_FLOAT_DTYPE
+    if device is None:
+        device=DEFAULT_DEVICE
+    # string handling for dtype, "float" --> float
     if isinstance(dtype,str):
         dtype=DEFAULT_FLOAT_DTYPE if dtype=="float" else DEFAULT_COMPLEX_DTYPE
+    # infer if we're using torch or numpy (numpy does not take device arg)
     if xp != np:
         array = xp.zeros(dims, dtype=dtype, device=device)
     else:
         array = xp.zeros(dims, dtype=dtype)
     return array
+
+def memmap(dims,dtype=DEFAULT_FLOAT_DTYPE,filename=None):
+    if filename is None:
+        print("WARNING: memmap attempted without filename, falling back to zeros")
+        return zeros(dims,dtype)
+    # cast to numpy dtypes so we can use numpy memmaps
+    if xp != np and dtype in [ xp.complex128, xp.complex64, xp.float64, xp.float32 ]:
+        dtype = { xp.complex128:np.complex128, xp.complex64:np.complex64,
+                 xp.float64:np.float64, xp.float32:np.float32 }[ dtype ]
+    return np.memmap(filename, dtype=dtype, mode='w+', shape=dims)
+
+def absolute(array):
+    if xp != np and type(array) in [ np.memmap, np.ndarray ]:
+        return np.absolute(array)
+    return xp.absolute(array)
+
+def reshape(array,shape):
+    if xp != np and type(array) == np.memmap:
+        return np.reshape(array,shape)
+    return xp.reshape(array,shape)
 
 def ones(dims, dtype=DEFAULT_FLOAT_DTYPE, device=DEFAULT_DEVICE):
     if xp != np:
@@ -150,25 +184,26 @@ def fftshift(k,**kwargs):
     return xp.fft.fftshift(k,**kwargs)
 
 def mean(k,**kwargs):
-    if TORCH_AVAILABLE and "keepdims" in kwargs.keys():
+    use_torch = TORCH_AVAILABLE
+    if type(k) in [ np.memmap, np.ndarray ]:
+        use_torch = False
+    if use_torch and "keepdims" in kwargs.keys():
         kwargs["keepdim"]=kwargs["keepdims"] ; del kwargs["keepdims"]
-    if not TORCH_AVAILABLE and "keepdim" in kwargs.keys():
+    if not use_torch and "keepdim" in kwargs.keys():
         kwargs["keepdims"]=kwargs["keepdim"] ; del kwargs["keepdim"]
-    if TORCH_AVAILABLE and "axis" in kwargs.keys():
+    if use_torch and "axis" in kwargs.keys():
         kwargs["dim"]=kwargs["axis"] ; del kwargs["axis"]
-    if not TORCH_AVAILABLE and "dim" in kwargs.keys():
+    if not use_torch and "dim" in kwargs.keys():
         kwargs["axis"]=kwargs["dim"] ; del kwargs["dim"]
+    if not use_torch:
+        return np.mean(k,**kwargs)
     return xp.mean(k,**kwargs)
-
 
 def ifft2(k):
     return xp.fft.ifft2(k)
 
 def real(x):
     return xp.real(x)
-
-def absolute(x):
-    return xp.absolute(x)
 
 def amax(x):
     return xp.amax(x)
@@ -177,10 +212,10 @@ def amin(x):
     return xp.amin(x)
 
 def sum(x, axis=None, **kwargs):
-    if xp != np:
+    if xp != np and type(x) not in [ np.memmap, np.ndarray ]:
         return xp.sum(x, dim=axis, **kwargs)
     else:
-        return xp.sum(x, axis=axis, **kwargs)
+        return np.sum(x, axis=axis, **kwargs)
 
 def any(x):
     return xp.any(x)
