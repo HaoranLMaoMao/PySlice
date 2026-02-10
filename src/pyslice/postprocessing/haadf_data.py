@@ -197,11 +197,12 @@ class HAADFData(PySliceSerial, Signal):
             ax.imshow(absolute(np.asarray(preview_data)), cmap="inferno")
             plt.show()
 
-        collected = self._wf_array * mask[None,None,None,:,:,None] # c,x,y,t,kx,ky,l indices, mask is kx,ky
+        #collected = self._wf_array * mask[None,None,None,:,:,None] # c,x,y,t,kx,ky,l indices, mask is kx,ky
         #self._array = xp.mean(xp.sum(xp.absolute(collected),axis=(4,5)),axis=(0,3,4)) # sum over kx,ky, mean over c,t,l
         for i in range(len(self._xs)): # looping doesn't blow up ram when we absolute it
             for j in range(len(self._ys)):
-                self._array[i,j] = mean(sum(absolute(collected[:,i,j,:,:,:,:]),axis=(2,3)),axis=(0,1,2)) # sum over kx,ky, mean over c,t,l
+                collected = self._wf_array[:,i,j,:,:,:,:] * mask[None,None,:,:,None] # c,[x],[y],t,kx,ky,l indices, mask is kx,ky
+                self._array[i,j] = mean(sum(absolute(collected),axis=(2,3)),axis=(0,1,2)) # sum over kx,ky, mean over c,t,l
 
         # Update dimensions with computed xs, ys
         def to_numpy(x):
