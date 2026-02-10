@@ -330,7 +330,10 @@ class MultisliceCalculator:
                         nx,ny = self.base_probe.cropping,self.base_probe.cropping
 
                     # frame_data is always: p,x,y,l,1 (self.wavefunction_data expects p,t,x,y,l, since we loop time. recall Propagate gave l,p,x,y)
-                    frame_data = zeros((self.n_probes, nx, ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
+                    if self.use_memmap:
+                        frame_data = memmap((self.n_probes, nx, ny, self.n_layers,1), dtype=self.complex_dtype, filename = cache_file )
+                    else:
+                        frame_data = zeros((self.n_probes, nx, ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
 
                     #batched_probes = create_batched_probes(self.base_probe, self.probe_positions, self.device)
                     # Propagate returns: [l,p,x,y] where l,p are both optional (if store_all_slices=True, and if n_probes>1)
@@ -366,6 +369,8 @@ class MultisliceCalculator:
                             for layer_idx in range(self.n_layers):
                                 exit_waves_k = xp.fft.fft2(exit_waves_single[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
                                 diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
+                                if self.use_memmap:
+                                    diffraction_patterns = to_cpu(diffraction_patterns)
                                 frame_data[p:p+chunksize,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
                     else:
                         # simultaneously propagate all probes at once, [l],p,x,y
@@ -378,23 +383,22 @@ class MultisliceCalculator:
                             exit_waves_k = xp.fft.fft2(exit_waves_batch[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
                             diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
                             #cropped = diffraction_patterns[:,self.i1:self.i2,self.j1:self.j2]
+                            if self.use_memmap:
+                                diffraction_patterns = to_cpu(diffraction_patterns)
                             frame_data[:,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
 
                     # Convert to CPU numpy array for saving
-                    if TORCH_AVAILABLE and hasattr(frame_data, 'cpu'):
-                        frame_data_cpu = frame_data.cpu().numpy()
-                    else:
-                        frame_data_cpu = frame_data
+                    frame_data_cpu = to_cpu(frame_data)
 
-                    if "exitwaves" in self.cache_levels or "slices" in self.cache_levels:
+                    if not self.use_memmap and ( "exitwaves" in self.cache_levels or "slices" in self.cache_levels ):
                         np.save(cache_file, frame_data_cpu)
                     frames_computed += 1
 
                 #print(frame_data.shape,self.wavefunction_data.shape)
                 cropped = frame_data[:,self.i1:self.i2,self.j1:self.j2,:,0]
                 #print(cropped.shape)
-                if self.use_memmap:
-                    cropped = to_cpu(cropped)
+                #if self.use_memmap:
+                #    cropped = to_cpu(cropped)
                 self.wavefunction_data[:, frame_idx, :, :, :] = cropped # load p,x,y,l,1 --> p,t,x,y,l indices
                 # Update progress bar for this frame
                 pbar.update(1)

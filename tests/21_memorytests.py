@@ -29,7 +29,7 @@ run = "all"
 #run = "bigref"
 #run = "bigmemmap"
 #run = "bigmemloop"
-#run = "mongo"
+run = "mongo"
 
 def clean():
 	#if os.path.exists("psi_data"):
@@ -249,7 +249,7 @@ if run in [ "mongo", "all" ]:
 	#potential = Potential(xs, ys, zs, positions, atom_types, kind="kirkland")
 	#potential.plot()
 	calculator=MultisliceCalculator()											# CREATE CALCULATOR OBJECT
-	probe_xs = np.linspace(a,10*a,256) ; probe_ys = np.linspace(b,10*b,256)
+	probe_xs = np.linspace(a,10*a,512) ; probe_ys = np.linspace(b,10*b,512)
 	calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,use_memmap=True,loop_probes=100,min_dk=0.1)
 	exitwaves = calculator.run()												# RUN MULTISLICE
 	haadf=HAADFData(exitwaves)													# CALCULATE HAADF
