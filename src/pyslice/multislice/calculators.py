@@ -387,10 +387,9 @@ class MultisliceCalculator:
                                 diffraction_patterns = to_cpu(diffraction_patterns)
                             frame_data[:,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
 
-                    # Convert to CPU numpy array for saving
-                    frame_data_cpu = to_cpu(frame_data)
-
                     if not self.use_memmap and ( "exitwaves" in self.cache_levels or "slices" in self.cache_levels ):
+                        # Convert to CPU numpy array for saving
+                        frame_data_cpu = to_cpu(frame_data)
                         np.save(cache_file, frame_data_cpu)
                     frames_computed += 1
 
