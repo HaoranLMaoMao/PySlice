@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import logging
-from ..backend import zeros,mean,ones,to_cpu
+from ..backend import zeros,mean,ones,to_cpu,asarray
 
 try:
     import torch ; xp = torch
@@ -95,7 +95,7 @@ class Probe:
     Significant speedup for large grid sizes through GPU-accelerated FFT operations.
     """
     
-    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, probe_xs=None, probe_ys=None, probe_positions=None, cropping=False):
+    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, probe_xs=None, probe_ys=None, probe_positions=None, cropping=False, defer_shifts=False):
         """
         Initialize GPU-accelerated probe wavefunction.
         
@@ -197,7 +197,12 @@ class Probe:
         self.cropping = cropping
         self.offsets = np.zeros((len(self.probe_positions),2),dtype=int) # these are used when we have cropped the probe
 
-        #self.applyShifts() # NEW PHILOSOPY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have a bajillion probes, then this cube might be huge! instead, only callers (e.g. calculator, addSpatialDecoherence, addTemporalDecoherence etc) call applyShifts when ready. This means calculators' loop_probes can handle them one at a time, without building out the entire cube.
+        # NEW PHILOSOPHY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have
+        # a bajillion probes, then this cube might be huge! instead, callers (e.g. calculator) pass
+        # defer_shifts=True and call applyShifts when ready. This means calculators' loop_probes can
+        # handle them one at a time, without building out the entire cube.
+        if not defer_shifts:
+            self.applyShifts()
 
     def generate_single_probe(self,mrad,wavelength,gaussianVOA,preview=False):
         nx,ny = len(self.kxs) , len(self.kys)
@@ -706,7 +711,7 @@ def calculateObject(probe,exitwave,guessedObject,weighting=.5,dz=0.5,damping=.01
     # t = exp(i σ O) --> O = log(t)/i/σ
     O = xp.log(t)/1j/sigma
     # WHAT IS exp(i σ O) REALLY DOING? exp(iϕ) is a sinusoid. an only-real object is applying a phase shift? can we do calculate an angle instead?
-    O = np.angle(t)/sigma
+    O = xp.angle(t)/sigma
     # consider:
     # instead of division, should i multiply by complex conjugate? (not technically the same, but it will deal with near-zeros)
     # instead of log, should i use: https://en.wikipedia.org/wiki/Complex_logarithm#Calculating_the_principal_value
@@ -718,7 +723,7 @@ def calculateObject(probe,exitwave,guessedObject,weighting=.5,dz=0.5,damping=.01
     #axs[2].imshow(to_cpu(xp.absolute(O)**.1), cmap="inferno") ; axs[2].set_title("object")
     #plt.show()
 
-    delta=(O-guessedObject)
+    delta=(O-asarray(guessedObject))
 
     # probe amplitude masking function: zeros-out points where probe intensity is zero, without giving probe features as features in your potential
     delta*=xp.absolute(psi1)/(xp.absolute(psi1)+damping*xp.amax(xp.absolute(psi1)))

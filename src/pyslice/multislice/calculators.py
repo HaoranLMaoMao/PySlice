@@ -204,13 +204,11 @@ class MultisliceCalculator:
             self.probe_xs = [lx/2] ; self.probe_ys = [ly/2]
 
         # Create probe on the correct device from the start
-        self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions,cropping=probe_cropping)
+        # defer_shifts=True so calculator controls when to expand the probe cube (see loop_probes)
+        self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions,cropping=probe_cropping, defer_shifts=True)
 
-        if not self.loop_probes: # NEW PHILOSOPY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have a bajillion probes, then this cube might be huge! instead, only callers (e.g. calculator, addSpatialDecoherence, addTemporalDecoherence etc) call applyShifts when ready. This means calculators' loop_probes can handle them one at a time, without building out the entire cube.
+        if not self.loop_probes:
             self.base_probe.applyShifts()
-
-
-        #self.base_probe.applyShifts()
 
         # Initialize storage for results
         self.n_frames = trajectory.n_frames

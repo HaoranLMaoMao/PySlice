@@ -63,7 +63,7 @@ for flatten in [True,False]:
         plt.title("Reconstructed Potential")
         plt.show()
 
-    O = np.sum(Os,axis=0)
+    O = np.sum([to_cpu(o) for o in Os],axis=0)
     fig, ax = plt.subplots()
     ax.imshow(np.absolute(O)**.1, cmap="inferno")
     plt.title("summed reconstructed")

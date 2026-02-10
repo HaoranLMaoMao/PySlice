@@ -409,6 +409,9 @@ class Potential:
     def array(self):
         return to_cpu(self._array)
 
+    def to_cpu(self):
+        return to_cpu(self._array)
+
     def to_device(self, device):
         """Move tensor data to specified device."""
         if hasattr(self, 'array_torch'):
