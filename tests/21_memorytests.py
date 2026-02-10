@@ -27,8 +27,8 @@ a,b=2.4907733333333337,2.1570729817355123
 #run = "mindk"
 #run = "mindkloop"
 #run = "bigref"
-run = "bigmemmap"
-#run = "bigmemloop"
+#run = "bigmemmap"
+run = "bigmemloop"
 #run = "mongo"
 
 if os.path.exists("psi_data"):
