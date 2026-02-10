@@ -1,0 +1,11 @@
+failed to import pySEA: No module named 'pySEA'
+running reference
+running memmap
+running probeloop1
+running probeloop10
+running mindk
+running mindkloop
+running bigref
+running bigmemmap
+running bigmemloop
+running mongo

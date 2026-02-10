@@ -165,6 +165,8 @@ class HAADFData(PySliceSerial, Signal):
         radius_outer = (outer_mrad * 1e-3) / self.probe.wavelength
 
         mask = zeros(q.shape, type_match = self._wf_array)
+        if isinstance(self._wf_array,np.memmap):
+            q = to_cpu(q)
         mask[q >= radius_inner] = 1
         mask[q >= radius_outer] = 0
 
