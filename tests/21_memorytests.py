@@ -20,7 +20,9 @@ a,b=2.4907733333333337,2.1570729817355123
 
 #run = "reference"
 #run = "memmap"
-run = "probeloop10"
+#run = "probeloop10"
+#run = "refbig"
+run = "memmapbig"
 
 shutil.rmtree("psi_data")
 
@@ -99,3 +101,47 @@ if run == "probeloop10":
 	haadf=HAADFData(exitwaves)													# CALCULATE HAADF
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_probeloop10.png")
+
+if run == "refbig": # same as 04_haadf.py, but bigger FOV. immediate OOM-kill on multislice (250x216 kpts, 50x50 probe positions, probecube is 250*216*50*50*128/8/1024^3=2GB, frame_data is the same, wavefunction_data is 3x, calculator's intermediate variable exit_waves_k is 2GB too, and Propagate has intermediate variables too)
+	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
+	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
+	trajectory=trajectory.get_random_timesteps(2,seed=5)						# SELECT "RANDOM" TIMESTEPS
+	for x,y,m in [[2*a,b*4/3,12],[2*a,b*4/3+b,14],[3.5*a,b*4/3,16]]:			# ADD DOPANTS (for testing scan lims)
+		dxyz = trajectory.positions[0,:,:]-np.asarray([x,y,0])[None,:]
+		distances = np.sqrt(np.sum((dxyz)**2,axis=1))
+		i = np.argmin(distances) # which atom is closest to a,b?
+		trajectory.atom_types[i] = m
+	positions = trajectory.positions[0]											# PREVIEW POTENTIAL
+	atom_types=trajectory.atom_types
+	xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=0.1,slice_thickness=0.5)
+	potential = Potential(xs, ys, zs, positions, atom_types, kind="kirkland")
+	potential.plot()
+	calculator=MultisliceCalculator()											# CREATE CALCULATOR OBJECT
+	probe_xs = np.linspace(a,4*a,50) ; probe_ys = np.linspace(b,4*b,50)
+	calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys)
+	exitwaves = calculator.run()												# RUN MULTISLICE
+	haadf=HAADFData(exitwaves)													# CALCULATE HAADF
+	haadf.calculateADF(preview=False)
+	haadf.plot("outputs/figs/21_memorytests_refbig.png")
+
+if run == "memmapbig": # memmapping should at least remove wavefunction_data from memory, tops out at 18GB during multislice, OOM-kill on ADF (250x216 kpts, 50x50 probe positions, probecube is 250*216*50*50*128/8/1024^3=2GB, frame_data is the same, wavefunction_data is 3x, calculator's intermediate variable exit_waves_k is 2GB too, and Propagate has intermediate variables too)
+	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
+	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
+	trajectory=trajectory.get_random_timesteps(2,seed=5)						# SELECT "RANDOM" TIMESTEPS
+	for x,y,m in [[2*a,b*4/3,12],[2*a,b*4/3+b,14],[3.5*a,b*4/3,16]]:			# ADD DOPANTS (for testing scan lims)
+		dxyz = trajectory.positions[0,:,:]-np.asarray([x,y,0])[None,:]
+		distances = np.sqrt(np.sum((dxyz)**2,axis=1))
+		i = np.argmin(distances) # which atom is closest to a,b?
+		trajectory.atom_types[i] = m
+	positions = trajectory.positions[0]											# PREVIEW POTENTIAL
+	atom_types=trajectory.atom_types
+	xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=0.1,slice_thickness=0.5)
+	potential = Potential(xs, ys, zs, positions, atom_types, kind="kirkland")
+	potential.plot()
+	calculator=MultisliceCalculator()											# CREATE CALCULATOR OBJECT
+	probe_xs = np.linspace(a,4*a,50) ; probe_ys = np.linspace(b,4*b,50)
+	calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,use_memmap=True)
+	exitwaves = calculator.run()												# RUN MULTISLICE
+	haadf=HAADFData(exitwaves)													# CALCULATE HAADF
+	haadf.calculateADF(preview=False)
+	haadf.plot("outputs/figs/21_memorytests_memmapbig.png")
