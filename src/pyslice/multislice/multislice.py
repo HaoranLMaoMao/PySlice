@@ -194,7 +194,7 @@ class Probe:
             self._array = zeros((1,1,nx,ny),dtype=complex_dtype)
             self._array[0,0,:,:] = self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)
 
-        self.applyShifts()
+        #self.applyShifts() # NEW PHILOSOPY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have a bajillion probes, then this cube might be huge! instead, only callers (e.g. calculator, addSpatialDecoherence, addTemporalDecoherence etc) call applyShifts when ready. This means calculators' loop_probes can handle them one at a time, without building out the entire cube.
 
     def generate_single_probe(self,mrad,wavelength,gaussianVOA,preview=False):
         nx,ny = len(self.kxs) , len(self.kys)
@@ -370,17 +370,17 @@ class Probe:
         for i, (px,py) in enumerate(self.probe_positions):
             if px-self.lx/2 == 0 and py-self.ly/2 == 0:
                     continue
-            # Create shifted probe using phase ramp in k-space
-            probe_k = xp.fft.fft2(self._array[:,i,:,:]) # positional,summable,x,y
 
-            # Apply phase ramp for spatial shift (negative sign = shift right)
-            kx_shift = xp.exp(-2j * xp.pi * self.kxs[None,:, None] * (px-self.lx/2) )
-            ky_shift = xp.exp(-2j * xp.pi * self.kys[None,None, :] * (py-self.ly/2) )
-            probe_k_shifted = probe_k * kx_shift * ky_shift
+            self._array[:,i,:,:] = self.placeProbe(self._array[:,i,:,:], px, py )
 
-            # Convert back to real space
-            self._array[:,i,:,:] = xp.fft.ifft2(probe_k_shifted)
         nc,npt,nx,ny = self._array.shape #; print("applyShifts expands to",nc,npt,nx,ny)
+
+    def placeProbe(self,array,x,y):
+        probe_k = xp.fft.fft2(array) # positional,summable,x,y
+        kx_shift = xp.exp(-2j * xp.pi * self.kxs[None,:, None] * (x-self.lx/2) )
+        ky_shift = xp.exp(-2j * xp.pi * self.kys[None,None, :] * (y-self.ly/2) )
+        probe_k_shifted = probe_k * kx_shift * ky_shift
+        return xp.fft.ifft2(probe_k_shifted)
 
     def aberrate(self,aberrations):
         dP = aberrationFunction(self.kxs,self.kys,self.wavelength,aberrations)

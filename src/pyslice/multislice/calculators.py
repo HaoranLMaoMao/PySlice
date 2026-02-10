@@ -122,7 +122,8 @@ class MultisliceCalculator:
         cache_levels: list = ["exitwaves"], # options include: exitwaves, slices, potentials (this replaces store_all_slices)
         max_kx = np.inf,
         max_ky = np.inf,
-        use_memmap = False
+        use_memmap = False,
+        loop_probes = False,
     ):
         """
         Set up multislice simulation using PyTorch acceleration.
@@ -157,6 +158,7 @@ class MultisliceCalculator:
         self.max_kx = max_kx
         self.max_ky = max_ky
         self.use_memmap = use_memmap
+        self.loop_probes = loop_probes
                 
         # Set up spatial grids
         xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=sampling,slice_thickness=slice_thickness)
@@ -195,7 +197,12 @@ class MultisliceCalculator:
 
         # Create probe on the correct device from the start
         self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions)
-        self.base_probe.applyShifts()
+
+        if not self.loop_probes: # NEW PHILOSOPY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have a bajillion probes, then this cube might be huge! instead, only callers (e.g. calculator, addSpatialDecoherence, addTemporalDecoherence etc) call applyShifts when ready. This means calculators' loop_probes can handle them one at a time, without building out the entire cube.
+            self.base_probe.applyShifts()
+
+
+        #self.base_probe.applyShifts()
 
         # Initialize storage for results
         self.n_frames = trajectory.n_frames
@@ -250,7 +257,7 @@ class MultisliceCalculator:
 
 
         nc,npt,nx,ny = self.base_probe._array.shape
-        self.n_probes = nc*npt
+        self.n_probes = nc*len(self.base_probe.probe_positions)
         # Storage: [probe, frame, x, y, layer] - matches WFData expected format
         self.n_layers = self.nz if "slices" in self.cache_levels else 1
         if self.use_memmap:
@@ -308,28 +315,49 @@ class MultisliceCalculator:
                     potential = Potential(self.xs, self.ys, self.zs, positions, atom_type_names, kind="kirkland", device=self.device, slice_axis=self.slice_axis, progress=show_progress, cache_dir=cache_file.parent if "potentials" in self.cache_levels else None, frame_idx = frame_idx)
 
                     #n_probes = nc*npt
-                    nc,npt,nx,ny = self.base_probe._array.shape
+                    nc,npt,nx,ny = self.base_probe._array.shape ; npt = len(self.base_probe.probe_positions)
                     n_slices = len(self.zs)
+                    npt = len(self.base_probe.probe_positions)
+
+                    # frame_data is always: p,x,y,l,1 (self.wavefunction_data expects p,t,x,y,l, since we loop time. recall Propagate gave l,p,x,y)
+                    frame_data = zeros((self.n_probes, nx, ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
 
                     #batched_probes = create_batched_probes(self.base_probe, self.probe_positions, self.device)
                     # Propagate returns: [l,p,x,y] where l,p are both optional (if store_all_slices=True, and if n_probes>1)
-                    exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
-                    #print(exit_waves_batch.shape)
-                    #print(exit_waves_batch.shape)
-                    #if n_probes==1 and "slices" not in self.cache_levels:
-                    #    exit_waves_batch = expand_dims(exit_waves_batch,0)
-                    if "slices" not in self.cache_levels:
-                        exit_waves_batch = expand_dims(exit_waves_batch,0)
-                    #print(exit_waves_batch.shape)
-                    # frame_data is always: p,x,y,l,1 (self.wavefunction_data expects p,t,x,y,l, since we loop time. recall Propagate gave l,p,x,y)
-                    frame_data = zeros((self.n_probes, nx, ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
-                    #print(frame_data.shape)
-                    for layer_idx in range(self.n_layers):
-                        kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
-                        exit_waves_k = xp.fft.fft2(exit_waves_batch[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
-                        diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
-                        #cropped = diffraction_patterns[:,self.i1:self.i2,self.j1:self.j2]
-                        frame_data[:,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
+                    if self.loop_probes:
+                        for p in tqdm(range(npt)):
+                            # new temporary probe pulled from base_probe's array
+                            array = self.base_probe._array #; print(array.shape)
+                            x,y = self.base_probe.probe_positions[p]
+                            array = self.base_probe.placeProbe(array,x,y)
+                            probe = Probe(xs = self.base_probe.xs,
+                                          ys = self.base_probe.ys,
+                                          mrad = self.base_probe.mrad,
+                                          eV = self.base_probe.eV,
+                                          array=array,
+                                          device=self.base_probe.device)
+                            # propagate single probe
+                            exit_waves_single = Propagate(probe , potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) ) # [l],p,x,y indices
+                            # expand out to fixed l,p,x,y indices
+                            exit_waves_single = expand_dims(exit_waves_single,0) if len(exit_waves_single.shape)==3 else exit_waves_single
+                            # FFT and load into frame_data
+                            kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
+                            for layer_idx in range(self.n_layers):
+                                exit_waves_k = xp.fft.fft2(exit_waves_single[layer_idx,0,:,:], **kwarg) # l,p,x,y --> p,x,y
+                                diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
+                                frame_data[p,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
+                    else:
+                        # simultaneously propagate all probes at once, [l],p,x,y
+                        exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
+                        # expand out to fixed l,p,x,y indices
+                        exit_waves_batch = expand_dims(exit_waves_batch,0) if len(exit_waves_batch.shape)==3 else exit_waves_batch
+                        # FFT and load into frame_data
+                        for layer_idx in range(self.n_layers):
+                            kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
+                            exit_waves_k = xp.fft.fft2(exit_waves_batch[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
+                            diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
+                            #cropped = diffraction_patterns[:,self.i1:self.i2,self.j1:self.j2]
+                            frame_data[:,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
 
                     # Convert to CPU numpy array for saving
                     if TORCH_AVAILABLE and hasattr(frame_data, 'cpu'):

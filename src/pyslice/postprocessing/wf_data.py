@@ -154,6 +154,7 @@ class WFData(PySliceSerial, Signal):
     @property
     def reshaped(self): # where self._array is indices probe,time,kx,ky,layer, we reshape to probe_x,probe_y,time,kx,ky,layer
         nc,nptp,nx,ny = self.probe._array.shape # recall: decoherence creates duplicate probes: num_copies,num_positions,x,y indices
+        nptp = len(self.probe.probe_positions)
         npta,nt,nkx,nky,nl = self._array.shape # recall, Propagate flattens the first two, and adds time,layers: nc*npt,num_frames,x,y,nl indice
         intermediate = reshape(self._array,(nc,nptp,nt,nkx,nky,nl))
         nx,ny = len(self.probe.probe_xs),len(self.probe.probe_ys)
