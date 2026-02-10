@@ -20,7 +20,7 @@ a,b=2.4907733333333337,2.1570729817355123
 
 #run = "reference"
 #run = "memmap"
-run = "probeloop"
+run = "probeloop10"
 
 shutil.rmtree("psi_data")
 
@@ -64,7 +64,7 @@ if run == "memmap": # same as 04_haadf.py, but using memmap
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_memmap.png")
 
-if run == "probeloop":
+if run == "probeloop1":
 # same as 04_haadf.py, but with chunked looped probes
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
@@ -81,3 +81,21 @@ if run == "probeloop":
 	haadf=HAADFData(exitwaves)													# CALCULATE HAADF
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_probeloop1.png")
+
+if run == "probeloop10":
+# same as 04_haadf.py, but with chunked looped probes
+	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
+	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
+	trajectory=trajectory.get_random_timesteps(2,seed=5)						# SELECT "RANDOM" TIMESTEPS
+	for x,y,m in [[2*a,b*4/3,12],[2*a,b*4/3+b,14],[3.5*a,b*4/3,16]]:			# ADD DOPANTS (for testing scan lims)
+		dxyz = trajectory.positions[0,:,:]-np.asarray([x,y,0])[None,:]
+		distances = np.sqrt(np.sum((dxyz)**2,axis=1))
+		i = np.argmin(distances) # which atom is closest to a,b?
+		trajectory.atom_types[i] = m
+	calculator=MultisliceCalculator()											# CREATE CALCULATOR OBJECT
+	probe_xs = np.linspace(10*a-a,10*a-3*a,14) ; probe_ys = np.linspace(10*b-b,10*b-3*b,16)
+	calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,loop_probes=10)
+	exitwaves = calculator.run()												# RUN MULTISLICE
+	haadf=HAADFData(exitwaves)													# CALCULATE HAADF
+	haadf.calculateADF(preview=False)
+	haadf.plot("outputs/figs/21_memorytests_probeloop10.png")
