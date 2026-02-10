@@ -28,8 +28,8 @@ a,b=2.4907733333333337,2.1570729817355123
 #run = "mindkloop"
 #run = "bigref"
 #run = "bigmemmap"
-run = "bigmemloop"
-#run = "mongo"
+#run = "bigmemloop"
+run = "mongo"
 
 if os.path.exists("psi_data"):
 	shutil.rmtree("psi_data")
@@ -225,6 +225,7 @@ if run in [ "bigmemloop", "all" ]:
 
 
 # STRESS TEST: 1000x1000 probe positions (would be a 160 GB probe cube alone!) on uncropped trajectory (huge potential!). chunking is required to avoid the probe loop, memmaping is a good idea, and we're introducing autocropping to propagate a cropped proba through a cropped potential, which also means we limit our number of k-points. min_dk = 0.1 iA for a 0.1 A sampling means nkx,nky are 100x100 even for the full uncropped system.
+# OPE: frame_data is 41 GB (100 kx 100 ky 512 x 512 y)
 if run == "mongo":
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	#trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
@@ -240,7 +241,7 @@ if run == "mongo":
 	#potential = Potential(xs, ys, zs, positions, atom_types, kind="kirkland")
 	#potential.plot()
 	calculator=MultisliceCalculator()											# CREATE CALCULATOR OBJECT
-	probe_xs = np.linspace(a,10*a,512) ; probe_ys = np.linspace(b,10*b,512)
+	probe_xs = np.linspace(a,10*a,256) ; probe_ys = np.linspace(b,10*b,256)
 	calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,use_memmap=True,loop_probes=100,min_dk=0.1)
 	exitwaves = calculator.run()												# RUN MULTISLICE
 	haadf=HAADFData(exitwaves)													# CALCULATE HAADF
