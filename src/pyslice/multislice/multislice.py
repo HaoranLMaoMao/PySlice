@@ -231,7 +231,7 @@ class Probe:
     def copy(self,selected_probes=None):
         """Create a deep copy of the probe."""
         new_probe = Probe.__new__(Probe)
-        for attr in dir(self):
+        for attr in self.__dict__.keys():
             if attr[0]=="_" or "array" in attr:
                 continue
             val = getattr(self,attr)
@@ -246,10 +246,10 @@ class Probe:
                 new_probe._array = self._array[:,selected_probes,:,:].clone()
             new_probe.offsets = self.offsets[selected_probes,:]
             new_probe.probe_positions = self.probe_positions[selected_probes,:]
-            print("new",new_probe.offsets.shape,new_probe.probe_positions.shape)
+            #print("new",new_probe.offsets.shape,new_probe.probe_positions.shape)
         else:
             new_probe._array = self._array.clone()
-            print("no selected used")
+            #print("no selected used")
         #new_probe.device = self.device
         #new_probe.array_numpy = self.array_numpy.copy()
         return new_probe
@@ -377,7 +377,7 @@ class Probe:
             self.applyShifts()
 
     def applyShifts(self):
-        nc,npt,nx,ny = self._array.shape ; print("applyShifts shape was",nc,npt,nx,ny,"len(self.probe_positions)",len(self.probe_positions))
+        nc,npt,nx,ny = self._array.shape #; print("applyShifts shape was",nc,npt,nx,ny,"len(self.probe_positions)",len(self.probe_positions))
         if npt>1: # TODO ALSO NEED SOMETHING TO DETERMINE IF SHIFTS HAVE ALREADY BEEN APPLIED. EG A LIST WHICH IS ALWAYS UPDATED WHEN ARRAY IS RESET?
             return
 
@@ -395,7 +395,7 @@ class Probe:
 
             self._array[:,i,:,:],self.offsets[i,:] = self.placeProbe(self._array[:,i,:,:], px, py )
 
-        nc,npt,nx,ny = self._array.shape ; print("applyShifts expands to",nc,npt,nx,ny)
+        nc,npt,nx,ny = self._array.shape #; print("applyShifts expands to",nc,npt,nx,ny)
 
     def placeProbe(self,array,x,y):
         dx = (x-self.lx/2) ; dy = (y-self.ly/2)                 # probe started in the center

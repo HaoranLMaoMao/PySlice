@@ -326,6 +326,8 @@ class MultisliceCalculator:
                     nc,npt,nx,ny = self.base_probe._array.shape ; npt = len(self.base_probe.probe_positions)
                     n_slices = len(self.zs)
                     npt = len(self.base_probe.probe_positions)
+                    if self.base_probe.cropping:
+                        nx,ny = self.base_probe.cropping,self.base_probe.cropping
 
                     # frame_data is always: p,x,y,l,1 (self.wavefunction_data expects p,t,x,y,l, since we loop time. recall Propagate gave l,p,x,y)
                     frame_data = zeros((self.n_probes, nx, ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)

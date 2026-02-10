@@ -18,20 +18,23 @@ dt=.005
 types={1:"B",2:"N"}
 a,b=2.4907733333333337,2.1570729817355123
 
+#run = "all"
+
 #run = "reference"
 #run = "memmap"
 #run = "probeloop1"
 #run = "probeloop10"
 #run = "mindk"
-run = "mindkloop"
+#run = "mindkloop"
 #run = "bigref"
-#run = "bigmemmap"
+run = "bigmemmap"
 #run = "bigmemloop"
+#run = "mongo"
 
 if os.path.exists("psi_data"):
 	shutil.rmtree("psi_data")
 
-if run == "reference": # same as 04_haadf.py, no modifications
+if run in [ "reference", "all" ]: # same as 04_haadf.py, no modifications
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
 	trajectory=trajectory.get_random_timesteps(2,seed=5)						# SELECT "RANDOM" TIMESTEPS
@@ -54,7 +57,7 @@ if run == "reference": # same as 04_haadf.py, no modifications
 	haadf.plot("outputs/figs/21_memorytests_reference.png")
 
 
-if run == "memmap": # same as 04_haadf.py, but using memmap
+if run in [ "memmap", "all" ]: # same as 04_haadf.py, but using memmap
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
 	trajectory=trajectory.get_random_timesteps(2,seed=5)						# SELECT "RANDOM" TIMESTEPS
@@ -71,7 +74,8 @@ if run == "memmap": # same as 04_haadf.py, but using memmap
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_memmap.png")
 
-if run == "probeloop1":
+
+if run in [ "probeloop1", "all" ]:
 # same as 04_haadf.py, but with chunked looped probes
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
@@ -89,7 +93,8 @@ if run == "probeloop1":
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_probeloop1.png")
 
-if run == "probeloop10":
+
+if run in [ "probeloop10", "all" ]:
 # same as 04_haadf.py, but with chunked looped probes
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
@@ -107,7 +112,8 @@ if run == "probeloop10":
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_probeloop10.png")
 
-if run == "mindk":
+
+if run in [ "mindk", "all" ]:
 # same as 04_haadf.py, but with chunked looped probes
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
@@ -125,7 +131,8 @@ if run == "mindk":
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_mindk.png")
 
-if run == "mindkloop":
+
+if run in [ "mindkloop", "all" ]:
 # same as 04_haadf.py, but with chunked looped probes
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
@@ -144,7 +151,7 @@ if run == "mindkloop":
 	haadf.plot("outputs/figs/21_memorytests_mindkloop.png")
 
 
-if run == "bigref": # same as 04_haadf.py, but bigger FOV. immediate OOM-kill on multislice (250x216 kpts, 50x50 probe positions, probecube is 250*216*50*50*128/8/1024^3=2GB, frame_data is the same, wavefunction_data is 3x, calculator's intermediate variable exit_waves_k is 2GB too, and Propagate has intermediate variables too)
+if run in [ "bigref", "all" ]: # same as 04_haadf.py, but bigger FOV. immediate OOM-kill on multislice (250x216 kpts, 50x50 probe positions, probecube is 250*216*50*50*128/8/1024^3=2GB, frame_data is the same, wavefunction_data is 3x, calculator's intermediate variable exit_waves_k is 2GB too, and Propagate has intermediate variables too)
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
 	trajectory=trajectory.get_random_timesteps(2,seed=5)						# SELECT "RANDOM" TIMESTEPS
@@ -159,16 +166,17 @@ if run == "bigref": # same as 04_haadf.py, but bigger FOV. immediate OOM-kill on
 	potential = Potential(xs, ys, zs, positions, atom_types, kind="kirkland")
 	potential.plot()
 	calculator=MultisliceCalculator()											# CREATE CALCULATOR OBJECT
-	probe_xs = np.linspace(a,4*a,50) ; probe_ys = np.linspace(b,4*b,50)
+	probe_xs = np.linspace(a,4*a,32) ; probe_ys = np.linspace(b,4*b,32)
 	calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys)
 	exitwaves = calculator.run()												# RUN MULTISLICE
 	haadf=HAADFData(exitwaves)													# CALCULATE HAADF
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_bigref.png")
 
+
 # (250x216 kpts, 50x50 probe positions, probecube is 250*216*50*50*128/8/1024^3=2GB, frame_data is the same, wavefunction_data is 3x, calculator's intermediate variable exit_waves_k is 2GB too, and Propagate has intermediate variables too)
 # memmapping should at least remove wavefunction_data from memory, tops out at 18GB during first frame multislice, OOM-kill after. dropping to 40x40 runs
-if run == "bigmemmap":
+if run in [ "bigmemmap", "all" ]:
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
 	trajectory=trajectory.get_random_timesteps(2,seed=5)						# SELECT "RANDOM" TIMESTEPS
@@ -190,9 +198,10 @@ if run == "bigmemmap":
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_bigmemmap.png")
 
+
 # (250x216 kpts, 50x50 probe positions, probecube is 250*216*50*50*128/8/1024^3=2GB, frame_data is the same, wavefunction_data is 3x, calculator's intermediate variable exit_waves_k is 2GB too, and Propagate has intermediate variables too)
 # memmapping should at least remove wavefunction_data from memory, probe_loop removes the probe cube plus however many intermediate variables are of the same size. 50x50 now runs in 2.7 GB ram
-if run == "bigmemloop":
+if run in [ "bigmemloop", "all" ]:
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
 	trajectory=trajectory.get_random_timesteps(2,seed=5)						# SELECT "RANDOM" TIMESTEPS
@@ -214,6 +223,7 @@ if run == "bigmemloop":
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_bigmemloop.png")
 
+
 # STRESS TEST: 1000x1000 probe positions (would be a 160 GB probe cube alone!) on uncropped trajectory (huge potential!). chunking is required to avoid the probe loop, memmaping is a good idea, and we're introducing autocropping to propagate a cropped proba through a cropped potential, which also means we limit our number of k-points. min_dk = 0.1 iA for a 0.1 A sampling means nkx,nky are 100x100 even for the full uncropped system.
 if run == "mongo":
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
@@ -230,10 +240,10 @@ if run == "mongo":
 	#potential = Potential(xs, ys, zs, positions, atom_types, kind="kirkland")
 	#potential.plot()
 	calculator=MultisliceCalculator()											# CREATE CALCULATOR OBJECT
-	probe_xs = np.linspace(a,4*a,50) ; probe_ys = np.linspace(b,4*b,50)
+	probe_xs = np.linspace(a,10*a,512) ; probe_ys = np.linspace(b,10*b,512)
 	calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,use_memmap=True,loop_probes=100,min_dk=0.1)
 	exitwaves = calculator.run()												# RUN MULTISLICE
 	haadf=HAADFData(exitwaves)													# CALCULATE HAADF
 	haadf.calculateADF(preview=False)
-	haadf.plot("outputs/figs/21_memorytests_bigmemloop.png")
+	haadf.plot("outputs/figs/21_memorytests_mongo.png")
 
