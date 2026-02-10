@@ -204,7 +204,7 @@ class HAADFData(PySliceSerial, Signal):
         for i in range(len(self._xs)): # looping doesn't blow up ram when we absolute it
             for j in range(len(self._ys)):
                 collected = self._wf_array[:,i,j,:,:,:,:] * mask[None,None,:,:,None] # c,[x],[y],t,kx,ky,l indices, mask is kx,ky
-                self._array[i,j] = mean(sum(absolute(collected),axis=(2,3)),axis=(0,1,2)) # sum over kx,ky, mean over c,t,l
+                self._array[i,j] = mean(sum(absolute(collected)**2,axis=(2,3)),axis=(0,1,2)) # sum |ψ|² over kx,ky, mean over c,t,l
 
         # Update dimensions with computed xs, ys
         def to_numpy(x):
@@ -245,7 +245,9 @@ class HAADFData(PySliceSerial, Signal):
         xs = to_cpu(self._xs)
         ys = to_cpu(self._ys)
 
-        extent = (np.amin(xs), np.amax(xs), np.amin(ys), np.amax(ys))
+        dx = (xs[-1] - xs[0]) / (len(xs) - 1) if len(xs) > 1 else 0
+        dy = (ys[-1] - ys[0]) / (len(ys) - 1) if len(ys) > 1 else 0
+        extent = (np.amin(xs) - dx/2, np.amax(xs) + dx/2, np.amin(ys) - dy/2, np.amax(ys) + dy/2)
         ax.imshow(absolute(array), cmap="inferno", extent=extent)
         ax.set_xlabel("x ($\\AA$)")
         ax.set_ylabel("y ($\\AA$)")
