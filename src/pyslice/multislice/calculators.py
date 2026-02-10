@@ -34,7 +34,7 @@ from .multislice import Probe,Propagate,create_batched_probes
 from .trajectory import Trajectory
 from ..postprocessing.wf_data import WFData
 from .sed import SED
-from ..backend import zeros,expand_dims,to_cpu,memmap
+from ..backend import zeros,expand_dims,to_cpu,memmap,ones
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +124,7 @@ class MultisliceCalculator:
         max_ky = np.inf,
         use_memmap = False,
         loop_probes = False,
+        min_dk = 0
     ):
         """
         Set up multislice simulation using PyTorch acceleration.
@@ -159,6 +160,7 @@ class MultisliceCalculator:
         self.max_ky = max_ky
         self.use_memmap = use_memmap
         self.loop_probes = loop_probes
+        self.min_dk = min_dk
                 
         # Set up spatial grids
         xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=sampling,slice_thickness=slice_thickness)
@@ -167,6 +169,12 @@ class MultisliceCalculator:
         self.lx = lx ; self.ly = ly ; self.lz = lz
         self.nx = nx ; self.ny = ny ; self.nz = nz
         self.dx = xs[1]-xs[0] ; self.dy = ys[1]-ys[0] ; self.dy = ys[1]-ys[0]
+
+        probe_cropping = 0
+        if self.min_dk > 0: # dk = 1/L = 1/(nx*sampling)
+            nx = int(np.round(1/(self.min_dk*self.sampling)))
+            self.nx = nx ; self.ny = nx
+            probe_cropping = nx
 
         # calculate kxs kys here, so we can crop them, since we'll pre-allocate wavefunction_data below
         self.kxs_uncrop = xp.fft.fftshift(xp.fft.fftfreq(self.nx, self.sampling))  # k-space in 1/Å
@@ -196,7 +204,7 @@ class MultisliceCalculator:
             self.probe_xs = [lx/2] ; self.probe_ys = [ly/2]
 
         # Create probe on the correct device from the start
-        self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions)
+        self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions,cropping=probe_cropping)
 
         if not self.loop_probes: # NEW PHILOSOPY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have a bajillion probes, then this cube might be huge! instead, only callers (e.g. calculator, addSpatialDecoherence, addTemporalDecoherence etc) call applyShifts when ready. This means calculators' loop_probes can handle them one at a time, without building out the entire cube.
             self.base_probe.applyShifts()
@@ -325,17 +333,28 @@ class MultisliceCalculator:
                     #batched_probes = create_batched_probes(self.base_probe, self.probe_positions, self.device)
                     # Propagate returns: [l,p,x,y] where l,p are both optional (if store_all_slices=True, and if n_probes>1)
                     if self.loop_probes:
+                        chunksize = self.loop_probes if isinstance(self.loop_probes,int) else 1
                         for p in tqdm(range(npt)):
+                            if p%chunksize!=0:
+                                continue
                             # new temporary probe pulled from base_probe's array
-                            array = self.base_probe._array #; print(array.shape)
-                            x,y = self.base_probe.probe_positions[p]
-                            array = self.base_probe.placeProbe(array,x,y)
-                            probe = Probe(xs = self.base_probe.xs,
-                                          ys = self.base_probe.ys,
-                                          mrad = self.base_probe.mrad,
-                                          eV = self.base_probe.eV,
-                                          array=array,
-                                          device=self.base_probe.device)
+                            probe = self.base_probe.copy(selected_probes=slice(p,p+chunksize))
+                            probe.applyShifts()
+                            #print(probe.array.shape)
+                            #array = self.base_probe._array[:,0,None,:,:]*ones(chunksize)[None,:,None,None]
+                            #array = self.base_probe.placeProbe(array,x,y)
+                            #probe = Probe(xs = self.base_probe.xs,
+                            #              ys = self.base_probe.ys,
+                            #              mrad = self.base_probe.mrad,
+                            #              eV = self.base_probe.eV,
+                            #              array=array,
+                            #              device=self.base_probe.device)
+
+                            #for i,(x,y) in enumerate(self.base_probe.probe_positions[p:p+chunksize]):
+                            #    x,y = self.base_probe.probe_positions[p]
+                            #    array[i,:,:],_ = placeProbe(array,x,y)
+
+                            #probe.applyShifts()
                             # propagate single probe
                             exit_waves_single = Propagate(probe , potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) ) # [l],p,x,y indices
                             # expand out to fixed l,p,x,y indices
@@ -343,9 +362,9 @@ class MultisliceCalculator:
                             # FFT and load into frame_data
                             kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
                             for layer_idx in range(self.n_layers):
-                                exit_waves_k = xp.fft.fft2(exit_waves_single[layer_idx,0,:,:], **kwarg) # l,p,x,y --> p,x,y
+                                exit_waves_k = xp.fft.fft2(exit_waves_single[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
                                 diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
-                                frame_data[p,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
+                                frame_data[p:p+chunksize,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
                     else:
                         # simultaneously propagate all probes at once, [l],p,x,y
                         exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )

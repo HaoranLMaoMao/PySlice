@@ -95,7 +95,7 @@ class Probe:
     Significant speedup for large grid sizes through GPU-accelerated FFT operations.
     """
     
-    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, probe_xs=None, probe_ys=None, probe_positions=None):
+    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, probe_xs=None, probe_ys=None, probe_positions=None, cropping=False):
         """
         Initialize GPU-accelerated probe wavefunction.
         
@@ -194,6 +194,9 @@ class Probe:
             self._array = zeros((1,1,nx,ny),dtype=complex_dtype)
             self._array[0,0,:,:] = self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)
 
+        self.cropping = cropping
+        self.offsets = np.zeros((len(self.probe_positions),2),dtype=int) # these are used when we have cropped the probe
+
         #self.applyShifts() # NEW PHILOSOPY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have a bajillion probes, then this cube might be huge! instead, only callers (e.g. calculator, addSpatialDecoherence, addTemporalDecoherence etc) call applyShifts when ready. This means calculators' loop_probes can handle them one at a time, without building out the entire cube.
 
     def generate_single_probe(self,mrad,wavelength,gaussianVOA,preview=False):
@@ -225,19 +228,30 @@ class Probe:
         return xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
         #self.array_numpy = self.array.cpu().numpy()
     
-    def copy(self):
+    def copy(self,selected_probes=None):
         """Create a deep copy of the probe."""
-        new_probe = ProbeTorch.__new__(ProbeTorch)
-        new_probe.xs = self.xs.clone()
-        new_probe.ys = self.ys.clone()
-        new_probe.mrad = self.mrad
-        new_probe.eV = self.eV
-        new_probe.wavelength = self.wavelength
-        new_probe.kxs = self.kxs.clone()
-        new_probe.kys = self.kys.clone()
-        new_probe._array = self._array.clone()
-        new_probe.device = self.device
-        new_probe.array_numpy = self.array_numpy.copy()
+        new_probe = Probe.__new__(Probe)
+        for attr in dir(self):
+            if attr[0]=="_" or "array" in attr:
+                continue
+            val = getattr(self,attr)
+            if hasattr(val,"clone"):
+                val = val.clone()
+            setattr(new_probe,attr,val)
+        if selected_probes is not None:
+            nc,npt,nx,ny = self._array.shape
+            if npt == 1:
+                new_probe._array = self._array[:,:,:,:].clone()
+            else:
+                new_probe._array = self._array[:,selected_probes,:,:].clone()
+            new_probe.offsets = self.offsets[selected_probes,:]
+            new_probe.probe_positions = self.probe_positions[selected_probes,:]
+            print("new",new_probe.offsets.shape,new_probe.probe_positions.shape)
+        else:
+            new_probe._array = self._array.clone()
+            print("no selected used")
+        #new_probe.device = self.device
+        #new_probe.array_numpy = self.array_numpy.copy()
         return new_probe
 
     @property
@@ -363,24 +377,45 @@ class Probe:
             self.applyShifts()
 
     def applyShifts(self):
-        nc,npt,nx,ny = self._array.shape #; print("applyShifts shape was",nc,npt,nx,ny)
+        nc,npt,nx,ny = self._array.shape ; print("applyShifts shape was",nc,npt,nx,ny,"len(self.probe_positions)",len(self.probe_positions))
         if npt>1: # TODO ALSO NEED SOMETHING TO DETERMINE IF SHIFTS HAVE ALREADY BEEN APPLIED. EG A LIST WHICH IS ALWAYS UPDATED WHEN ARRAY IS RESET?
             return
-        self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
+
+        # inflate self._array to store probe cube (npt,nx,ny)
+        if self.cropping:
+            i1=nx//2-self.cropping//2 ; i2=i1+self.cropping     # |_______i1___.___i2_______| for initial centered probe at lx/2,ly/2
+            j1=ny//2-self.cropping//2 ; j2=j1+self.cropping
+            self._array = self._array[:,0,None,i1:i2,j1:j2] * ones(len(self.probe_positions))[None,:,None,None]
+        else:
+            self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
+        # loop through probe positions
         for i, (px,py) in enumerate(self.probe_positions):
             if px-self.lx/2 == 0 and py-self.ly/2 == 0:
                     continue
 
-            self._array[:,i,:,:] = self.placeProbe(self._array[:,i,:,:], px, py )
+            self._array[:,i,:,:],self.offsets[i,:] = self.placeProbe(self._array[:,i,:,:], px, py )
 
-        nc,npt,nx,ny = self._array.shape #; print("applyShifts expands to",nc,npt,nx,ny)
+        nc,npt,nx,ny = self._array.shape ; print("applyShifts expands to",nc,npt,nx,ny)
 
     def placeProbe(self,array,x,y):
+        dx = (x-self.lx/2) ; dy = (y-self.ly/2)                 # probe started in the center
+        if self.cropping:
+            i1=self.nx//2-self.cropping//2 ; i2=i1+self.cropping  # |_______i1___.___i2_______| for initial centered probe at lx/2,ly/2
+            j1=self.ny//2-self.cropping//2 ; j2=j1+self.cropping
+            device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
+            kxs = xp.fft.fftfreq(self.cropping, d=self.dx, **device_kwargs)
+            kys = xp.fft.fftfreq(self.cropping, d=self.dy, **device_kwargs)
+            dpx = dx//self.dx ; dpy = dy//self.dy               # pixel shifts
+            offset_x = i1+dpx ; offset_y = j1+dpy
+            dx-=dpx*self.dx ; dy-=dpy*self.dy                   # update subpixel shifts
+        else:
+            kxs,kys=self.kxs,self.kys
+            offset_x = 0 ; offset_y=0
         probe_k = xp.fft.fft2(array) # positional,summable,x,y
-        kx_shift = xp.exp(-2j * xp.pi * self.kxs[None,:, None] * (x-self.lx/2) )
-        ky_shift = xp.exp(-2j * xp.pi * self.kys[None,None, :] * (y-self.ly/2) )
+        kx_shift = xp.exp(-2j * xp.pi * kxs[None,:, None] * dx )
+        ky_shift = xp.exp(-2j * xp.pi * kys[None,None, :] * dy )
         probe_k_shifted = probe_k * kx_shift * ky_shift
-        return xp.fft.ifft2(probe_k_shifted)
+        return xp.fft.ifft2(probe_k_shifted),(offset_x,offset_y)
 
     def aberrate(self,aberrations):
         dP = aberrationFunction(self.kxs,self.kys,self.wavelength,aberrations)
@@ -545,11 +580,16 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     
     # Pre-compute propagation operator in k-space (Fresnel propagation)
     # All tensors should already be on the correct device from creation
-    kx_grid, ky_grid = xp.meshgrid(potential.kxs, potential.kys, indexing='ij')
+    kx,ky = potential.kxs, potential.kys
+    if probe.cropping:
+        device_kwargs = {'device': probe.device, 'dtype': probe.dtype} if probe.use_torch else {}
+        kx = xp.fft.fftfreq(probe.cropping, d=probe.dx, **device_kwargs)
+        ky = xp.fft.fftfreq(probe.cropping, d=probe.dy, **device_kwargs)
+    kx_grid, ky_grid = xp.meshgrid(kx, ky, indexing='ij')
     k_squared = kx_grid**2 + ky_grid**2
 
     # Precompute 2/3 Nyquist anti-aliasing aperture for bandwidth-limiting transmission functions
-    aa_aperture = antialias_aperture(potential.kxs, potential.kys)
+    aa_aperture = antialias_aperture(kx, ky)
 
     # Fold anti-aliasing aperture into propagator to bandwidth-limit wavefunction at every slice
     P = xp.exp(-1j * xp.pi * probe_wavelengths[:,None,None] * dz * k_squared[None,:,:]) * aa_aperture[None,:,:] # Kirkland2010 Eq 6.65
@@ -575,7 +615,16 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
             potential_slice = potential.calculateSlice(z)
         else:
             potential_slice = potential._array[:, :, z]
-        t = xp.exp(1j * sigma[:,None,None] * potential_slice[None,:,:]) # Kirkland2010 Eq 6.59
+
+        if probe.cropping:
+            t = zeros( (len(sigma), probe.cropping, probe.cropping ), type_match=P)
+            for p,o in enumerate(probe.offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
+                pot = xp.roll(potential_slice,-o[0],0)[:probe.cropping,:]
+                pot = xp.roll(pot,-o[1],1)[:,:probe.cropping]
+                #pot = xp.roll(potential_slice,list(-o),(0,1))[:probe.cropping,:probe.cropping]
+                t[p,:,:]=xp.exp(1j*sigma[p]*pot)
+        else:
+            t = xp.exp(1j * sigma[:,None,None] * potential_slice[None,:,:]) # Kirkland2010 Eq 6.59. n,x,y indices
 
         # Bandwidth-limit the transmission function to 2/3 Nyquist to prevent aliasing
         kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
