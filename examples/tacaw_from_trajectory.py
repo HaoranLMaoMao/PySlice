@@ -9,9 +9,6 @@ a LAMMPS dump file directly and proceeds to multislice + TACAW analysis.
 
 Input file:
     ../tests/inputs/hBN_truncated.lammpstrj
-
-Requirements:
-    pip install pyslice
 """
 
 import os

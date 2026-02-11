@@ -11,9 +11,6 @@ Along the way we visualize:
   3. (Optional) The projected electrostatic potential — for diagnostic purposes
 
 No external input files are needed — the structure is created from scratch.
-
-Requirements:
-    pip install pyslice
 """
 
 import os

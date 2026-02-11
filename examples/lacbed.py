@@ -16,9 +16,6 @@ Steps:
 
 Input file:
     ../tests/inputs/Si_truncated.lammpstrj
-
-Requirements:
-    pip install pyslice
 """
 
 import os

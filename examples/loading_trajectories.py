@@ -18,9 +18,6 @@ Input files:
     ../tests/inputs/silicon_xyz.xyz
     ../tests/inputs/hBN_truncated.lammpstrj
     ../tests/inputs/hBN_GAP_ase.trj
-
-Requirements:
-    pip install pyslice
 """
 
 import numpy as np

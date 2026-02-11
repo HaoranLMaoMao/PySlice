@@ -9,9 +9,6 @@ Complete PySlice workflow from scratch:
   4. TACAW: spectral diffraction at a chosen frequency + phonon dispersion
 
 No external input files are needed — the structure is created from scratch.
-
-Requirements:
-    pip install "pyslice[fast,md]"
 """
 
 import os

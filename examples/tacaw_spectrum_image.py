@@ -10,9 +10,6 @@ in time to extract intensity at a chosen phonon frequency.
 
 This script loads the MD trajectory produced by tacaw_pipeline.py.
 Run that example first to generate the trajectory.
-
-Requirements:
-    pip install pyslice
 """
 
 import os
