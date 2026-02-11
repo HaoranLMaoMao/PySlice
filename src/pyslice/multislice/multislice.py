@@ -596,34 +596,15 @@ class PrismProbe:
         # SPARSIFIED STUFF, USED FOR CONSTRUCTING SPARSE SINUSOIDS IN REAL SPACE
         if nky is None:
             nky = nkx
-        self.nx_cropped = nkx ; self.ny_cropped = nky
+        self.nx_cropped = nkx ; self.ny_cropped = nky # indices for cropping i1,i2,j1,j2
         self.i1 = self.nx//2-self.nx_cropped//2 ; self.i2 = self.i1+self.nx_cropped
         self.j1 = self.ny//2-self.ny_cropped//2 ; self.j2 = self.j1+self.ny_cropped
-        #self.kx_cropped = self.kxs[i1:i2] # ...-3,-2,-1,0,1,2,3... -crop-> [-2,-1,0,1,2] #--> unshift again --> [0,1,2,-2,-1]
-        #self.ky_cropped = self.kys[j1:j2] # NO, KEEP IT SHIFTED
-        #print("kxs",self.kxs)
-        #print("kx_cropped",self.kx_cropped)
-        #print("ky_cropped",self.ky_cropped)
         self.probe_positions=zeros((self.nx_cropped,self.ny_cropped,2))
-        #self.i_lookup=zeros((self.nx_cropped),dtype=int) # these are used to map sparse indices to full-res
-        #self.j_lookup=zeros((self.ny_cropped),dtype=int)
-        #self.ij_pairs=zeros((self.nx_cropped,self.ny_cropped,2),dtype=int)
         for i,kx in enumerate(self.kxs[self.i1:self.i2]):           # looping across a sparsified k-grid
-            #ii = xp.argmin(absolute(self.kxs-kx))
-            #self.i_lookup[i]=ii                         # "which full-res k-point closely matches this sparse k-point"
-            #print("cropped",i,"--> uncropped",ii)
             for j,ky in enumerate(self.kys[self.j1:self.j2]):
-                #n = j+i*self.ny_cropped
                 self.probe_positions[i,j,0]=kx
                 self.probe_positions[i,j,1]=ky
-                #jj = xp.argmin(absolute(self.kys-ky))
-                #self.j_lookup[j]=jj
-                #self.ij_pairs[i,j,0]=ii
-                #self.ij_pairs[i,j,1]=jj
-        #i,j=1,1 ; ii=self.i_lookup[i] ; jj=self.j_lookup[j]
-        #print("cropped i,j="+str(i)+","+str(j),"cropped kx,ky="+str(self.kx_cropped[i])+","+str(self.ky_cropped[j]),"matches uncropped ii,jj="+str(ii)+","+str(jj),"uncropped kx,ky="+str(self.kxs[ii])+","+str(self.kys[jj]))
         self.probe_positions = reshape(self.probe_positions,(self.nx_cropped*self.ny_cropped,2))
-        #self.ij_pairs = reshape(self.ij_pairs,(self.nx_cropped*self.ny_cropped,2))
 
         # HANDLE BEAM PARAMS (copied from Probe just in case anyone asks for them)
         self.mrad = mrad
@@ -643,18 +624,8 @@ class PrismProbe:
         self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
         # loop through probe positions
         for n,(kx,ky) in enumerate(self.probe_positions):
-            self._array[:,n,:,:] = np.exp(-2j * xp.pi * self.xs[:, None] * kx ) * np.exp(-2j * xp.pi * self.ys[None,:] * ky )
+            self._array[:,n,:,:] = np.exp(2j * xp.pi * self.xs[:, None] * kx ) * np.exp(2j * xp.pi * self.ys[None,:] * ky )
             # numpy appears to use exp(i2pixk) convention for FFT: xs = np.linspace(0,100,10000) ; ys = np.sin(xs) ; fft = np.fft.fft(ys) ; freq=np.fft.fftfreq(len(xs),d=xs[1]-xs[0]) ; fft2 = np.sum(ys[:,None]*np.exp(2j*np.pi*xs[:,None]*freq[None,:]),axis=0)
-
-
-            #if i==0:
-            #    import matplotlib.pyplot as plt
-            #    fig, ax = plt.subplots()
-            #    ax.imshow(to_cpu(xp.real(self._array[0,i,:,:])).T, cmap="inferno")
-            #    plt.show()
-            #ii,jj=self.ij_pairs[n]
-            #self._array[:,n,ii,jj] = 1
-            #self._array[:,n,:,:] = xp.fft.ifft2(xp.fft.ifftshift(self._array[:,n,:,:])) # generate_single_probe does fft.ifftshift(xp.fft.ifft2(reciprocal))
 
     # if a PrismProbe object (a whole bunch of sinusoidal entrance waves) is propagated through a potential, then the potential exit waves for a whole bunch of realistic probes can be calculated from the exit waves for each entrance wave
     # SHIFTING: array is shifted, factors is NOT shifted,
@@ -665,25 +636,29 @@ class PrismProbe:
         #import matplotlib.pyplot as plt
         #fig, ax = plt.subplots()
         #i,j=self.nx_cropped//2+1,self.ny_cropped//2-1
-        #ii=self.i_lookup[i] ; jj = self.j_lookup[j]
-        #print(self.kx_cropped[i],self.ky_cropped[j])
-        #print(self.kxs[ii],self.kys[jj])
         #ax.imshow(np.real(np.fft.ifft2(np.fft.ifftshift(to_cpu(array[i,j,:,:])))).T, cmap="inferno")
         #plt.show()
+        # strategy: we need each probe's array (generated, shifted to position), FFT'd, cropped, so we can select fourier components
+        # you can 1) create a dummy probe, call generate_single_probe and placeProbe, and reuse it every time, and this can be done in real or reciprocal space. or 2) you can just create a new probe each time (for a chunk of positions). i'm choosing 2 because it makes chunking easier
         #probe = Probe(self.xs, self.ys, self.mrad, self.eV, defer_shifts=True) # dummy probe so we can directly access Probe class functions
         for n,(x,y) in enumerate(tqdm(positions)):
             if n%chunksize!=0:
                 continue
+            # strategy 1, real-space
             #ary = probe.generate_single_probe(self.mrad,self.wavelength,self.gaussianVOA,preview=False)
             #probe_k = xp.fft.fftshift(xp.fft.fft2(probe.placeProbe(ary,x,y)[0][0,:,:])) # shiff(fft()) to match what calculators did to array
+            # strategy 2, keep things in reciprocal space, saves two ffts?
             # realspace single probe was xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
             # placed was xp.fft.fft2(array), then phase ramp, then xp.fft.ifft2(array)
             #ary = probe.generate_single_probe(self.mrad,self.wavelength,self.gaussianVOA,preview=False,keep_reciprocal=True)
             #probe_k = xp.fft.fftshift(probe.placeProbe(ary,x,y,realspace=False)[0][0,:,:])
-
+            # strategy 3, stack of probes
             probes = Probe(self.xs, self.ys, self.mrad, self.eV, probe_positions = positions[n:n+chunksize])
             kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
             probe_ks = xp.fft.fftshift(xp.fft.fft2(probes._array[0,:,:,:],**kwarg),**kwarg)
+            # fourier components of FFT'd and cropped probe are the contribution of each exit wave
+            factors = probe_ks[:,self.i1:self.i2,self.j1:self.j2] # this is unshifted since ij_lookup used unshifted kxs,kys
+            result[n:n+chunksize,:,:]=sum(factors[:,:,:,None,None]*array[None,:,:,:,:],axis=(1,2)) # sum over all sinusoids
 
             #dx = (x-probe.lx/2) ; dy = (y-probe.ly/2)
             #if abs(dx)<.1 and abs(dy)<.1:
@@ -691,13 +666,12 @@ class PrismProbe:
             #    print("dx",dx,dy)
             #    import matplotlib.pyplot as plt
             #    fig, ax = plt.subplots()
-            #    ax.imshow(np.real(probe_k).T, cmap="inferno")
+            #    ax.imshow(np.real(probe_ks[0]).T, cmap="inferno")
             #    plt.show()
-            factors = probe_ks[:,self.i1:self.i2,self.j1:self.j2] # this is unshifted since ij_lookup used unshifted kxs,kys
             # preview our sparse-k reconstructed probe? fft --> downsample --> ifft
-            #if n==len(positions)//3:
+            #if n<=len(positions)//3<n+chunksize:
             #    print("plotting reconstructed probe for",x,y)
-            #    probe_r = xp.fft.ifft2(xp.fft.ifftshift(factors))
+            #    probe_r = xp.fft.ifft2(xp.fft.ifftshift(factors[0,:,:]))
             #    import matplotlib.pyplot as plt
             #    fig, ax = plt.subplots()
             #    extent = (xp.min(self.xs), xp.max(self.xs), xp.min(self.ys), xp.max(self.ys))
@@ -705,7 +679,6 @@ class PrismProbe:
             #    plt.show()
             # result from this probe is it's downsampled fourier component scaling/phase term, multiplied by each fourier component's raw exit
             #factors = xp.fft.fftshift(factors) # array will have been shift(fft())'d in MultisliceCalculator
-            result[n:n+chunksize,:,:]=sum(factors[:,:,:,None,None]*array[None,:,:,:,:],axis=(1,2)) # sum over all sinusoids
 
         return result
 
