@@ -8,6 +8,8 @@ Compare two approaches to multislice simulation:
            displacements → CBED + HAADF
   Part B — Real dynamics: load a LAMMPS MD trajectory with true thermal
            motion → CBED + HAADF
+  Part C — Aberrations: re-run Part A with spherical aberration and
+           2-fold astigmatism to see their effect on the HAADF image
 
 Same scan grid and microscope parameters in both cases so the results
 are directly comparable.
@@ -110,3 +112,50 @@ haadf_md = HAADFData(wf_md)
 haadf_md.calculateADF(inner_mrad=60, outer_mrad=200)
 haadf_md.plot("outputs/haadf_md_trajectory.png")
 print("Saved HAADF (MD trajectory)")
+
+# ============================= PART C ======================================
+# Aberrations — same frozen-phonon structure as Part A, with lens aberrations
+# ===========================================================================
+# Aberrations are applied to the probe after setup using calc.base_probe.aberrate().
+# The argument is a dict of Cnm coefficients (following abTEM convention):
+#
+#   Rotationally symmetric:   "C30": value           (e.g. spherical aberration in Å)
+#   With orientation angle:   "C12": (value, angle)  (e.g. 2-fold astigmatism)
+#
+# Common coefficients:
+#   C10 — defocus                   C12 — 2-fold astigmatism
+#   C21 — axial coma                C23 — 3-fold astigmatism
+#   C30 — 3rd-order spherical       C32 — axial star
+#   C34 — 4-fold astigmatism
+print()
+print("=" * 60)
+print("PART C: Frozen phonon + aberrations")
+print("=" * 60)
+
+calc = MultisliceCalculator()
+calc.setup(
+    trajectory_cif,
+    aperture=30, voltage_eV=100e3, sampling=0.1, slice_thickness=0.5,
+    probe_xs=probe_xs, probe_ys=probe_ys,
+    use_memmap=True,
+    loop_probes=500,
+)
+
+# Apply aberrations to the probe before running
+calc.base_probe.aberrate({
+    "C30": 1e3,              # 1000 Å spherical aberration
+    "C12": (1e2, 0.0),       # 100 Å 2-fold astigmatism at 0°
+})
+
+wf_aberr = calc.run()
+
+wf_aberr.plot_reciprocal(
+    "outputs/cbed_aberrated.png",
+    whichProbe=0, powerscaling=0.1, extent=[-2, 2, -2, 2],
+)
+print("Saved CBED (aberrated)")
+
+haadf_aberr = HAADFData(wf_aberr)
+haadf_aberr.calculateADF(inner_mrad=60, outer_mrad=200)
+haadf_aberr.plot("outputs/haadf_aberrated.png")
+print("Saved HAADF (aberrated)")
