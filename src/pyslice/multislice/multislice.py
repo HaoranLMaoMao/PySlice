@@ -587,21 +587,27 @@ class PrismProbe:
         self.kys = xp.fft.fftfreq(self.ny, d=self.dy, **device_kwargs)
         self._array = zeros((1,1,self.nx,self.ny),dtype=self.complex_dtype)
         # SPARSIFIED STUFF, USED FOR CONSTRUCTING SPARSE SINUSOIDS IN REAL SPACE
-        self.nx_sparse = 25 ; self.ny_sparse = 26
-        self.kx_sparse = xp.fft.fftfreq(self.nx_sparse, d=self.dx, **device_kwargs)
-        self.ky_sparse = xp.fft.fftfreq(self.ny_sparse, d=self.dy, **device_kwargs)
-        self.probe_positions=zeros((self.nx_sparse*self.ny_sparse,2))
-        self.i_lookup=zeros((self.nx_sparse),dtype=int) # these are used to map sparse indices to full-res
-        self.j_lookup=zeros((self.ny_sparse),dtype=int)
-        for i,kx in enumerate(self.kx_sparse):           # looping across a sparsified k-grid
+        self.nx_cropped = 49 ; self.ny_cropped = 50
+        i1 = self.nx//2-self.nx_cropped//2 ; i2 = i1+self.nx_cropped
+        j1 = self.ny//2-self.ny_cropped//2 ; j2 = j1+self.ny_cropped
+        self.kx_cropped = xp.fft.ifftshift(xp.fft.fftshift(self.kxs)[i1:i2])
+        self.ky_cropped = xp.fft.ifftshift(xp.fft.fftshift(self.kys)[j1:j2])
+        self.probe_positions=zeros((self.nx_cropped*self.ny_cropped,2))
+        self.i_lookup=zeros((self.nx_cropped),dtype=int) # these are used to map sparse indices to full-res
+        self.j_lookup=zeros((self.ny_cropped),dtype=int)
+        self.ij_pairs=zeros((self.nx_cropped*self.ny_cropped,2),dtype=int)
+        for i,kx in enumerate(self.kx_cropped):           # looping across a sparsified k-grid
             ii = xp.argmin(absolute(self.kxs-kx))
             self.i_lookup[i]=ii                         # "which full-res k-point closely matches this sparse k-point"
-            for j,ky in enumerate(self.ky_sparse):
-                n = j+i*self.ny_sparse
+            for j,ky in enumerate(self.ky_cropped):
+                n = j+i*self.ny_cropped
                 self.probe_positions[n,0]=kx
                 self.probe_positions[n,1]=ky
                 jj = xp.argmin(absolute(self.kys-ky))
                 self.j_lookup[j]=jj
+                self.ij_pairs[n,0]=ii
+                self.ij_pairs[n,1]=jj
+
 
         # HANDLE BEAM PARAMS (copied from Probe just in case anyone asks for them)
         self.mrad = mrad
@@ -620,18 +626,21 @@ class PrismProbe:
         # inflate self._array to store probe cube (npt,nx,ny)
         self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
         # loop through probe positions
-        for i,(kx,ky) in enumerate(self.probe_positions):
-            self._array[:,i,:,:] = np.exp(-1j * xp.pi * self.xs[:, None] * kx ) * np.exp(-1j * xp.pi * self.ys[None,:] * ky )
+        for n,(kx,ky) in enumerate(self.probe_positions):
+            #self._array[:,i,:,:] = np.exp(-2j * xp.pi * self.xs[:, None] * kx ) * np.exp(-2j * xp.pi * self.ys[None,:] * ky )
             #if i==0:
             #    import matplotlib.pyplot as plt
             #    fig, ax = plt.subplots()
             #    ax.imshow(to_cpu(xp.real(self._array[0,i,:,:])).T, cmap="inferno")
             #    plt.show()
+            ii,jj=self.ij_pairs[n]
+            self._array[:,n,ii,jj] = 1
+            self._array[:,n,:,:] = xp.fft.ifft2(self._array[:,n,:,:])
 
     # if a PrismProbe object (a whole bunch of sinusoidal entrance waves) is propagated through a potential, then the potential exit waves for a whole bunch of realistic probes can be calculated from the exit waves for each entrance wave
     def calculateProbesFromS(self,array,positions): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
         result = zeros((len(positions),self.nx,self.ny),dtype="complex") # full-res kx,ky for each probe position
-        array = reshape(array,(self.nx_sparse,self.ny_sparse,self.nx,self.ny)) # eikx,eiky,kx,ky
+        array = reshape(array,(self.nx_cropped,self.ny_cropped,self.nx,self.ny)) # eikx,eiky,kx,ky
         # preview an arbitrary exit wave? (note: calculator will have done shift(fft(realspace)), so we should invert those steps)
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
@@ -648,7 +657,7 @@ class PrismProbe:
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 extent = (xp.min(self.xs), xp.max(self.xs), xp.min(self.ys), xp.max(self.ys))
-                ax.imshow(to_cpu(xp.real(probe_r)).T, cmap="inferno",extent=extent)
+                ax.imshow(to_cpu(xp.real(probe_r)).T[::-1,:], cmap="inferno",extent=extent)
                 #ax.set_xlabel("x ($\\AA$)") ; ax.set_ylabel("y ($\\AA}$)")
                 plt.show()
             # result from this probe is it's downsampled fourier component scaling/phase term, multiplied by each fourier component's raw exit
