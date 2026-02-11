@@ -587,7 +587,7 @@ class PrismProbe:
         self.kys = xp.fft.fftshift(xp.fft.fftfreq(self.ny, d=self.dy, **device_kwargs))
         self._array = zeros((1,1,self.nx,self.ny),dtype=self.complex_dtype)
         # SPARSIFIED STUFF, USED FOR CONSTRUCTING SPARSE SINUSOIDS IN REAL SPACE
-        self.nx_cropped = 25 ; self.ny_cropped = 26
+        self.nx_cropped = 26 ; self.ny_cropped = 25
         i1 = self.nx//2-self.nx_cropped//2 ; i2 = i1+self.nx_cropped
         j1 = self.ny//2-self.ny_cropped//2 ; j2 = j1+self.ny_cropped
         self.kx_cropped = self.kxs[i1:i2] # ...-3,-2,-1,0,1,2,3... -crop-> [-2,-1,0,1,2] #--> unshift again --> [0,1,2,-2,-1]
