@@ -590,8 +590,8 @@ class PrismProbe:
         self.nx_cropped = 25 ; self.ny_cropped = 26
         i1 = self.nx//2-self.nx_cropped//2 ; i2 = i1+self.nx_cropped
         j1 = self.ny//2-self.ny_cropped//2 ; j2 = j1+self.ny_cropped
-        self.kx_cropped = xp.fft.ifftshift(self.kxs[i1:i2]) # ...-3,-2,-1,0,1,2,3... -crop-> [-2,-1,0,1,2] --> unshift again --> [0,1,2,-2,-1]
-        self.ky_cropped = xp.fft.ifftshift(self.kys[j1:j2])
+        self.kx_cropped = self.kxs[i1:i2] # ...-3,-2,-1,0,1,2,3... -crop-> [-2,-1,0,1,2] #--> unshift again --> [0,1,2,-2,-1]
+        self.ky_cropped = self.kys[j1:j2] # NO, KEEP IT SHIFTED
         print("kxs",self.kxs)
         print("kx_cropped",self.kx_cropped)
         print("ky_cropped",self.ky_cropped)
@@ -655,18 +655,20 @@ class PrismProbe:
         # preview an arbitrary exit wave? (note: calculator will have done shift(fft(realspace)), so we should invert those steps)
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
-        i,j=1,-2
+        i,j=self.nx_cropped//2+1,self.ny_cropped//2-1
+        ii=self.i_lookup[i] ; jj = self.j_lookup[j]
         print(self.kx_cropped[i],self.ky_cropped[j])
+        print(self.kxs[ii],self.kys[jj])
         ax.imshow(np.real(np.fft.ifft2(np.fft.ifftshift(to_cpu(array[i,j,:,:])))).T, cmap="inferno")
         plt.show()
         for n,(x,y) in enumerate(tqdm(positions)):
             probe = Probe(self.xs, self.ys, self.mrad, self.eV, probe_positions=[[x,y]])
-            probe_k = xp.fft.fftshift(xp.fft.fft2(probe._array[0,0,:,:])) # i,j lookup used shifted indices
+            probe_k = xp.fft.fftshift(xp.fft.fft2(probe._array[0,0,:,:])) # shiff(fft()) to match what calculators did to array
             factors = probe_k[self.i_lookup,:][:,self.j_lookup] # this is unshifted since ij_lookup used unshifted kxs,kys
             # preview our sparse-k reconstructed probe? fft --> downsample --> ifft
             if n==len(positions)//3:
                 print("plotting reconstructed probe for",x,y)
-                probe_r = xp.fft.ifft2(factors)
+                probe_r = xp.fft.ifft2(xp.fft.ifftshift(factors))
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 extent = (xp.min(self.xs), xp.max(self.xs), xp.min(self.ys), xp.max(self.ys))
