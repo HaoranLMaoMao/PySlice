@@ -20,8 +20,13 @@ a,b=2.4907733333333337,2.1570729817355123
 
 # LOAD TRAJECTORY
 trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()
-# TRIM TO 10x10 UC
-trajectory=trajectory.slice_positions([0,5*a],[0,5*b])
+trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
+trajectory=trajectory.get_random_timesteps(2,seed=5)						# SELECT "RANDOM" TIMESTEPS
+for x,y,m in [[2*a,b*4/3,12],[2*a,b*4/3+b,14],[3.5*a,b*4/3,16]]:			# ADD DOPANTS (for testing scan lims)
+    dxyz = trajectory.positions[0,:,:]-np.asarray([x,y,0])[None,:]
+    distances = np.sqrt(np.sum((dxyz)**2,axis=1))
+    i = np.argmin(distances) # which atom is closest to a,b?
+    trajectory.atom_types[i] = m
 # SELECT 10 "RANDOM" TIMESTEPS (use seed for reproducibility)
 trajectory=trajectory.get_random_timesteps(2,seed=5)
 # CREATE CALCULATOR OBJECT
@@ -29,9 +34,8 @@ calculator=MultisliceCalculator()
 # SET UP GRID OF HAADF SCAN POINTS
 #xy=probe_grid([a,3*a],[b,3*b],14,16)
 #calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_positions=xy,cache_levels=[])
-probe_xs = np.linspace(a,3*a,27)
-probe_ys = np.linspace(b,3*b,27)
-calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,prism=True,loop_probes=100,use_memmap=True)#,cache_levels=[])
+probe_xs = np.linspace(a,4*a,33) ; probe_ys = np.linspace(b,4*b,32)
+calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,prism=25,loop_probes=100,use_memmap=True)#,cache_levels=[])
 # RUN MULTISLICE
 exitwaves = calculator.run()
 #exitwaves.plot_realspace(whichProbe=500)

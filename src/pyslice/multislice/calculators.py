@@ -191,8 +191,8 @@ class MultisliceCalculator:
 
         # Preferred to pass probe_xs and probe_ys from which we will define a grid
         if self.probe_xs is not None and self.probe_ys is not None:
-            x,y = np.meshgrid(self.probe_xs,self.probe_ys,indexing='ij')
-            self.probe_positions = np.asarray(list(zip(x.flat,y.flat)))
+            x,y = np.meshgrid(self.probe_xs,self.probe_ys)
+            self.probe_positions = np.reshape([x,y],(2,len(x.flat))).T # x,y looped indices to match what multislice.Probe does
 
         # If probe_positions provided but not probe_xs/probe_ys, derive them
         elif self.probe_positions is not None:
@@ -207,7 +207,7 @@ class MultisliceCalculator:
 
         if self.prism:
             # Prism algorithm works by passing a series of sinusoids (fourier components shared by all probes) through the sample. "PrismProbe" will therefore give us a series of sinusoids, and there is a reconstruction step later
-            self.base_probe = PrismProbe(xs, ys, self.aperture, self.voltage_eV, device=self.device)
+            self.base_probe = PrismProbe(xs, ys, self.aperture, self.voltage_eV, device=self.device, nkx=self.prism)
         else:
             # OR, we'll propagate our series of real-space probes.
             # need to make sure they're on the correct device, and defer_shifts=True means the calculator controls when to expand the probe cube (see loop_probes)
