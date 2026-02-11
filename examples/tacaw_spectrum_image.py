@@ -31,7 +31,7 @@ print(f"Loaded trajectory: {trajectory.n_frames} frames, {trajectory.n_atoms} at
 # ---------------------------------------------------------------------------
 # 2. Convergent-beam multislice over a probe scan grid
 # ---------------------------------------------------------------------------
-a_si = trajectory.box_matrix[0, 0] / 10  # unit cell size from box
+a_si = 5.431  # Si lattice parameter (Å)
 probe_xs = np.linspace(a_si, 4 * a_si, 18)
 probe_ys = np.linspace(a_si, 4 * a_si, 18)
 

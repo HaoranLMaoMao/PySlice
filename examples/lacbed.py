@@ -50,6 +50,8 @@ print(f"After z-tiling: {trajectory.n_frames} frames, {trajectory.n_atoms} atoms
 # ---------------------------------------------------------------------------
 # 2. Multislice with a defocused convergent probe
 # ---------------------------------------------------------------------------
+defocus_ang = -1000  # Å — large defocus spreads the probe over a wide area
+
 calc = MultisliceCalculator()
 calc.setup(
     trajectory,
@@ -58,9 +60,7 @@ calc.setup(
     sampling=0.1,
     slice_thickness=0.5,
 )
-
-# Defocus the probe to spread it over a large area
-calc.base_probe.defocus(-1000)  # -1000 Å defocus
+calc.base_probe.defocus(defocus_ang)
 
 exitwaves = calc.run()
 print(f"Exit-wave shape: {exitwaves.array.shape}")
@@ -69,7 +69,7 @@ print(f"Exit-wave shape: {exitwaves.array.shape}")
 # 3. Post-processing: free-space propagation + real-space aperture
 # ---------------------------------------------------------------------------
 # Propagate to the detector plane (compensate for specimen thickness)
-exitwaves.propagate_free_space(1000 - calc.lz)
+exitwaves.propagate_free_space(-defocus_ang - calc.lz)
 
 # Apply a real-space selected-area aperture (5 Å radius)
 exitwaves.applyMask(5, "real")

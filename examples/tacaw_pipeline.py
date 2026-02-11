@@ -87,7 +87,7 @@ Z = tacaw.spectral_diffraction(15.0)
 tacaw.plot(Z ** 0.1, "kx", "ky", filename="outputs/tacaw_15THz.png")
 print("Saved spectral diffraction at 15 THz")
 
-# Phonon dispersion along Gamma → X
+# Phonon dispersion along X → Gamma → X
 a_si = 5.431  # Si lattice parameter (Å)
 kx_path = np.linspace(-2 * np.pi / a_si, 2 * np.pi / a_si, 200)
 ky_path = np.zeros_like(kx_path)
@@ -105,4 +105,4 @@ ax.set_xlabel("kx ($\\AA^{-1}$)")
 ax.set_ylabel("frequency (THz)")
 fig.savefig("outputs/tacaw_dispersion.png")
 plt.close(fig)
-print("Saved phonon dispersion Gamma → X → Gamma")
+print("Saved phonon dispersion X → Gamma → X")

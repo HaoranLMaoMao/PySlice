@@ -7,8 +7,8 @@ electron beam and compute the diffraction pattern.
 
 Along the way we visualize:
   1. The atomic structure (projected along the beam direction)
-  2. The projected electrostatic potential the electrons scatter from
-  3. The resulting electron diffraction pattern
+  2. The resulting electron diffraction pattern
+  3. (Optional) The projected electrostatic potential — for diagnostic purposes
 
 No external input files are needed — the structure is created from scratch.
 
@@ -92,23 +92,11 @@ calc.setup(
 )
 
 # ---------------------------------------------------------------------------
-# 4. Visualize the projected potential
+# 4. Run multislice and plot the diffraction pattern
 # ---------------------------------------------------------------------------
-# The Potential class builds the electrostatic potential that electrons
-# scatter from. Here we visualize it for the first frozen-phonon frame.
-potential = Potential(
-    calc.xs, calc.ys, calc.zs,
-    trajectory.positions[0], list(trajectory.atom_types),
-    kind="kirkland", device=calc.device, slice_axis=calc.slice_axis,
-)
-potential.build()
-potential.plot(filename="outputs/tem_potential.png")
-plt.close()
-print("Saved projected potential")
-
-# ---------------------------------------------------------------------------
-# 5. Run multislice and plot the diffraction pattern
-# ---------------------------------------------------------------------------
+# MultisliceCalculator builds the potential internally — you do NOT need to
+# construct a Potential object yourself.  We do it below purely to visualize
+# what the electrons scatter from.
 wf = calc.run()
 wf.plot_reciprocal(
     "outputs/tem_diffraction.png",
@@ -117,3 +105,19 @@ wf.plot_reciprocal(
     extent=[-2, 2, -2, 2],
 )
 print("Saved diffraction pattern")
+
+# ---------------------------------------------------------------------------
+# 5. (Optional) Visualize the projected potential
+# ---------------------------------------------------------------------------
+# This is NOT part of the normal workflow — just a diagnostic visualization.
+# The Potential class lets you inspect the electrostatic potential that the
+# multislice algorithm scatters electrons from.
+potential = Potential(
+    calc.xs, calc.ys, calc.zs,
+    trajectory.positions[0], list(trajectory.atom_types),
+    kind="kirkland", device=calc.device, slice_axis=calc.slice_axis,
+)
+potential.build()
+potential.plot(filename="outputs/tem_potential.png")
+plt.close()
+print("Saved projected potential (optional diagnostic)")
