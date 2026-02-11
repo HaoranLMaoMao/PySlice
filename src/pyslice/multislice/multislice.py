@@ -211,12 +211,12 @@ class Probe:
 
         reciprocal = zeros((nx, ny))
         radius = (mrad * 1e-3) / wavelength  # Convert mrad to reciprocal space units
-        kx_grid, ky_grid = xp.meshgrid(self.kxs, self.kys, indexing='ij')
+        kx_grid, ky_grid = xp.meshgrid(self.kxs, self.kys, indexing='ij') # unshifted kx ky: 0,1,2,3,....-3,-2,-1
         radii = xp.sqrt(kx_grid**2 + ky_grid**2)
 
         if gaussianVOA == 0:
             mask = radii < radius
-            reciprocal[mask] = 1.0
+            reciprocal[mask] = 1.0          # mask covers the corners (unshifted in reciprocal space)
         else:
             from scipy.special import erf
             reciprocal = 1-erf((radii-radius)/(gaussianVOA*radius))
@@ -225,12 +225,12 @@ class Probe:
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots() ; print(radius)
             extent = (xp.min(self.kxs), xp.max(self.kxs), xp.min(self.kys), xp.max(self.kys))
-            ax.imshow(xp.fft.fftshift(reciprocal.T), cmap="inferno",extent=extent)
+            ax.imshow(xp.fft.fftshift(reciprocal.T), cmap="inferno",extent=extent) # shift to visualize with k=0 in the center
             ax.set_xlabel("kx ($\\AA^{-1}$)")
             ax.set_ylabel("ky ($\\AA^{-1}$)")
             plt.show()
 
-        return xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
+        return xp.fft.ifftshift(xp.fft.ifft2(reciprocal)) # iFFT --> realspace --> shift --> zero in the center
         #self.array_numpy = self.array.cpu().numpy()
     
     def copy(self,selected_probes=None):
@@ -428,7 +428,7 @@ class Probe:
         # self.array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
         # Aberrations are defined at the aperture plane, so we must apply them in reciprocal space. 
 	    # (or do a convolution in real-space)
-        reciprocal = xp.fft.fft2(xp.fft.fftshift(self._array))
+        reciprocal = xp.fft.fft2(xp.fft.fftshift(self._array)) # centered-real --> zero at corner --> FFT --> kx,ky zero at corner
         reciprocal *= dP
         self._array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
 
@@ -464,7 +464,7 @@ class Probe:
 # this is done by multiplying the complex wave (be it a probe or an exit wave) by xp.exp(-1j * dPhi)
 def aberrationFunction(kxs,kys,wavelength,aberrations): # aberrations should be a dict of Cnm following https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
     dPhi = xp.zeros((len(kxs),len(kys)))
-    ks = xp.sqrt( kxs[:,None]**2 + kys[None,:]**2 )
+    ks = xp.sqrt( kxs[:,None]**2 + kys[None,:]**2 ) # unshifted: 0,1,2,3,...-3,-2,-1, reciprocal origin at corner
     theta = xp.arctan2( kys[None,:] , kxs[:,None] )
     for k in aberrations.keys():
         n,m = int(k[1]),int(k[2]) # C03 --> 0,3
@@ -583,31 +583,38 @@ class PrismProbe:
             self.xs = xs
             self.ys = ys
         device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
-        self.kxs = xp.fft.fftfreq(self.nx, d=self.dx, **device_kwargs)
-        self.kys = xp.fft.fftfreq(self.ny, d=self.dy, **device_kwargs)
+        self.kxs = xp.fft.fftshift(xp.fft.fftfreq(self.nx, d=self.dx, **device_kwargs)) # # 0,1,2,3...-3,-2.-1 -shift-> ...-3,-2,-1,0,1,2,3...
+        self.kys = xp.fft.fftshift(xp.fft.fftfreq(self.ny, d=self.dy, **device_kwargs))
         self._array = zeros((1,1,self.nx,self.ny),dtype=self.complex_dtype)
         # SPARSIFIED STUFF, USED FOR CONSTRUCTING SPARSE SINUSOIDS IN REAL SPACE
-        self.nx_cropped = 49 ; self.ny_cropped = 50
+        self.nx_cropped = 25 ; self.ny_cropped = 26
         i1 = self.nx//2-self.nx_cropped//2 ; i2 = i1+self.nx_cropped
         j1 = self.ny//2-self.ny_cropped//2 ; j2 = j1+self.ny_cropped
-        self.kx_cropped = xp.fft.ifftshift(xp.fft.fftshift(self.kxs)[i1:i2])
-        self.ky_cropped = xp.fft.ifftshift(xp.fft.fftshift(self.kys)[j1:j2])
-        self.probe_positions=zeros((self.nx_cropped*self.ny_cropped,2))
+        self.kx_cropped = xp.fft.ifftshift(self.kxs[i1:i2]) # ...-3,-2,-1,0,1,2,3... -crop-> [-2,-1,0,1,2] --> unshift again --> [0,1,2,-2,-1]
+        self.ky_cropped = xp.fft.ifftshift(self.kys[j1:j2])
+        print("kxs",self.kxs)
+        print("kx_cropped",self.kx_cropped)
+        print("ky_cropped",self.ky_cropped)
+        self.probe_positions=zeros((self.nx_cropped,self.ny_cropped,2))
         self.i_lookup=zeros((self.nx_cropped),dtype=int) # these are used to map sparse indices to full-res
         self.j_lookup=zeros((self.ny_cropped),dtype=int)
-        self.ij_pairs=zeros((self.nx_cropped*self.ny_cropped,2),dtype=int)
+        self.ij_pairs=zeros((self.nx_cropped,self.ny_cropped,2),dtype=int)
         for i,kx in enumerate(self.kx_cropped):           # looping across a sparsified k-grid
             ii = xp.argmin(absolute(self.kxs-kx))
             self.i_lookup[i]=ii                         # "which full-res k-point closely matches this sparse k-point"
+            #print("cropped",i,"--> uncropped",ii)
             for j,ky in enumerate(self.ky_cropped):
-                n = j+i*self.ny_cropped
-                self.probe_positions[n,0]=kx
-                self.probe_positions[n,1]=ky
+                #n = j+i*self.ny_cropped
+                self.probe_positions[i,j,0]=kx
+                self.probe_positions[i,j,1]=ky
                 jj = xp.argmin(absolute(self.kys-ky))
                 self.j_lookup[j]=jj
-                self.ij_pairs[n,0]=ii
-                self.ij_pairs[n,1]=jj
-
+                self.ij_pairs[i,j,0]=ii
+                self.ij_pairs[i,j,1]=jj
+        i,j=1,1 ; ii=self.i_lookup[i] ; jj=self.j_lookup[j]
+        print("cropped i,j="+str(i)+","+str(j),"cropped kx,ky="+str(self.kx_cropped[i])+","+str(self.ky_cropped[j]),"matches uncropped ii,jj="+str(ii)+","+str(jj),"uncropped kx,ky="+str(self.kxs[ii])+","+str(self.kys[jj]))
+        self.probe_positions = reshape(self.probe_positions,(self.nx_cropped*self.ny_cropped,2))
+        self.ij_pairs = reshape(self.ij_pairs,(self.nx_cropped*self.ny_cropped,2))
 
         # HANDLE BEAM PARAMS (copied from Probe just in case anyone asks for them)
         self.mrad = mrad
@@ -627,28 +634,34 @@ class PrismProbe:
         self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
         # loop through probe positions
         for n,(kx,ky) in enumerate(self.probe_positions):
-            #self._array[:,i,:,:] = np.exp(-2j * xp.pi * self.xs[:, None] * kx ) * np.exp(-2j * xp.pi * self.ys[None,:] * ky )
+            self._array[:,n,:,:] = np.exp(-2j * xp.pi * self.xs[:, None] * kx ) * np.exp(-2j * xp.pi * self.ys[None,:] * ky )
+            # numpy appears to use exp(i2pixk) convention for FFT: xs = np.linspace(0,100,10000) ; ys = np.sin(xs) ; fft = np.fft.fft(ys) ; freq=np.fft.fftfreq(len(xs),d=xs[1]-xs[0]) ; fft2 = np.sum(ys[:,None]*np.exp(2j*np.pi*xs[:,None]*freq[None,:]),axis=0)
+
+
             #if i==0:
             #    import matplotlib.pyplot as plt
             #    fig, ax = plt.subplots()
             #    ax.imshow(to_cpu(xp.real(self._array[0,i,:,:])).T, cmap="inferno")
             #    plt.show()
-            ii,jj=self.ij_pairs[n]
-            self._array[:,n,ii,jj] = 1
-            self._array[:,n,:,:] = xp.fft.ifft2(self._array[:,n,:,:])
+            #ii,jj=self.ij_pairs[n]
+            #self._array[:,n,ii,jj] = 1
+            #self._array[:,n,:,:] = xp.fft.ifft2(xp.fft.ifftshift(self._array[:,n,:,:])) # generate_single_probe does fft.ifftshift(xp.fft.ifft2(reciprocal))
 
     # if a PrismProbe object (a whole bunch of sinusoidal entrance waves) is propagated through a potential, then the potential exit waves for a whole bunch of realistic probes can be calculated from the exit waves for each entrance wave
+    # SHIFTING: array is shifted, factors is NOT shifted,
     def calculateProbesFromS(self,array,positions): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
         result = zeros((len(positions),self.nx,self.ny),dtype="complex") # full-res kx,ky for each probe position
         array = reshape(array,(self.nx_cropped,self.ny_cropped,self.nx,self.ny)) # eikx,eiky,kx,ky
         # preview an arbitrary exit wave? (note: calculator will have done shift(fft(realspace)), so we should invert those steps)
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
-        ax.imshow(np.real(np.fft.ifft2(np.fft.ifftshift(to_cpu(array[0,5,:,:])))).T, cmap="inferno")
+        i,j=1,-2
+        print(self.kx_cropped[i],self.ky_cropped[j])
+        ax.imshow(np.real(np.fft.ifft2(np.fft.ifftshift(to_cpu(array[i,j,:,:])))).T, cmap="inferno")
         plt.show()
         for n,(x,y) in enumerate(tqdm(positions)):
             probe = Probe(self.xs, self.ys, self.mrad, self.eV, probe_positions=[[x,y]])
-            probe_k = xp.fft.fft2(probe._array[0,0,:,:])
+            probe_k = xp.fft.fftshift(xp.fft.fft2(probe._array[0,0,:,:])) # i,j lookup used shifted indices
             factors = probe_k[self.i_lookup,:][:,self.j_lookup] # this is unshifted since ij_lookup used unshifted kxs,kys
             # preview our sparse-k reconstructed probe? fft --> downsample --> ifft
             if n==len(positions)//3:
@@ -661,7 +674,7 @@ class PrismProbe:
                 #ax.set_xlabel("x ($\\AA$)") ; ax.set_ylabel("y ($\\AA}$)")
                 plt.show()
             # result from this probe is it's downsampled fourier component scaling/phase term, multiplied by each fourier component's raw exit
-            factors = xp.fft.fftshift(factors) # array will have been shift(fft())'d in MultisliceCalculator
+            #factors = xp.fft.fftshift(factors) # array will have been shift(fft())'d in MultisliceCalculator
             result[n,:,:]=sum(factors[:,:,None,None]*array,axis=(0,1)) # sum over all sinusoids
 
         return result
