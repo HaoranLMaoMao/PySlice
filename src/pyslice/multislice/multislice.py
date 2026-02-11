@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import logging
-from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape
+from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop
 
 try:
     import torch ; xp = torch
@@ -95,7 +95,7 @@ class Probe:
     Significant speedup for large grid sizes through GPU-accelerated FFT operations.
     """
     
-    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, probe_xs=None, probe_ys=None, probe_positions=None, cropping=False, defer_shifts=False):
+    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, probe_xs=None, probe_ys=None, probe_positions=None, cropping=False, defer_shifts=False, stay_reciprocal = False, crop_reciprocal=False):
         """
         Initialize GPU-accelerated probe wavefunction.
         
@@ -179,6 +179,12 @@ class Probe:
         # Set up device kwargs for unified xp interface (same as Potential class)
         device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
         
+        self.stay_reciprocal = stay_reciprocal
+        self.crop_reciprocal = crop_reciprocal
+        if self.crop_reciprocal: # user asked for kspace to be, say, 100 pixels, but right now it's 350...
+            self.crop_reciprocal = (min(nx,ny)-self.crop_reciprocal)//2 # so we need to chop 125 off each side
+
+
         self.kxs = xp.fft.fftfreq(nx, d=dx, **device_kwargs)
         self.kys = xp.fft.fftfreq(ny, d=dy, **device_kwargs)
 
@@ -204,14 +210,20 @@ class Probe:
         if not defer_shifts:
             self.applyShifts()
 
-    def generate_single_probe(self,mrad,wavelength,gaussianVOA,preview=False,keep_reciprocal=False):
-        nx,ny = len(self.kxs) , len(self.kys)
+    def generate_single_probe(self,mrad,wavelength,gaussianVOA,preview=False):
+        kxs,kys = self.kxs,self.kys
+        if self.crop_reciprocal:           # unshifted kx ky: 0,1,2,3,....-3,-2,-1, midcrop gets rid of high-k: 0,1,2,-2,-1
+            kxs = midcrop(self.kxs,self.crop_reciprocal)
+            kys = midcrop(self.kys,self.crop_reciprocal)
+
+        nx,ny = len(kxs) , len(kys)
         if mrad == 0:
             return zeros((nx, ny))+1
 
-        reciprocal = zeros((nx, ny))
         radius = (mrad * 1e-3) / wavelength  # Convert mrad to reciprocal space units
-        kx_grid, ky_grid = xp.meshgrid(self.kxs, self.kys, indexing='ij') # unshifted kx ky: 0,1,2,3,....-3,-2,-1
+
+        reciprocal = zeros((nx, ny))
+        kx_grid, ky_grid = xp.meshgrid(kxs, kys, indexing='ij') # unshifted kx ky: 0,1,2,3,....-3,-2,-1
         radii = xp.sqrt(kx_grid**2 + ky_grid**2)
 
         if gaussianVOA == 0:
@@ -230,8 +242,9 @@ class Probe:
             ax.set_ylabel("ky ($\\AA^{-1}$)")
             plt.show()
 
-        if keep_reciprocal:
-            return reciprocal
+        if self.stay_reciprocal: # if we would've done a real-space shift, we should apply a phase ramp in reciprocal space
+            return reciprocal * xp.exp(-2j * xp.pi * kxs[None,:, None] * self.lx/2 ) * xp.exp(-2j * xp.pi * kys[None,None, :] * self.ly/2 )
+
         return xp.fft.ifftshift(xp.fft.ifft2(reciprocal)) # iFFT --> realspace --> shift --> zero in the center
         #self.array_numpy = self.array.cpu().numpy()
     
@@ -404,7 +417,7 @@ class Probe:
 
         nc,npt,nx,ny = self._array.shape #; print("applyShifts expands to",nc,npt,nx,ny)
 
-    def placeProbe(self,array,x,y,realspace=True):
+    def placeProbe(self,array,x,y):
         dx = (x-self.lx/2) ; dy = (y-self.ly/2)                 # probe started in the center
         if self.cropping:
             i1=self.nx//2-self.cropping//2 ; i2=i1+self.cropping  # |_______i1___.___i2_______| for initial centered probe at lx/2,ly/2
@@ -415,19 +428,25 @@ class Probe:
             dpx = dx//self.dx ; dpy = dy//self.dy               # pixel shifts
             offset_x = i1+dpx ; offset_y = j1+dpy
             dx-=dpx*self.dx ; dy-=dpy*self.dy                   # update subpixel shifts
+        elif self.crop_reciprocal:           # unshifted kx ky: 0,1,2,3,....-3,-2,-1, midcrop gets rid of high-k: 0,1,2,-2,-1
+            kxs = midcrop(self.kxs,self.crop_reciprocal)
+            kys = midcrop(self.kys,self.crop_reciprocal)
+            offset_x = 0 ; offset_y=0
         else:
             kxs,kys=self.kxs,self.kys
             offset_x = 0 ; offset_y=0
-        if realspace:
+        if not self.stay_reciprocal:
             probe_k = xp.fft.fft2(array) # positional,summable,x,y
         else:
             probe_k = array
         kx_shift = xp.exp(-2j * xp.pi * kxs[None,:, None] * dx )
         ky_shift = xp.exp(-2j * xp.pi * kys[None,None, :] * dy )
         probe_k_shifted = probe_k * kx_shift * ky_shift
-        if realspace:
-            return xp.fft.ifft2(probe_k_shifted),(offset_x,offset_y)
-        return probe_k_shifted,(offset_x,offset_y)
+
+        if self.stay_reciprocal:
+             return probe_k_shifted,(offset_x,offset_y)
+        return xp.fft.ifft2(probe_k_shifted),(offset_x,offset_y)
+
 
     def aberrate(self,aberrations):
         dP = aberrationFunction(self.kxs,self.kys,self.wavelength,aberrations)
@@ -597,6 +616,17 @@ class PrismProbe:
         if nky is None:
             nky = nkx
         self.nx_cropped = nkx ; self.ny_cropped = nky # indices for cropping i1,i2,j1,j2
+
+        #self.to_cut = self.nx//2-self.nx_cropped//2
+
+        #print("kxs",len(self.kxs),
+        #tocut=(min(self.nx,self.ny)-self.nx_cropped)//2 # this calc will be used for probe cropping
+        #self.nx_cropped = len(midcrop(self.kxs,tocut))
+        #self.ny_cropped = len(midcrop(self.kys,tocut))
+        #print()
+        #self.crop_reciprocal = (min(nx,ny)-self.crop_reciprocal)//2
+
+
         self.i1 = self.nx//2-self.nx_cropped//2 ; self.i2 = self.i1+self.nx_cropped
         self.j1 = self.ny//2-self.ny_cropped//2 ; self.j2 = self.j1+self.ny_cropped
         self.probe_positions=zeros((self.nx_cropped,self.ny_cropped,2))
@@ -653,9 +683,13 @@ class PrismProbe:
             #ary = probe.generate_single_probe(self.mrad,self.wavelength,self.gaussianVOA,preview=False,keep_reciprocal=True)
             #probe_k = xp.fft.fftshift(probe.placeProbe(ary,x,y,realspace=False)[0][0,:,:])
             # strategy 3, stack of probes
-            probes = Probe(self.xs, self.ys, self.mrad, self.eV, probe_positions = positions[n:n+chunksize])
+            #probes = Probe(self.xs, self.ys, self.mrad, self.eV, probe_positions = positions[n:n+chunksize])
+            #kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
+            #probe_ks = xp.fft.fftshift(xp.fft.fft2(probes._array[0,:,:,:],**kwarg),**kwarg)
+            probes = Probe(self.xs, self.ys, self.mrad, self.eV, probe_positions = positions[n:n+chunksize],stay_reciprocal=True)#,crop_reciprocal=self.nx_cropped)
             kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
-            probe_ks = xp.fft.fftshift(xp.fft.fft2(probes._array[0,:,:,:],**kwarg),**kwarg)
+            probe_ks = xp.fft.fftshift(probes._array[0,:,:,:],**kwarg)
+
             # fourier components of FFT'd and cropped probe are the contribution of each exit wave
             factors = probe_ks[:,self.i1:self.i2,self.j1:self.j2] # this is unshifted since ij_lookup used unshifted kxs,kys
             result[n:n+chunksize,:,:]=sum(factors[:,:,:,None,None]*array[None,:,:,:,:],axis=(1,2)) # sum over all sinusoids
@@ -669,14 +703,14 @@ class PrismProbe:
             #    ax.imshow(np.real(probe_ks[0]).T, cmap="inferno")
             #    plt.show()
             # preview our sparse-k reconstructed probe? fft --> downsample --> ifft
-            #if n<=len(positions)//3<n+chunksize:
-            #    print("plotting reconstructed probe for",x,y)
-            #    probe_r = xp.fft.ifft2(xp.fft.ifftshift(factors[0,:,:]))
-            #    import matplotlib.pyplot as plt
-            #    fig, ax = plt.subplots()
-            #    extent = (xp.min(self.xs), xp.max(self.xs), xp.min(self.ys), xp.max(self.ys))
-            #    ax.imshow(to_cpu(xp.real(probe_r)).T[::-1,:], cmap="inferno",extent=extent)
-            #    plt.show()
+            if n<=len(positions)//3<n+chunksize:
+                print("plotting reconstructed probe for",x,y)
+                probe_r = xp.fft.ifft2(xp.fft.ifftshift(factors[0,:,:]))
+                import matplotlib.pyplot as plt
+                fig, ax = plt.subplots()
+                extent = (xp.min(self.xs), xp.max(self.xs), xp.min(self.ys), xp.max(self.ys))
+                ax.imshow(to_cpu(xp.real(probe_r)).T[::-1,:], cmap="inferno",extent=extent)
+                plt.show()
             # result from this probe is it's downsampled fourier component scaling/phase term, multiplied by each fourier component's raw exit
             #factors = xp.fft.fftshift(factors) # array will have been shift(fft())'d in MultisliceCalculator
 

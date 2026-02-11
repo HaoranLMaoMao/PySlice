@@ -21,7 +21,7 @@ a,b=2.4907733333333337,2.1570729817355123
 # LOAD TRAJECTORY
 trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()
 trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
-trajectory=trajectory.get_random_timesteps(2,seed=5)						# SELECT "RANDOM" TIMESTEPS
+trajectory=trajectory.get_random_timesteps(1,seed=5)						# SELECT "RANDOM" TIMESTEPS
 for x,y,m in [[2*a,b*4/3,12],[2*a,b*4/3+b,14],[3.5*a,b*4/3,16]]:			# ADD DOPANTS (for testing scan lims)
     dxyz = trajectory.positions[0,:,:]-np.asarray([x,y,0])[None,:]
     distances = np.sqrt(np.sum((dxyz)**2,axis=1))

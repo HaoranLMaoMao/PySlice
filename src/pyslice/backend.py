@@ -237,3 +237,6 @@ def to_cpu(array):
 
 def isnan(x):
     return xp.isnan(x)
+
+def midcrop(a,n): # e.g. unshifted ks: 0,1,2,3,4.....-4,-3,-,2-1, crop out 3 through -3, the inverse of a[n:-n]
+    return xp.roll(xp.roll(a,len(a)//2)[n:-n],len(a)//2-n)

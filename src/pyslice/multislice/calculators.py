@@ -295,7 +295,7 @@ class MultisliceCalculator:
                 #continue
                 cache_file = self.output_dir / f"frame_{frame_idx}.npy"
                 # Show detailed progress for single-frame runs
-                show_progress = (frame_idx == 0 and self.n_frames == 1)
+                show_progress = (frame_idx == 0 and self.n_frames == 1 and not self.loop_probes)
 
                 # special case: no frames cached, but we clearly finished and got to tacaw. if so, don't bother regenerating
                 # this allows cache_levels = [] to be used for disk space savings
