@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import logging
-from ..backend import zeros,mean,ones,to_cpu,asarray
+from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape
 
 try:
     import torch ; xp = torch
@@ -535,6 +535,159 @@ def create_batched_probes(base_probe, probe_positions, device=None):
         array = xp.asarray(probe_arrays)
 
     return Probe(base_probe.xs, base_probe.ys, base_probe.mrad, base_probe.eV, array=array, device=base_probe.device)
+
+
+class PrismProbe:
+    """
+    Where Probe object creates a series of real-space probes (n,nx,ny cube, for n probe positions), the Prism algorithm propagates a series of sinusoids (fourier components shared by all real-space probes), then reconstructs each probe's exit wave.
+
+    PrismProbe object should serve as a stand-in for Probe, meaning it can be propagated through a potential (via the Propagate function), the probe cube (n,nx,ny) generated via self.applyShifts, and a subset of probes selected via self.copy, which enables chunked processing. where Probe.probe_positions stores real-space x,y pairs for positions, PrismProbe stores reciprocal-space kx,ky pairs to denote the sinusoid.
+
+    """
+    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False):
+
+        # TORCH DEVICES AND DTYPES
+        if TORCH_AVAILABLE:
+            # Auto-detect device if not specified (same logic as Potential class)
+            if device is None:
+                if torch.cuda.is_available():
+                    device = torch.device('cuda')
+                elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+                    device = torch.device('mps')
+                else:
+                    device = torch.device('cpu')
+            elif isinstance(device, str):
+                device = torch.device(device)
+            self.device = device
+            self.use_torch = True
+            # Use float32 for MPS compatibility (same as Potential class)
+            self.dtype = torch.float32 if device.type == 'mps' else torch.float64
+            self.complex_dtype = torch.complex64 if device.type == 'mps' else torch.complex128
+        else:
+            if device is not None:
+                raise ImportError("PyTorch not available. Please install PyTorch.")
+            self.device = None
+            self.use_torch = False
+            self.dtype = np.float64
+            self.complex_dtype = np.complex128
+
+        # FULL-SIZED STUFF: USED FOR INTERACTING WITH THE POTENTIAL AND ALL THAT, real-space and reciprocal-space
+        self.dx = xs[1]-xs[0] ; self.dy = ys[1]-ys[0]
+        self.nx = len(xs) ; self.ny = len(ys)
+        # Convert coordinate arrays to tensors if using torch (same as Potential class)
+        if self.use_torch:
+            # Use as_tensor to avoid copy warning when input is already a tensor
+            self.xs = torch.as_tensor(xs, dtype=self.dtype, device=self.device)
+            self.ys = torch.as_tensor(ys, dtype=self.dtype, device=self.device)
+        else:
+            self.xs = xs
+            self.ys = ys
+        device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
+        self.kxs = xp.fft.fftfreq(self.nx, d=self.dx, **device_kwargs)
+        self.kys = xp.fft.fftfreq(self.ny, d=self.dy, **device_kwargs)
+        self._array = zeros((1,1,self.nx,self.ny),dtype=self.complex_dtype)
+        # SPARSIFIED STUFF, USED FOR CONSTRUCTING SPARSE SINUSOIDS IN REAL SPACE
+        self.nx_sparse = 25 ; self.ny_sparse = 26
+        self.kx_sparse = xp.fft.fftfreq(self.nx_sparse, d=self.dx, **device_kwargs)
+        self.ky_sparse = xp.fft.fftfreq(self.ny_sparse, d=self.dy, **device_kwargs)
+        self.probe_positions=zeros((self.nx_sparse*self.ny_sparse,2))
+        self.i_lookup=zeros((self.nx_sparse),dtype=int) # these are used to map sparse indices to full-res
+        self.j_lookup=zeros((self.ny_sparse),dtype=int)
+        for i,kx in enumerate(self.kx_sparse):           # looping across a sparsified k-grid
+            ii = xp.argmin(absolute(self.kxs-kx))
+            self.i_lookup[i]=ii                         # "which full-res k-point closely matches this sparse k-point"
+            for j,ky in enumerate(self.ky_sparse):
+                n = j+i*self.ny_sparse
+                self.probe_positions[n,0]=kx
+                self.probe_positions[n,1]=ky
+                jj = xp.argmin(absolute(self.kys-ky))
+                self.j_lookup[j]=jj
+
+        # HANDLE BEAM PARAMS (copied from Probe just in case anyone asks for them)
+        self.mrad = mrad
+        self.eV = eV ; self.wavelength=wavelength(eV)
+        self.eVs = np.asarray([eV])
+        if self.use_torch:
+            self.eVs = torch.as_tensor(self.eVs, dtype=self.dtype, device=self.device)
+        self.wavelengths = wavelength(self.eVs)
+        self.temporal_decoherence = None
+        self.spatial_decoherence = None
+        self.gaussianVOA = gaussianVOA
+        self.cropping = False
+
+    # where Probe.applyShifts looks at real-space x,y pairs in probe_positions and applies a phase ramp to shift a template probe, PrismProbe.applyShifts looks at reciprocal-space kx,ky pairs in probe_positions to construct sinusoids
+    def applyShifts(self):
+        # inflate self._array to store probe cube (npt,nx,ny)
+        self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
+        # loop through probe positions
+        for i,(kx,ky) in enumerate(self.probe_positions):
+            self._array[:,i,:,:] = np.exp(-1j * xp.pi * self.xs[:, None] * kx ) * np.exp(-1j * xp.pi * self.ys[None,:] * ky )
+            #if i==0:
+            #    import matplotlib.pyplot as plt
+            #    fig, ax = plt.subplots()
+            #    ax.imshow(to_cpu(xp.real(self._array[0,i,:,:])).T, cmap="inferno")
+            #    plt.show()
+
+    # if a PrismProbe object (a whole bunch of sinusoidal entrance waves) is propagated through a potential, then the potential exit waves for a whole bunch of realistic probes can be calculated from the exit waves for each entrance wave
+    def calculateProbesFromS(self,array,positions): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
+        result = zeros((len(positions),self.nx,self.ny),dtype="complex") # full-res kx,ky for each probe position
+        array = reshape(array,(self.nx_sparse,self.ny_sparse,self.nx,self.ny)) # eikx,eiky,kx,ky
+        # preview an arbitrary exit wave? (note: calculator will have done shift(fft(realspace)), so we should invert those steps)
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots()
+        ax.imshow(np.real(np.fft.ifft2(np.fft.ifftshift(to_cpu(array[0,5,:,:])))).T, cmap="inferno")
+        plt.show()
+        for n,(x,y) in enumerate(tqdm(positions)):
+            probe = Probe(self.xs, self.ys, self.mrad, self.eV, probe_positions=[[x,y]])
+            probe_k = xp.fft.fft2(probe._array[0,0,:,:])
+            factors = probe_k[self.i_lookup,:][:,self.j_lookup] # this is unshifted since ij_lookup used unshifted kxs,kys
+            # preview our sparse-k reconstructed probe? fft --> downsample --> ifft
+            if n==len(positions)//3:
+                print("plotting reconstructed probe for",x,y)
+                probe_r = xp.fft.ifft2(factors)
+                import matplotlib.pyplot as plt
+                fig, ax = plt.subplots()
+                extent = (xp.min(self.xs), xp.max(self.xs), xp.min(self.ys), xp.max(self.ys))
+                ax.imshow(to_cpu(xp.real(probe_r)).T, cmap="inferno",extent=extent)
+                #ax.set_xlabel("x ($\\AA$)") ; ax.set_ylabel("y ($\\AA}$)")
+                plt.show()
+            # result from this probe is it's downsampled fourier component scaling/phase term, multiplied by each fourier component's raw exit
+            factors = xp.fft.fftshift(factors) # array will have been shift(fft())'d in MultisliceCalculator
+            result[n,:,:]=sum(factors[:,:,None,None]*array,axis=(0,1)) # sum over all sinusoids
+
+        return result
+
+    def copy(self,selected_probes=None):
+        #print("creating copy",selected_probes)
+        """Create a deep copy of the probe."""
+        new_probe = PrismProbe.__new__(PrismProbe)
+        for attr in self.__dict__.keys():
+            if attr[0]=="_" or "array" in attr:
+                continue
+            val = getattr(self,attr)
+            if hasattr(val,"clone"):
+                val = val.clone()
+            setattr(new_probe,attr,val)
+        if selected_probes is not None:
+            nc,npt,nx,ny = self._array.shape
+            if npt == 1:
+                new_probe._array = self._array[:,:,:,:].clone()
+            else:
+                new_probe._array = self._array[:,selected_probes,:,:].clone()
+            #new_probe.offsets = self.offsets[selected_probes,:]
+            new_probe.probe_positions = self.probe_positions[selected_probes,:]
+            #print("new",new_probe.offsets.shape,new_probe.probe_positions.shape)
+        else:
+            new_probe._array = self._array.clone()
+            #print("no selected used")
+        #new_probe.device = self.device
+        #new_probe.array_numpy = self.array_numpy.copy()
+        return new_probe
+
+    @property
+    def array(self):
+        return to_cpu(self._array)
+
 
 # Given a real-space entrance wave, and a potential (or object), calculate the exit wave: ψ₁ -> O -> ψ₂
 # From Kirkland2010:

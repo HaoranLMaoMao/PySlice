@@ -1,5 +1,6 @@
 # backend.py
 import numpy as np
+import os
 #import torch
 
 
@@ -129,6 +130,7 @@ def zeros(dims, dtype=None, device=None, type_match=None):
     return array
 
 def memmap(dims,dtype=DEFAULT_FLOAT_DTYPE,filename=None):
+    from numpy.lib.format import open_memmap
     if filename is None:
         print("WARNING: memmap attempted without filename, falling back to zeros")
         return zeros(dims,dtype)
@@ -136,7 +138,8 @@ def memmap(dims,dtype=DEFAULT_FLOAT_DTYPE,filename=None):
     if xp != np and dtype in [ xp.complex128, xp.complex64, xp.float64, xp.float32 ]:
         dtype = { xp.complex128:np.complex128, xp.complex64:np.complex64,
                  xp.float64:np.float64, xp.float32:np.float32 }[ dtype ]
-    return np.memmap(filename, dtype=dtype, mode='w+', shape=dims)
+    mode = 'w+' #'r+' if os.path.exists(filename) else 'w+'
+    return open_memmap(filename, dtype=dtype, mode=mode, shape=dims)
 
 def absolute(array):
     if xp != np and type(array) in [ np.memmap, np.ndarray ]:
@@ -227,7 +230,7 @@ def einsum(subscripts, *operands, **kwargs):
         return xp.einsum(subscripts, *operands, optimize=True, **kwargs)
 
 def to_cpu(array):
-    if type(array) == np.ndarray:
+    if type(array) in [ np.ndarray, np.memmap ]:
         return array
     else:
         return array.cpu().numpy()
