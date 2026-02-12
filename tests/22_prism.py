@@ -34,7 +34,7 @@ calculator=MultisliceCalculator()
 # SET UP GRID OF HAADF SCAN POINTS
 #xy=probe_grid([a,3*a],[b,3*b],14,16)
 #calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_positions=xy,cache_levels=[])
-probe_xs = np.linspace(a,4*a,33) ; probe_ys = np.linspace(b,4*b,32)
+probe_xs = np.linspace(a,4*a,256) ; probe_ys = np.linspace(b,4*b,256)
 calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,prism=25,loop_probes=100,use_memmap=True)#,cache_levels=[])
 # RUN MULTISLICE
 exitwaves = calculator.run()
