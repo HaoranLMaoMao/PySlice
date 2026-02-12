@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import logging
-from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop,einsum
+from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop,einsum,ceil
 #from line_profiler import profile
 
 try:
@@ -571,7 +571,7 @@ class PrismProbe:
     PrismProbe object should serve as a stand-in for Probe, meaning it can be propagated through a potential (via the Propagate function), the probe cube (n,nx,ny) generated via self.applyShifts, and a subset of probes selected via self.copy, which enables chunked processing. where Probe.probe_positions stores real-space x,y pairs for positions, PrismProbe stores reciprocal-space kx,ky pairs to denote the sinusoid.
 
     """
-    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, nkx = 25, nky=None):
+    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, nkx = 25, nky=None, kth=1):
 
         # TORCH DEVICES AND DTYPES
         if TORCH_AVAILABLE:
@@ -639,6 +639,7 @@ class PrismProbe:
         self.spatial_decoherence = None
         self.gaussianVOA = gaussianVOA
         self.cropping = False
+        self.kth = kth
 
     # where Probe.applyShifts looks at real-space x,y pairs in probe_positions and applies a phase ramp to shift a template probe, PrismProbe.applyShifts looks at reciprocal-space kx,ky pairs in probe_positions to construct sinusoids
     def applyShifts(self):
@@ -654,10 +655,11 @@ class PrismProbe:
     #@profile
     def calculateProbesFromS(self,array,positions,chunksize=100,load_into=None): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
         if load_into is None:
-            result = zeros((len(positions),self.nx,self.ny),dtype="complex") # full-res kx,ky for each probe position
+            result = zeros((len(positions),ceil(self.nx/self.kth),ceil(self.ny/self.kth)),dtype="complex") # full-res kx,ky for each probe position
         else:
             result = load_into
-        array = reshape(array,(self.nx_cropped,self.ny_cropped,self.nx,self.ny)) # eikx,eiky,kx,ky
+        print(self.nx,self.ny)
+        array = reshape(array,(self.nx_cropped,self.ny_cropped,ceil(self.nx/self.kth),ceil(self.ny/self.kth))) # eikx,eiky,kx,ky
         # preview an arbitrary exit wave? (note: calculator will have done shift(fft(realspace)), so we should invert those steps)
         #import matplotlib.pyplot as plt
         #fig, ax = plt.subplots()

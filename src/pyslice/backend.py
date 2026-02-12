@@ -242,3 +242,8 @@ def isnan(x):
 
 def midcrop(a,n): # e.g. unshifted ks: 0,1,2,3,4.....-4,-3,-,2-1, crop out 3 through -3, the inverse of a[n:-n]
     return xp.roll(xp.roll(a,len(a)//2)[n:-n],len(a)//2-n)
+
+def ceil(v):
+    if xp != np and type(v)==torch.Tensor:
+        return int(xp.ceil(v))
+    return int(np.ceil(v))
