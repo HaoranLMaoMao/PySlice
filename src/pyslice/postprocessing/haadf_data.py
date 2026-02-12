@@ -8,7 +8,7 @@ import logging
 from .wf_data import WFData
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
-from pyslice.backend import zeros,to_cpu,mean,sum,absolute
+from pyslice.backend import zeros,to_cpu,mean,sum,absolute,einsum
 #from ..data.pyslice_serial import PySliceSerial
 
 logger = logging.getLogger(__name__)
