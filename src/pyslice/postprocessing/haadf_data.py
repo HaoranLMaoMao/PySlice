@@ -206,8 +206,9 @@ class HAADFData(PySliceSerial, Signal):
                 collected = self._wf_array[:,i,j,:,:,:,:] * mask[None,None,:,:,None] # c,[x],[y],t,kx,ky,l indices, mask is kx,ky
                 self._array[i,j] = mean(sum(absolute(collected)**2,axis=(2,3)),axis=(0,1,2)) # sum |ψ|² over kx,ky, mean over c,t,l
         # TODO this should be einsum, but i'm not trying to test it right now...
-        # self._wf_array = absolute(self._wf_array)**2
-        # self._array[i,j] = xp.einsum('cxytkql,kq->xy',self._wf_array,mask)/(nc*nt*nl)
+        #nc,_,_,nt,_,_,nl = self._wf_array.shape
+        #self._wf_array = absolute(self._wf_array)**2
+        #self._array = xp.einsum('cxytkql,kq->xy',self._wf_array,mask)/(nc*nt*nl) # RECEIVES ERROR: RuntimeError: expected scalar type ComplexDouble but found Double
 
         # Update dimensions with computed xs, ys
         def to_numpy(x):
