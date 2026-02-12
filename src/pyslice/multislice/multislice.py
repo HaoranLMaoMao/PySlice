@@ -646,7 +646,7 @@ class PrismProbe:
         self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
         # loop through probe positions
         for n,(kx,ky) in enumerate(self.probe_positions):
-            self._array[:,n,:,:] = np.exp(2j * xp.pi * self.xs[:, None] * kx ) * xp.exp(2j * xp.pi * self.ys[None,:] * ky )
+            self._array[:,n,:,:] = xp.exp(2j * xp.pi * self.xs[:, None] * kx ) * xp.exp(2j * xp.pi * self.ys[None,:] * ky )
             # numpy appears to use exp(i2pixk) convention for FFT: xs = np.linspace(0,100,10000) ; ys = np.sin(xs) ; fft = np.fft.fft(ys) ; freq=np.fft.fftfreq(len(xs),d=xs[1]-xs[0]) ; fft2 = np.sum(ys[:,None]*np.exp(2j*np.pi*xs[:,None]*freq[None,:]),axis=0)
 
     # if a PrismProbe object (a whole bunch of sinusoidal entrance waves) is propagated through a potential, then the potential exit waves for a whole bunch of realistic probes can be calculated from the exit waves for each entrance wave

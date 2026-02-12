@@ -201,14 +201,14 @@ class HAADFData(PySliceSerial, Signal):
 
         #collected = self._wf_array * mask[None,None,None,:,:,None] # c,x,y,t,kx,ky,l indices, mask is kx,ky
         #self._array = xp.mean(xp.sum(xp.absolute(collected),axis=(4,5)),axis=(0,3,4)) # sum over kx,ky, mean over c,t,l
-        for i in range(len(self._xs)): # looping doesn't blow up ram when we absolute it
-            for j in range(len(self._ys)):
-                collected = self._wf_array[:,i,j,:,:,:,:] * mask[None,None,:,:,None] # c,[x],[y],t,kx,ky,l indices, mask is kx,ky
-                self._array[i,j] = mean(sum(absolute(collected)**2,axis=(2,3)),axis=(0,1,2)) # sum |ψ|² over kx,ky, mean over c,t,l
+        #for i in range(len(self._xs)): # looping doesn't blow up ram when we absolute it
+        #    for j in range(len(self._ys)):
+        #        collected = self._wf_array[:,i,j,:,:,:,:] * mask[None,None,:,:,None] # c,[x],[y],t,kx,ky,l indices, mask is kx,ky
+        #        self._array[i,j] = mean(sum(absolute(collected)**2,axis=(2,3)),axis=(0,1,2)) # sum |ψ|² over kx,ky, mean over c,t,l
         # TODO this should be einsum, but i'm not trying to test it right now...
-        #nc,_,_,nt,_,_,nl = self._wf_array.shape
-        #self._wf_array = absolute(self._wf_array)**2
-        #self._array = xp.einsum('cxytkql,kq->xy',self._wf_array,mask)/(nc*nt*nl) # RECEIVES ERROR: RuntimeError: expected scalar type ComplexDouble but found Double
+        nc,_,_,nt,_,_,nl = self._wf_array.shape
+        self._wf_array = absolute(self._wf_array)**2
+        self._array = einsum('cxytkql,kq->xy',self._wf_array,mask)/(nc*nt*nl) # RECEIVES ERROR: RuntimeError: expected scalar type ComplexDouble but found Double
 
         # Update dimensions with computed xs, ys
         def to_numpy(x):
