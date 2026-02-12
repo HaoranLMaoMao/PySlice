@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import logging
-from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop
+from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop,einsum
 from line_profiler import profile
 
 try:
@@ -652,7 +652,7 @@ class PrismProbe:
     # if a PrismProbe object (a whole bunch of sinusoidal entrance waves) is propagated through a potential, then the potential exit waves for a whole bunch of realistic probes can be calculated from the exit waves for each entrance wave
     # SHIFTING: array is shifted, factors is NOT shifted,
     #@profile
-    def calculateProbesFromS(self,array,positions,chunksize=1000,load_into=None): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
+    def calculateProbesFromS(self,array,positions,chunksize=100,load_into=None): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
         if load_into is None:
             result = zeros((len(positions),self.nx,self.ny),dtype="complex") # full-res kx,ky for each probe position
         else:
@@ -691,7 +691,7 @@ class PrismProbe:
             # fourier components of FFT'd and cropped probe are the contribution of each exit wave
             factors = probe_ks[:,self.i1:-self.i1,self.j1:-self.j1] # this is unshifted since ij_lookup used unshifted kxs,kys
             #factors = probe_ks#[:,self.i1:-self.i1,self.j1:-self.j1] # this is unshifted since ij_lookup used unshifted kxs,kys
-            result[n:n+chunksize,:,:]=xp.einsum('pkq,kqxy->pxy',factors,array) # sum over all sinusoids
+            result[n:n+chunksize,:,:]=einsum('pkq,kqxy->pxy',factors,array) # sum over all sinusoids
 
             #dx = (x-probe.lx/2) ; dy = (y-probe.ly/2)
             #if abs(dx)<.1 and abs(dy)<.1:

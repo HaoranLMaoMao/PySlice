@@ -224,10 +224,11 @@ def any(x):
     return xp.any(x)
 
 def einsum(subscripts, *operands, **kwargs):
-    if xp != np:
+    numpytypes = [ type(o) in [np.ndarray, np.memmap] for o in operands ]
+    if xp != np and True not in numpytypes:
         return xp.einsum(subscripts, *operands, **kwargs)
     else:
-        return xp.einsum(subscripts, *operands, optimize=True, **kwargs)
+        return np.einsum(subscripts, *operands, optimize=True, **kwargs)
 
 def to_cpu(array):
     if type(array) in [ np.ndarray, np.memmap ]:
