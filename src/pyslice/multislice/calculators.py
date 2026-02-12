@@ -393,7 +393,7 @@ class MultisliceCalculator:
 
                 if self.prism:
                     # Recall: Prism algorithm passes a series of sinusoids through the sample (fourier components shared by all real-space probes), so now for each real-space probe, we need to calculate the exitwaves from components
-                    self.base_probe.calculateProbesFromS(frame_data,self.probe_positions, load_into=(self.wavefunction_data[:,frame_idx,:,:,0]))
+                    self.base_probe.calculateProbesFromS(frame_data,self.probe_positions, load_into=self.wavefunction_data[:,frame_idx,:,:,0])
                 else:
                     self.wavefunction_data[:, frame_idx, :, :, :] = cropped # load p,x,y,l,1 --> p,t,x,y,l indices
                 # Update progress bar for this frame

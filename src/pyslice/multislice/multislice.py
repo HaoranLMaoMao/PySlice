@@ -652,7 +652,7 @@ class PrismProbe:
     # if a PrismProbe object (a whole bunch of sinusoidal entrance waves) is propagated through a potential, then the potential exit waves for a whole bunch of realistic probes can be calculated from the exit waves for each entrance wave
     # SHIFTING: array is shifted, factors is NOT shifted,
     #@profile
-    def calculateProbesFromS(self,array,positions,chunksize=10,load_into=None): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
+    def calculateProbesFromS(self,array,positions,chunksize=1000,load_into=None): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
         if load_into is None:
             result = zeros((len(positions),self.nx,self.ny),dtype="complex") # full-res kx,ky for each probe position
         else:
