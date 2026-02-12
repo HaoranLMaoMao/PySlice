@@ -228,6 +228,7 @@ def einsum(subscripts, *operands, **kwargs):
     if xp != np and True not in numpytypes:
         return xp.einsum(subscripts, *operands, **kwargs)
     else:
+        operands = [ to_cpu(o) for o in operands ]
         return np.einsum(subscripts, *operands, optimize=True, **kwargs)
 
 def to_cpu(array):
