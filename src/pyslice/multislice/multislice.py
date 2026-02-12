@@ -651,7 +651,7 @@ class PrismProbe:
 
     # if a PrismProbe object (a whole bunch of sinusoidal entrance waves) is propagated through a potential, then the potential exit waves for a whole bunch of realistic probes can be calculated from the exit waves for each entrance wave
     # SHIFTING: array is shifted, factors is NOT shifted,
-    @profile
+    #@profile
     def calculateProbesFromS(self,array,positions,chunksize=10): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
         result = zeros((len(positions),self.nx,self.ny),dtype="complex") # full-res kx,ky for each probe position
         array = reshape(array,(self.nx_cropped,self.ny_cropped,self.nx,self.ny)) # eikx,eiky,kx,ky
@@ -688,7 +688,7 @@ class PrismProbe:
             # fourier components of FFT'd and cropped probe are the contribution of each exit wave
             factors = probe_ks[:,self.i1:-self.i1,self.j1:-self.j1] # this is unshifted since ij_lookup used unshifted kxs,kys
             #factors = probe_ks#[:,self.i1:-self.i1,self.j1:-self.j1] # this is unshifted since ij_lookup used unshifted kxs,kys
-            result[n:n+chunksize,:,:]=sum(factors[:,:,:,None,None]*array[None,:,:,:,:],axis=(1,2)) # sum over all sinusoids
+            result[n:n+chunksize,:,:]=xp.einsum('pkq,kqxy->pxy',factors,array) # sum over all sinusoids
 
             #dx = (x-probe.lx/2) ; dy = (y-probe.ly/2)
             #if abs(dx)<.1 and abs(dy)<.1:
@@ -699,14 +699,14 @@ class PrismProbe:
             #    ax.imshow(np.real(probe_ks[0]).T, cmap="inferno")
             #    plt.show()
             # preview our sparse-k reconstructed probe? fft --> downsample --> ifft
-            if n<=len(positions)//3<n+chunksize:
-                print("plotting reconstructed probe for",x,y)
-                probe_r = xp.fft.ifft2(xp.fft.ifftshift(factors[0,:,:]))
-                import matplotlib.pyplot as plt
-                fig, ax = plt.subplots()
-                extent = (xp.min(self.xs), xp.max(self.xs), xp.min(self.ys), xp.max(self.ys))
-                ax.imshow(to_cpu(xp.real(probe_r)).T[::-1,:], cmap="inferno",extent=extent)
-                plt.show()
+            #if n<=len(positions)//3<n+chunksize:
+            #    print("plotting reconstructed probe for",x,y)
+            #    probe_r = xp.fft.ifft2(xp.fft.ifftshift(factors[0,:,:]))
+            #    import matplotlib.pyplot as plt
+            #    fig, ax = plt.subplots()
+            #    extent = (xp.min(self.xs), xp.max(self.xs), xp.min(self.ys), xp.max(self.ys))
+            #    ax.imshow(to_cpu(xp.real(probe_r)).T[::-1,:], cmap="inferno",extent=extent)
+            #    plt.show()
             # result from this probe is it's downsampled fourier component scaling/phase term, multiplied by each fourier component's raw exit
             #factors = xp.fft.fftshift(factors) # array will have been shift(fft())'d in MultisliceCalculator
 
