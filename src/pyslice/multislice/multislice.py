@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import logging
 from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop,einsum
-from line_profiler import profile
+#from line_profiler import profile
 
 try:
     import torch ; xp = torch
@@ -646,7 +646,7 @@ class PrismProbe:
         self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
         # loop through probe positions
         for n,(kx,ky) in enumerate(self.probe_positions):
-            self._array[:,n,:,:] = np.exp(2j * xp.pi * self.xs[:, None] * kx ) * np.exp(2j * xp.pi * self.ys[None,:] * ky )
+            self._array[:,n,:,:] = np.exp(2j * xp.pi * self.xs[:, None] * kx ) * xp.exp(2j * xp.pi * self.ys[None,:] * ky )
             # numpy appears to use exp(i2pixk) convention for FFT: xs = np.linspace(0,100,10000) ; ys = np.sin(xs) ; fft = np.fft.fft(ys) ; freq=np.fft.fftfreq(len(xs),d=xs[1]-xs[0]) ; fft2 = np.sum(ys[:,None]*np.exp(2j*np.pi*xs[:,None]*freq[None,:]),axis=0)
 
     # if a PrismProbe object (a whole bunch of sinusoidal entrance waves) is propagated through a potential, then the potential exit waves for a whole bunch of realistic probes can be calculated from the exit waves for each entrance wave
@@ -691,7 +691,10 @@ class PrismProbe:
             # fourier components of FFT'd and cropped probe are the contribution of each exit wave
             factors = probe_ks[:,self.i1:-self.i1,self.j1:-self.j1] # this is unshifted since ij_lookup used unshifted kxs,kys
             #factors = probe_ks#[:,self.i1:-self.i1,self.j1:-self.j1] # this is unshifted since ij_lookup used unshifted kxs,kys
-            result[n:n+chunksize,:,:]=einsum('pkq,kqxy->pxy',factors,array) # sum over all sinusoids
+            chunked = einsum('pkq,kqxy->pxy',factors,array) # sum over all sinusoids
+            if isinstance(result,np.memmap):
+                chunked = to_cpu(chunked)
+            result[n:n+chunksize,:,:] = chunked
 
             #dx = (x-probe.lx/2) ; dy = (y-probe.ly/2)
             #if abs(dx)<.1 and abs(dy)<.1:

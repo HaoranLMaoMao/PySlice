@@ -17,4 +17,5 @@ module load gcc
 source /home/qwe/torchenv/bin/activate # switching to uv venvs
 
 #bash runAllTests.sh torchgpu
-python3 21_memorytests.py
+#python3 21_memorytests.py
+python3 22_prism.py
