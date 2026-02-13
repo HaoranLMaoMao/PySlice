@@ -173,18 +173,28 @@ def exp(x):
     return xp.exp(x)
 
 def fft(k,**kwargs):
-    if TORCH_AVAILABLE and "axis" in kwargs.keys():
+    use_torch = TORCH_AVAILABLE
+    if type(k) in [ np.memmap, np.ndarray ]:
+        use_torch = False
+    if use_torch and "axis" in kwargs.keys():
         kwargs["dim"]=kwargs["axis"] ; del kwargs["axis"]
-    if not TORCH_AVAILABLE and "dim" in kwargs.keys():
+    if not use_torch and "dim" in kwargs.keys():
         kwargs["axis"]=kwargs["dim"] ; del kwargs["dim"]
-    return xp.fft.fft(k,**kwargs)
+    if use_torch:
+        return xp.fft.fft(k,**kwargs)
+    return np.fft.fft(k,**kwargs)
 
 def fftshift(k,**kwargs):
-    if TORCH_AVAILABLE and "axes" in kwargs.keys():
+    use_torch = TORCH_AVAILABLE
+    if type(k) in [ np.memmap, np.ndarray ]:
+        use_torch = False
+    if use_torch and "axes" in kwargs.keys():
         kwargs["dim"]=kwargs["axes"] ; del kwargs["axes"]
-    if not TORCH_AVAILABLE and "dim" in kwargs.keys():
+    if not use_torch and "dim" in kwargs.keys():
         kwargs["axes"]=kwargs["dim"] ; del kwargs["dim"]
-    return xp.fft.fftshift(k,**kwargs)
+    if use_torch:
+        return xp.fft.fftshift(k,**kwargs)
+    return np.fft.fftshift(k,**kwargs)
 
 def mean(k,**kwargs):
     use_torch = TORCH_AVAILABLE

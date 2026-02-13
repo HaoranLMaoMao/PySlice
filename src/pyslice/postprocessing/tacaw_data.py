@@ -9,7 +9,7 @@ from .wf_data import WFData
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 #from ..data.pyslice_serial import PySliceSerial
-from pyslice.backend import to_cpu,fft,fftshift,mean
+from pyslice.backend import to_cpu,fft,fftshift,mean,absolute
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -244,7 +244,7 @@ class TACAWData(PySliceSerial, Signal):
                 wf_fft = fftshift(wf_fft, axes=1)
 
                 if not self.keep_complex:
-                    wf_fft = xp.abs(wf_fft)**2
+                    wf_fft = absolute(wf_fft)**2
 
                 self._array[:,:,i,:] = wf_fft
 
@@ -254,7 +254,7 @@ class TACAWData(PySliceSerial, Signal):
             wf_fft = fftshift(wf_fft, axes=1)
 
             if not self.keep_complex:
-                wf_fft = xp.abs(wf_fft)**2
+                wf_fft = absolute(wf_fft)**2
 
             self._array = wf_fft
 
