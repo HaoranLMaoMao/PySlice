@@ -126,7 +126,8 @@ class MultisliceCalculator:
         loop_probes = False,
         min_dk = 0,
         prism = False,
-        kth=1
+        kth=1,
+        ADF=False
     ):
         """
         Set up multislice simulation using PyTorch acceleration.
@@ -165,6 +166,7 @@ class MultisliceCalculator:
         self.min_dk = min_dk
         self.prism = prism
         self.kth = kth
+        self.ADF = ADF
 
         # Set up spatial grids
         xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=sampling,slice_thickness=slice_thickness)
@@ -290,6 +292,20 @@ class MultisliceCalculator:
         if isinstance(self.base_probe._array,np.ndarray) and TORCH_AVAILABLE:
             self.base_probe._array = xp.tensor(self.base_probe._array)
 
+        if self.ADF: # create a dummy HAADFData object, first so we can hijack its getMask function, and later we'll load it up
+            kwargs = {}
+            if not isinstance(self.ADF,bool):
+                kwargs["inner_mrad"],kwargs["outer_mrad"] = self.ADF
+            from ..postprocessing.haadf_data import HAADFData
+            array = zeros((self.n_probes,1,1,1,1))
+            array+=xp.arange(self.n_probes)[:,None,None,None,None] # we'll use this as an index to map nth probe to the ADF grid coordinates i,j
+            wf = WFData(probe_positions=self.probe_positions,probe_xs=self.probe_xs,probe_ys=self.probe_ys,
+                time=None,kxs=self.kxs[::self.kth],kys=self.kys[::self.kth],xs=self.xs,ys=self.ys,
+                layer=None,array=array,probe=self.base_probe,cache_dir=self.output_dir)
+            self.ADF = HAADFData(wf)
+            self.mask = self.ADF.getMask(**kwargs)
+            self.ADF._array = zeros(self.ADF._wf_array[0,:,:,0,0,0,0].shape,type_match = self.ADF._wf_array)
+
         # Process frames one at a time with tqdm progress tracking
         with tqdm(total=self.n_frames, desc="Processing frames", unit="frame") as pbar:
             for frame_idx in range(self.n_frames):
@@ -366,6 +382,8 @@ class MultisliceCalculator:
                                 if self.use_memmap:
                                     diffraction_patterns = to_cpu(diffraction_patterns)
                                 frame_data[p:p+chunksize,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
+                                if self.ADF:
+                                    print(self.ADF._wf_array[0,:,:,0,0,0,0])
                     else:
                         # simultaneously propagate all probes at once, [l],p,x,y
                         exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
@@ -380,6 +398,10 @@ class MultisliceCalculator:
                             if self.use_memmap:
                                 diffraction_patterns = to_cpu(diffraction_patterns)
                             frame_data[:,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
+                            if self.ADF:
+                                index = self.ADF._wf_array[0,:,:,0,0,0,0]
+                                #self.ADF._array = einsum('pxyln,'frame_data
+
 
                     if not self.use_memmap and ( "exitwaves" in self.cache_levels or "slices" in self.cache_levels ):
                         # Convert to CPU numpy array for saving

@@ -143,6 +143,18 @@ class HAADFData(PySliceSerial, Signal):
             return np.asarray(raw)
         raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
 
+    def getMask(self, inner_mrad: float = 45, outer_mrad: float = 150):
+        q = xp.sqrt(self._kxs[:,None]**2 + self._kys[None,:]**2)
+        radius_inner = (inner_mrad * 1e-3) / self.probe.wavelength
+        radius_outer = (outer_mrad * 1e-3) / self.probe.wavelength
+
+        mask = zeros(q.shape, type_match = self._wf_array)
+        if isinstance(self._wf_array,np.memmap):
+            q = to_cpu(q)
+        mask[q >= radius_inner] = 1
+        mask[q >= radius_outer] = 0
+        return mask
+
     def calculateADF(self, inner_mrad: float = 45, outer_mrad: float = 150, preview: bool = False) -> np.ndarray:
         """
         Calculate the ADF (Annular Dark Field) image.
@@ -160,15 +172,16 @@ class HAADFData(PySliceSerial, Signal):
         #self._ys = xp.asarray(sorted(list(set(self.probe_positions[:,1]))), dtype=float_dtype)
         self._array = zeros((len(self._xs), len(self._ys)), type_match = self._wf_array)
 
-        q = xp.sqrt(self._kxs[:,None]**2 + self._kys[None,:]**2)
-        radius_inner = (inner_mrad * 1e-3) / self.probe.wavelength
-        radius_outer = (outer_mrad * 1e-3) / self.probe.wavelength
+        mask = self.getMask(inner_mrad, outer_mrad)
+        #q = xp.sqrt(self._kxs[:,None]**2 + self._kys[None,:]**2)
+        #radius_inner = (inner_mrad * 1e-3) / self.probe.wavelength
+        #radius_outer = (outer_mrad * 1e-3) / self.probe.wavelength
 
-        mask = zeros(q.shape, type_match = self._wf_array)
-        if isinstance(self._wf_array,np.memmap):
-            q = to_cpu(q)
-        mask[q >= radius_inner] = 1
-        mask[q >= radius_outer] = 0
+        #mask = zeros(q.shape, type_match = self._wf_array)
+        #if isinstance(self._wf_array,np.memmap):
+        #    q = to_cpu(q)
+        #mask[q >= radius_inner] = 1
+        #mask[q >= radius_outer] = 0
 
         probe_positions = xp.asarray(self.probe_positions, dtype=float_dtype)
 
