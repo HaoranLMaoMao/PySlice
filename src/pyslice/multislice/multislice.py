@@ -700,7 +700,8 @@ class PrismProbe:
                 chunked = to_cpu(chunked)
             if ADF:
                 intensities = einsum('pxy,xy->p',absolute(chunked)**2,ADFmask)
-                ADF._array += intensities[ADFindex]
+                for i,pp in zip(intensities,range(n,n+chunksize)):
+                    ADF._array[ADFindex==pp] += i
             else:
                 result[n:n+chunksize,:,:] = chunked
 
@@ -869,6 +870,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         if z < len(potential.zs) - 1:
             # Vectorized FFT over spatial dimensions for all probes
             kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
+            #print(kwarg,array.dtype,array.shape)
             fft_array = xp.fft.fft2(array, **kwarg)
             propagated_fft = P * fft_array
             array = xp.fft.ifft2(propagated_fft, **kwarg)

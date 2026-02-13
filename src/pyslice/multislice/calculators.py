@@ -128,7 +128,8 @@ class MultisliceCalculator:
         min_dk = 0,
         prism = False,
         kth=1,
-        ADF=False
+        ADF=False,
+        store_full=True
     ):
         """
         Set up multislice simulation using PyTorch acceleration.
@@ -168,6 +169,7 @@ class MultisliceCalculator:
         self.prism = prism
         self.kth = kth
         self.ADF = ADF
+        self.store_full = store_full
 
         # Set up spatial grids
         xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=sampling,slice_thickness=slice_thickness)
@@ -278,11 +280,12 @@ class MultisliceCalculator:
         self.n_probes = nc*len(self.probe_positions)
         # Storage: [probe, frame, x, y, layer] - matches WFData expected format
         self.n_layers = self.nz if "slices" in self.cache_levels else 1
-        if self.use_memmap:
-            self.wavefunction_data = memmap((self.n_probes, self.n_frames, ceil(self.nx/self.kth), ceil(self.ny/self.kth), self.n_layers),
+        if self.store_full:
+            if self.use_memmap:
+                self.wavefunction_data = memmap((self.n_probes, self.n_frames, ceil(self.nx/self.kth), ceil(self.ny/self.kth), self.n_layers),
                                                    dtype=self.complex_dtype, filename = self.output_dir / "wdf_memmap.npy" )
-        else:
-            self.wavefunction_data = zeros((self.n_probes, self.n_frames, ceil(self.nx/self.kth), ceil(self.ny/self.kth), self.n_layers),
+            else:
+                self.wavefunction_data = zeros((self.n_probes, self.n_frames, ceil(self.nx/self.kth), ceil(self.ny/self.kth), self.n_layers),
                                                    dtype=self.complex_dtype, device=self.device)
 
         # Process frames with caching and multiprocessing
@@ -361,6 +364,7 @@ class MultisliceCalculator:
                     #    nx,ny = self.base_probe.cropping,self.base_probe.cropping
 
                     # frame_data is always: p,x,y,l,1 (self.wavefunction_data expects p,t,x,y,l, since we loop time. recall Propagate gave l,p,x,y)
+                    #if self.store_full:
                     if self.use_memmap:
                         frame_data = memmap((n_waves, ceil(nx/self.kth), ceil(ny/self.kth), self.n_layers,1), dtype=self.complex_dtype, filename = cache_file )
                     else:
@@ -431,8 +435,10 @@ class MultisliceCalculator:
                     kwarg ={}
                     if self.ADF:
                         kwarg["ADF"]=(self.ADF,self.ADFmask,self.ADFindex)
-                    self.base_probe.calculateProbesFromS(frame_data,self.probe_positions, load_into=self.wavefunction_data[:,frame_idx,:,:,0])
-                else:
+                    if self.store_full:
+                        kwarg["load_into"]=self.wavefunction_data[:,frame_idx,:,:,0]
+                    self.base_probe.calculateProbesFromS(frame_data,self.probe_positions,**kwarg)
+                elif self.store_full:
                     self.wavefunction_data[:, frame_idx, :, :, :] = cropped # load p,x,y,l,1 --> p,t,x,y,l indices
                 # Update progress bar for this frame
                 pbar.update(1)
@@ -465,6 +471,9 @@ class MultisliceCalculator:
         layer_array = np.arange(self.nz) if "slices" in self.cache_levels else np.array([0])  # Layer indices
         
         # Package results
+        array = zeros((self.n_probes,1,1,1,1),dtype=self.complex_dtype)
+        if self.store_full:
+            array = self.wavefunction_data
         wf_data = WFData(
             probe_positions=self.probe_positions,
             probe_xs=self.probe_xs,
@@ -475,7 +484,7 @@ class MultisliceCalculator:
             xs=self.xs,
             ys=self.ys,
             layer=layer_array,
-            array=self.wavefunction_data,
+            array=array,
             probe=self.base_probe,
             cache_dir=self.output_dir
         )

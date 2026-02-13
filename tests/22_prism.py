@@ -35,7 +35,7 @@ calculator=MultisliceCalculator()
 #xy=probe_grid([a,3*a],[b,3*b],14,16)
 #calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_positions=xy,cache_levels=[])
 lx,ly,lz=np.diag(trajectory.box_matrix)
-probe_xs = np.linspace(0,lx,64) ; probe_ys = np.linspace(0,ly,64)
+probe_xs = np.linspace(0,lx,56) ; probe_ys = np.linspace(0,ly,56)
 calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,prism=25,loop_probes=10,use_memmap=False,kth=10,ADF=True,cache_levels=[])
 # RUN MULTISLICE
 exitwaves,haadf = calculator.run()
