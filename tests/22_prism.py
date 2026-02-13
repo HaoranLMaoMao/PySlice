@@ -35,10 +35,10 @@ calculator=MultisliceCalculator()
 #xy=probe_grid([a,3*a],[b,3*b],14,16)
 #calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_positions=xy,cache_levels=[])
 lx,ly,lz=np.diag(trajectory.box_matrix)
-probe_xs = np.linspace(0,lx,256) ; probe_ys = np.linspace(0,ly,256)
-calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,prism=25,loop_probes=50,use_memmap=True, kth=10)#,cache_levels=[])
+probe_xs = np.linspace(0,lx,64) ; probe_ys = np.linspace(0,ly,64)
+calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,prism=25,loop_probes=10,use_memmap=False,kth=10,ADF=True,cache_levels=[])
 # RUN MULTISLICE
-exitwaves = calculator.run()
+exitwaves,haadf = calculator.run()
 #exitwaves.plot_realspace(whichProbe=500)
 
 #fig, ax = plt.subplots()
@@ -46,9 +46,9 @@ exitwaves = calculator.run()
 #ax.imshow(ary.T, cmap="inferno")
 #plt.show()
 
-haadf=HAADFData(exitwaves)
-ary=haadf.calculateADF(preview=False) # use preview=True to view the collection angles of the ADF detector in reciprocal space
-xs=haadf.xs ; ys=haadf.ys
+#haadf=HAADFData(exitwaves)
+#ary=haadf.calculateADF(preview=False) # use preview=True to view the collection angles of the ADF detector in reciprocal space
+#xs=haadf.xs ; ys=haadf.ys
 
 #fig, ax = plt.subplots()
 #ax.imshow(ary.T, cmap="inferno")

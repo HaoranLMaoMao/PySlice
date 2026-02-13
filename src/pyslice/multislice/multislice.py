@@ -653,12 +653,14 @@ class PrismProbe:
     # if a PrismProbe object (a whole bunch of sinusoidal entrance waves) is propagated through a potential, then the potential exit waves for a whole bunch of realistic probes can be calculated from the exit waves for each entrance wave
     # SHIFTING: array is shifted, factors is NOT shifted,
     #@profile
-    def calculateProbesFromS(self,array,positions,chunksize=100,load_into=None): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
-        if load_into is None:
+    def calculateProbesFromS(self,array,positions,chunksize=100,load_into=None,ADF=False): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
+        if load_into is None and not ADF:
             result = zeros((len(positions),ceil(self.nx/self.kth),ceil(self.ny/self.kth)),dtype="complex") # full-res kx,ky for each probe position
-        else:
+        elif not ADF:
             result = load_into
-        print(self.nx,self.ny)
+        else:
+            ADF,ADFmask,ADFindex = ADF ; result = None
+
         array = reshape(array,(self.nx_cropped,self.ny_cropped,ceil(self.nx/self.kth),ceil(self.ny/self.kth))) # eikx,eiky,kx,ky
         # preview an arbitrary exit wave? (note: calculator will have done shift(fft(realspace)), so we should invert those steps)
         #import matplotlib.pyplot as plt
@@ -696,7 +698,11 @@ class PrismProbe:
             chunked = einsum('pkq,kqxy->pxy',factors,array) # sum over all sinusoids
             if isinstance(result,np.memmap):
                 chunked = to_cpu(chunked)
-            result[n:n+chunksize,:,:] = chunked
+            if ADF:
+                intensities = einsum('pxy,xy->p',absolute(chunked)**2,ADFmask)
+                ADF._array += intensities[ADFindex]
+            else:
+                result[n:n+chunksize,:,:] = chunked
 
             #dx = (x-probe.lx/2) ; dy = (y-probe.ly/2)
             #if abs(dx)<.1 and abs(dy)<.1:

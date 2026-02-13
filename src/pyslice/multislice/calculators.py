@@ -5,6 +5,7 @@ from typing import Optional, Tuple, List
 from tqdm import tqdm
 import time,os
 import hashlib
+#from line_profiler import profile
 
 try:
     import torch ; xp = torch
@@ -260,6 +261,7 @@ class MultisliceCalculator:
         ax.scatter(pp[:,0],pp[:,1],c='r')
         plt.show()
 
+    #@profile
     def run(self) -> WFData:
 
 
@@ -297,15 +299,15 @@ class MultisliceCalculator:
             if not isinstance(self.ADF,bool):
                 kwargs["inner_mrad"],kwargs["outer_mrad"] = self.ADF
             from ..postprocessing.haadf_data import HAADFData
-            array = zeros((self.n_probes,1,1,1,1),type_match=self.wavefunction_data)
-            array+=xp.arange(self.n_probes)[:,None,None,None,None] # we'll use this as an index to map nth probe to the ADF grid coordinates i,j
+            array = zeros((self.n_probes,1,1,1,1),dtype=self.complex_dtype)
+            array += xp.arange(self.n_probes)[:,None,None,None,None] # we'll use this as an index to map nth probe to the ADF grid coordinates i,j
             wf = WFData(probe_positions=self.probe_positions,probe_xs=self.probe_xs,probe_ys=self.probe_ys,
                 time=None,kxs=self.kxs[::self.kth],kys=self.kys[::self.kth],xs=self.xs,ys=self.ys,
                 layer=None,array=array,probe=self.base_probe,cache_dir=self.output_dir)
             self.ADF = HAADFData(wf)
             self.ADFmask = absolute(self.ADF.getMask(**kwargs)) # HAADFData infers mask dtype from _wf_array dtype, but we'll absolute^2 later
             self.ADFindex = absolute(self.ADF._wf_array[0,:,:,0,0,0,0]).to(int)
-            self.ADF._array = zeros(self.ADFindex.shape,type_match=self.wavefunction_data)
+            self.ADF._array = zeros(self.ADFindex.shape,dtype=self.complex_dtype)
 
         # Process frames one at a time with tqdm progress tracking
         with tqdm(total=self.n_frames, desc="Processing frames", unit="frame") as pbar:
@@ -333,7 +335,7 @@ class MultisliceCalculator:
 
                 # frame_data should always be shaped: n_probes,nkx,nky,n_layers,1 (idk why there's a trailing 1)
                 cache_exists,frame_data = checkCache(cache_file,self.cache_levels)
-                if cache_exists:
+                if cache_exists and not self.prism:
                     intensities = einsum('pxyln,xy->p',absolute(frame_data)**2,self.ADFmask)
                     self.ADF._array += intensities[self.ADFindex]
 
@@ -386,7 +388,7 @@ class MultisliceCalculator:
                                 if self.use_memmap:
                                     diffraction_patterns = to_cpu(diffraction_patterns)
                                 frame_data[p:p+chunksize,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
-                                if self.ADF:
+                                if self.ADF and not self.prism:
                                     #print(self.ADF._wf_array[0,:,:,0,0,0,0])
                                     intensities = einsum('pxyln,xy->p',absolute(frame_data[p:p+chunksize,:,:,:,:])**2,self.ADFmask)
                                     for i,pp in zip(intensities,range(p,p+chunksize)):
@@ -406,7 +408,7 @@ class MultisliceCalculator:
                             if self.use_memmap:
                                 diffraction_patterns = to_cpu(diffraction_patterns)
                             frame_data[:,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
-                            if self.ADF:
+                            if self.ADF and not self.prism:
                                 intensities = einsum('pxyln,xy->p',absolute(frame_data)**2,self.ADFmask)
                                 self.ADF._array += intensities[self.ADFindex]
                                 #self.ADF._array = einsum('pxyln,'frame_data
@@ -426,6 +428,9 @@ class MultisliceCalculator:
 
                 if self.prism:
                     # Recall: Prism algorithm passes a series of sinusoids through the sample (fourier components shared by all real-space probes), so now for each real-space probe, we need to calculate the exitwaves from components
+                    kwarg ={}
+                    if self.ADF:
+                        kwarg["ADF"]=(self.ADF,self.ADFmask,self.ADFindex)
                     self.base_probe.calculateProbesFromS(frame_data,self.probe_positions, load_into=self.wavefunction_data[:,frame_idx,:,:,0])
                 else:
                     self.wavefunction_data[:, frame_idx, :, :, :] = cropped # load p,x,y,l,1 --> p,t,x,y,l indices
