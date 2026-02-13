@@ -234,6 +234,7 @@ def any(x):
     return xp.any(x)
 
 def einsum(subscripts, *operands, **kwargs):
+    #print([ (type(o),o.dtype) for o in operands])
     numpytypes = [ type(o) in [np.ndarray, np.memmap] for o in operands ]
     if xp != np and True not in numpytypes:
         return xp.einsum(subscripts, *operands, **kwargs)

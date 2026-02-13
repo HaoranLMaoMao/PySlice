@@ -34,7 +34,7 @@ from .multislice import Probe,PrismProbe,Propagate,create_batched_probes
 from .trajectory import Trajectory
 from ..postprocessing.wf_data import WFData
 from .sed import SED
-from ..backend import zeros,expand_dims,to_cpu,memmap,ones,sum,absolute,ceil
+from ..backend import zeros,expand_dims,to_cpu,memmap,ones,sum,absolute,ceil,einsum
 
 logger = logging.getLogger(__name__)
 
@@ -297,14 +297,15 @@ class MultisliceCalculator:
             if not isinstance(self.ADF,bool):
                 kwargs["inner_mrad"],kwargs["outer_mrad"] = self.ADF
             from ..postprocessing.haadf_data import HAADFData
-            array = zeros((self.n_probes,1,1,1,1))
+            array = zeros((self.n_probes,1,1,1,1),type_match=self.wavefunction_data)
             array+=xp.arange(self.n_probes)[:,None,None,None,None] # we'll use this as an index to map nth probe to the ADF grid coordinates i,j
             wf = WFData(probe_positions=self.probe_positions,probe_xs=self.probe_xs,probe_ys=self.probe_ys,
                 time=None,kxs=self.kxs[::self.kth],kys=self.kys[::self.kth],xs=self.xs,ys=self.ys,
                 layer=None,array=array,probe=self.base_probe,cache_dir=self.output_dir)
             self.ADF = HAADFData(wf)
-            self.mask = self.ADF.getMask(**kwargs)
-            self.ADF._array = zeros(self.ADF._wf_array[0,:,:,0,0,0,0].shape,type_match = self.ADF._wf_array)
+            self.ADFmask = absolute(self.ADF.getMask(**kwargs)) # HAADFData infers mask dtype from _wf_array dtype, but we'll absolute^2 later
+            self.ADFindex = absolute(self.ADF._wf_array[0,:,:,0,0,0,0]).to(int)
+            self.ADF._array = zeros(self.ADFindex.shape,type_match=self.wavefunction_data)
 
         # Process frames one at a time with tqdm progress tracking
         with tqdm(total=self.n_frames, desc="Processing frames", unit="frame") as pbar:
@@ -332,6 +333,9 @@ class MultisliceCalculator:
 
                 # frame_data should always be shaped: n_probes,nkx,nky,n_layers,1 (idk why there's a trailing 1)
                 cache_exists,frame_data = checkCache(cache_file,self.cache_levels)
+                if cache_exists:
+                    intensities = einsum('pxyln,xy->p',absolute(frame_data)**2,self.ADFmask)
+                    self.ADF._array += intensities[self.ADFindex]
 
                 if not os.path.exists(self.output_dir / f"kx.npy"):
                     np.save(self.output_dir / f"kx.npy",to_cpu(self.kxs))
@@ -383,7 +387,11 @@ class MultisliceCalculator:
                                     diffraction_patterns = to_cpu(diffraction_patterns)
                                 frame_data[p:p+chunksize,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
                                 if self.ADF:
-                                    print(self.ADF._wf_array[0,:,:,0,0,0,0])
+                                    #print(self.ADF._wf_array[0,:,:,0,0,0,0])
+                                    intensities = einsum('pxyln,xy->p',absolute(frame_data[p:p+chunksize,:,:,:,:])**2,self.ADFmask)
+                                    for i,pp in zip(intensities,range(p,p+chunksize)):
+                                        self.ADF._array[self.ADFindex==pp] += i
+
                     else:
                         # simultaneously propagate all probes at once, [l],p,x,y
                         exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
@@ -399,7 +407,8 @@ class MultisliceCalculator:
                                 diffraction_patterns = to_cpu(diffraction_patterns)
                             frame_data[:,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
                             if self.ADF:
-                                index = self.ADF._wf_array[0,:,:,0,0,0,0]
+                                intensities = einsum('pxyln,xy->p',absolute(frame_data)**2,self.ADFmask)
+                                self.ADF._array += intensities[self.ADFindex]
                                 #self.ADF._array = einsum('pxyln,'frame_data
 
 
@@ -482,6 +491,10 @@ class MultisliceCalculator:
         
         # Save if requested - psi files already saved during processing
         
+        if self.ADF:
+            self.ADF._array /= self.n_frames # haadf_data divides by nc,nt,nl (from _wf_array's c,x,y,t,kx,ky,l)
+            return wf_data,self.ADF
+
         return wf_data
 
 logging_tracker=[]
