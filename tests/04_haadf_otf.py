@@ -42,8 +42,8 @@ for ijklm in indices:
 for n,kwargs in enumerate(kwargCombos):
     if not kwargs.get("ADF",False) and not kwargs.get("store_full",False): # skip nonsense combo (since ADF-in-post requires wavefunction_data returned)
         continue
-    if n<18:
-        continue
+    #if n<18:
+    #    continue
     os.system("rm -rf psi_data")
     print("RUNNING ITERATION",n,"HAADF WITH KWARGS:",kwargs)
     trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()                   # LOAD TRAJECTORY

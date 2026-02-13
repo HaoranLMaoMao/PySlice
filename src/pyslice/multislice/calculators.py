@@ -163,13 +163,13 @@ class MultisliceCalculator:
         self.cache_levels = cache_levels
         self.max_kx = max_kx
         self.max_ky = max_ky
-        self.use_memmap = use_memmap
-        self.loop_probes = loop_probes
-        self.min_dk = min_dk
-        self.prism = prism
-        self.kth = kth
-        self.ADF = ADF
-        self.store_full = store_full
+        self.use_memmap = use_memmap   # bool: frame_data (p,x,y,l,1) and wavefunction_data (p,t,x,y,l) will be memmapped instead of held in RAM
+        self.loop_probes = loop_probes # False or int: multiple probes (p,x,y) can be propagated simultaneously. this allows processing in chunks
+        self.min_dk = min_dk           # float: Δk=1/L, so this will pre-crop each probe and potential slice so a smaller area is propagated
+        self.prism = prism             # False or int: PRISM algorithm implementation, this denotes how many fourier components are used in kx ky
+        self.kth = kth                 # int: Δk=1/L, nk = nx. huge systems waste RAM with ultra-fine Δk. this sparsifies the exitwaves via ::kth
+        self.ADF = ADF                 # bool or (inner,outer): allows on-the-fly calculation of the ADF signal
+        self.store_full = store_full   # bool: if ADF=True and prism=False, this skips storing of the full [t],x,y,kx,ky 5D exit data
 
         # Set up spatial grids
         xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=sampling,slice_thickness=slice_thickness)
@@ -364,11 +364,11 @@ class MultisliceCalculator:
                     #    nx,ny = self.base_probe.cropping,self.base_probe.cropping
 
                     # frame_data is always: p,x,y,l,1 (self.wavefunction_data expects p,t,x,y,l, since we loop time. recall Propagate gave l,p,x,y)
-                    #if self.store_full:
-                    if self.use_memmap:
-                        frame_data = memmap((n_waves, ceil(nx/self.kth), ceil(ny/self.kth), self.n_layers,1), dtype=self.complex_dtype, filename = cache_file )
-                    else:
-                        frame_data = zeros((n_waves, ceil(nx/self.kth), ceil(ny/self.kth), self.n_layers,1), dtype=self.complex_dtype, device=self.device)
+                    if self.store_full or self.prism:
+                        if self.use_memmap:
+                            frame_data = memmap((n_waves, ceil(nx/self.kth), ceil(ny/self.kth), self.n_layers,1), dtype=self.complex_dtype, filename = cache_file )
+                        else:
+                            frame_data = zeros((n_waves, ceil(nx/self.kth), ceil(ny/self.kth), self.n_layers,1), dtype=self.complex_dtype, device=self.device)
 
                     #batched_probes = create_batched_probes(self.base_probe, self.probe_positions, self.device)
                     # Propagate returns: [l,p,x,y] where l,p are both optional (if store_all_slices=True, and if n_probes>1)
@@ -391,10 +391,11 @@ class MultisliceCalculator:
                                 diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
                                 if self.use_memmap:
                                     diffraction_patterns = to_cpu(diffraction_patterns)
-                                frame_data[p:p+chunksize,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
+                                if self.store_full or self.prism:
+                                    frame_data[p:p+chunksize,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
                                 if self.ADF and not self.prism:
                                     #print(self.ADF._wf_array[0,:,:,0,0,0,0])
-                                    intensities = einsum('pxyln,xy->p',absolute(frame_data[p:p+chunksize,:,:,:,:])**2,self.ADFmask)
+                                    intensities = einsum('pxy,xy->p',absolute(diffraction_patterns[:,:,:])**2,self.ADFmask)
                                     for i,pp in zip(intensities,range(p,p+chunksize)):
                                         self.ADF._array[self.ADFindex==pp] += i
 
@@ -411,21 +412,23 @@ class MultisliceCalculator:
                             #cropped = diffraction_patterns[:,self.i1:self.i2,self.j1:self.j2]
                             if self.use_memmap:
                                 diffraction_patterns = to_cpu(diffraction_patterns)
-                            frame_data[:,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
+                            if self.store_full or self.prism:
+                                frame_data[:,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
                             if self.ADF and not self.prism:
-                                intensities = einsum('pxyln,xy->p',absolute(frame_data)**2,self.ADFmask)
+                                intensities = einsum('pxy,xy->p',absolute(diffraction_patterns)**2,self.ADFmask)
                                 self.ADF._array += intensities[self.ADFindex]
                                 #self.ADF._array = einsum('pxyln,'frame_data
 
 
-                    if not self.use_memmap and ( "exitwaves" in self.cache_levels or "slices" in self.cache_levels ):
+                    if not self.use_memmap and ( "exitwaves" in self.cache_levels or "slices" in self.cache_levels ) and (self.store_full or self.prism):
                         # Convert to CPU numpy array for saving
                         frame_data_cpu = to_cpu(frame_data)
                         np.save(cache_file, frame_data_cpu)
                     frames_computed += 1
 
                 #print(frame_data.shape,self.wavefunction_data.shape)
-                cropped = frame_data[:,self.i1:self.i2,self.j1:self.j2,:,0]
+                if self.store_full or self.prism:
+                    cropped = frame_data[:,self.i1:self.i2,self.j1:self.j2,:,0]
                 #print(cropped.shape)
                 #if self.use_memmap:
                 #    cropped = to_cpu(cropped)

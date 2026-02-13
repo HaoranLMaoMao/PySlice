@@ -20,7 +20,7 @@ a,b=2.4907733333333337,2.1570729817355123
 
 # LOAD TRAJECTORY
 trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()
-#trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
+trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
 trajectory=trajectory.get_random_timesteps(1,seed=5)						# SELECT "RANDOM" TIMESTEPS
 for x,y,m in [[2*a,b*4/3,12],[2*a,b*4/3+b,14],[3.5*a,b*4/3,16]]:			# ADD DOPANTS (for testing scan lims)
     dxyz = trajectory.positions[0,:,:]-np.asarray([x,y,0])[None,:]
@@ -35,7 +35,7 @@ calculator=MultisliceCalculator()
 #xy=probe_grid([a,3*a],[b,3*b],14,16)
 #calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_positions=xy,cache_levels=[])
 lx,ly,lz=np.diag(trajectory.box_matrix)
-probe_xs = np.linspace(0,lx,56) ; probe_ys = np.linspace(0,ly,56)
+probe_xs = np.linspace(0,lx,256) ; probe_ys = np.linspace(0,ly,256)
 calculator.setup(trajectory,aperture=30,voltage_eV=100e3,sampling=.1,slice_thickness=.5,probe_xs=probe_xs,probe_ys=probe_ys,prism=25,loop_probes=10,use_memmap=False,kth=10,ADF=True,cache_levels=[])
 # RUN MULTISLICE
 exitwaves,haadf = calculator.run()
