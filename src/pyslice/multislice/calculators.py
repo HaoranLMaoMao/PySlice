@@ -440,7 +440,7 @@ class MultisliceCalculator:
                         kwarg["ADF"]=(self.ADF,self.ADFmask,self.ADFindex)
                     if self.store_full:
                         kwarg["load_into"]=self.wavefunction_data[:,frame_idx,:,:,0]
-                    self.base_probe.calculateProbesFromS(frame_data,self.probe_positions,**kwarg)
+                    self.base_probe.calculateProbesFromS(frame_data,self.probe_positions,**kwarg,chunksize=self.loop_probes)
                 elif self.store_full:
                     self.wavefunction_data[:, frame_idx, :, :, :] = cropped # load p,x,y,l,1 --> p,t,x,y,l indices
                 # Update progress bar for this frame
