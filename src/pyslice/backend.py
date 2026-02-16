@@ -1,5 +1,6 @@
 # backend.py
 import numpy as np
+import os
 #import torch
 
 
@@ -129,6 +130,7 @@ def zeros(dims, dtype=None, device=None, type_match=None):
     return array
 
 def memmap(dims,dtype=DEFAULT_FLOAT_DTYPE,filename=None):
+    from numpy.lib.format import open_memmap
     if filename is None:
         print("WARNING: memmap attempted without filename, falling back to zeros")
         return zeros(dims,dtype)
@@ -136,7 +138,8 @@ def memmap(dims,dtype=DEFAULT_FLOAT_DTYPE,filename=None):
     if xp != np and dtype in [ xp.complex128, xp.complex64, xp.float64, xp.float32 ]:
         dtype = { xp.complex128:np.complex128, xp.complex64:np.complex64,
                  xp.float64:np.float64, xp.float32:np.float32 }[ dtype ]
-    return np.memmap(filename, dtype=dtype, mode='w+', shape=dims)
+    mode = 'w+' #'r+' if os.path.exists(filename) else 'w+'
+    return open_memmap(filename, dtype=dtype, mode=mode, shape=dims)
 
 def absolute(array):
     if xp != np and type(array) in [ np.memmap, np.ndarray ]:
@@ -170,18 +173,28 @@ def exp(x):
     return xp.exp(x)
 
 def fft(k,**kwargs):
-    if TORCH_AVAILABLE and "axis" in kwargs.keys():
+    use_torch = TORCH_AVAILABLE
+    if type(k) in [ np.memmap, np.ndarray ]:
+        use_torch = False
+    if use_torch and "axis" in kwargs.keys():
         kwargs["dim"]=kwargs["axis"] ; del kwargs["axis"]
-    if not TORCH_AVAILABLE and "dim" in kwargs.keys():
+    if not use_torch and "dim" in kwargs.keys():
         kwargs["axis"]=kwargs["dim"] ; del kwargs["dim"]
-    return xp.fft.fft(k,**kwargs)
+    if use_torch:
+        return xp.fft.fft(k,**kwargs)
+    return np.fft.fft(k,**kwargs)
 
 def fftshift(k,**kwargs):
-    if TORCH_AVAILABLE and "axes" in kwargs.keys():
+    use_torch = TORCH_AVAILABLE
+    if type(k) in [ np.memmap, np.ndarray ]:
+        use_torch = False
+    if use_torch and "axes" in kwargs.keys():
         kwargs["dim"]=kwargs["axes"] ; del kwargs["axes"]
-    if not TORCH_AVAILABLE and "dim" in kwargs.keys():
+    if not use_torch and "dim" in kwargs.keys():
         kwargs["axes"]=kwargs["dim"] ; del kwargs["dim"]
-    return xp.fft.fftshift(k,**kwargs)
+    if use_torch:
+        return xp.fft.fftshift(k,**kwargs)
+    return np.fft.fftshift(k,**kwargs)
 
 def mean(k,**kwargs):
     use_torch = TORCH_AVAILABLE
@@ -221,16 +234,27 @@ def any(x):
     return xp.any(x)
 
 def einsum(subscripts, *operands, **kwargs):
-    if xp != np:
+    #print([ (type(o),o.dtype) for o in operands])
+    numpytypes = [ type(o) in [np.ndarray, np.memmap] for o in operands ]
+    if xp != np and True not in numpytypes:
         return xp.einsum(subscripts, *operands, **kwargs)
     else:
-        return xp.einsum(subscripts, *operands, optimize=True, **kwargs)
+        operands = [ to_cpu(o) for o in operands ]
+        return np.einsum(subscripts, *operands, optimize=True, **kwargs)
 
 def to_cpu(array):
-    if type(array) == np.ndarray:
+    if type(array) in [ np.ndarray, np.memmap ]:
         return array
     else:
         return array.cpu().numpy()
 
 def isnan(x):
     return xp.isnan(x)
+
+def midcrop(a,n): # e.g. unshifted ks: 0,1,2,3,4.....-4,-3,-,2-1, crop out 3 through -3, the inverse of a[n:-n]
+    return xp.roll(xp.roll(a,len(a)//2)[n:-n],len(a)//2-n)
+
+def ceil(v):
+    if xp != np and type(v)==torch.Tensor:
+        return int(xp.ceil(v))
+    return int(np.ceil(v))

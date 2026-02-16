@@ -4,7 +4,7 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, '../src')
 
-from pyslice import Loader,MultisliceCalculator,HAADFData,differ,gridFromTrajectory,Potential
+from pyslice import Loader,MultisliceCalculator,HAADFData,TACAWData,differ,gridFromTrajectory,Potential
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,7 +29,8 @@ run = "all"
 #run = "bigref"
 #run = "bigmemmap"
 #run = "bigmemloop"
-run = "mongo"
+#run = "mongo"
+run = "memtacaw"
 
 def clean():
 	#if os.path.exists("psi_data"):
@@ -255,4 +256,13 @@ if run in [ "mongo", "all" ]:
 	haadf=HAADFData(exitwaves)													# CALCULATE HAADF
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_mongo.png")
+
+if run == "memtacaw":
+	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
+	calculator=MultisliceCalculator()											# TACAW CALCULATION: ALL TIMESTEPS, PARALLEL BEAM
+	calculator.setup(trajectory,aperture=0,voltage_eV=100e3,sampling=.1,slice_thickness=.5,use_memmap=True)
+	exitwaves = calculator.run()
+	tacaw = TACAWData(exitwaves)												# CALCULATE TACAW, TEMPORAL FFT
+	Z = tacaw.spectral_diffraction(30) ; print(Z.shape)
+	tacaw.plot(Z**.1,"kx","ky",filename="outputs/figs/21_memtacaw.png")			# OR PLOT USING BUILT IN TOOLS: AN ENERGY SLICE:
 

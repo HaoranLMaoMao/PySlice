@@ -151,12 +151,13 @@ class WFData(PySliceSerial, Signal):
         """Backward compatible alias for internal array (may be tensor or numpy)."""
         return self._array
 
+    #@property
     def reshaped(self): # where self._array is indices probe,time,kx,ky,layer, we reshape to probe_x,probe_y,time,kx,ky,layer
         nc,nptp,nx,ny = self.probe._array.shape # recall: decoherence creates duplicate probes: num_copies,num_positions,x,y indices
-        nptp = len(self.probe.probe_positions)
+        nptp = len(self.probe_positions)
         npta,nt,nkx,nky,nl = self._array.shape # recall, Propagate flattens the first two, and adds time,layers: nc*npt,num_frames,x,y,nl indice
         intermediate = reshape(self._array,(nc,nptp,nt,nkx,nky,nl))
-        nx,ny = len(self.probe.probe_xs),len(self.probe.probe_ys)
+        nx,ny = len(self.probe_xs),len(self.probe_ys)
         return reshape(intermediate,(nc,ny,nx,nt,nkx,nky,nl)).swapaxes(1,2)
 
     @array.setter

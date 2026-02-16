@@ -5,6 +5,7 @@ from typing import Optional, Tuple, List
 from tqdm import tqdm
 import time,os
 import hashlib
+#from line_profiler import profile
 
 try:
     import torch ; xp = torch
@@ -30,11 +31,11 @@ except ImportError:
 
 
 from .potentials import gridFromTrajectory,Potential
-from .multislice import Probe,Propagate,create_batched_probes
+from .multislice import Probe,PrismProbe,Propagate,create_batched_probes
 from .trajectory import Trajectory
 from ..postprocessing.wf_data import WFData
 from .sed import SED
-from ..backend import zeros,expand_dims,to_cpu,memmap,ones
+from ..backend import zeros,expand_dims,to_cpu,memmap,ones,sum,absolute,ceil,einsum
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +129,11 @@ class MultisliceCalculator:
         max_ky = np.inf,
         use_memmap = False,
         loop_probes = False,
-        min_dk = 0
+        min_dk = 0,
+        prism = False,
+        kth=1,
+        ADF=False,
+        store_full=True
     ):
         """
         Set up multislice simulation using PyTorch acceleration.
@@ -162,10 +167,14 @@ class MultisliceCalculator:
         self.cache_levels = cache_levels
         self.max_kx = max_kx
         self.max_ky = max_ky
-        self.use_memmap = use_memmap
-        self.loop_probes = loop_probes
-        self.min_dk = min_dk
-                
+        self.use_memmap = use_memmap   # bool: frame_data (p,x,y,l,1) and wavefunction_data (p,t,x,y,l) will be memmapped instead of held in RAM
+        self.loop_probes = loop_probes # False or int: multiple probes (p,x,y) can be propagated simultaneously. this allows processing in chunks
+        self.min_dk = min_dk           # float: Δk=1/L, so this will pre-crop each probe and potential slice so a smaller area is propagated
+        self.prism = prism             # False or int: PRISM algorithm implementation, this denotes how many fourier components are used in kx ky
+        self.kth = kth                 # int: Δk=1/L, nk = nx. huge systems waste RAM with ultra-fine Δk. this sparsifies the exitwaves via ::kth
+        self.ADF = ADF                 # bool or (inner,outer): allows on-the-fly calculation of the ADF signal
+        self.store_full = store_full   # bool: if ADF=True and prism=False, this skips storing of the full [t],x,y,kx,ky 5D exit data
+
         # Set up spatial grids
         xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=sampling,slice_thickness=slice_thickness)
         nx=len(xs) ; ny=len(ys) ; nz=len(zs)
@@ -193,8 +202,8 @@ class MultisliceCalculator:
 
         # Preferred to pass probe_xs and probe_ys from which we will define a grid
         if self.probe_xs is not None and self.probe_ys is not None:
-            x,y = np.meshgrid(self.probe_xs,self.probe_ys,indexing='ij')
-            self.probe_positions = np.asarray(list(zip(x.flat,y.flat)))
+            x,y = np.meshgrid(self.probe_xs,self.probe_ys)
+            self.probe_positions = np.reshape([x,y],(2,len(x.flat))).T # x,y looped indices to match what multislice.Probe does
 
         # If probe_positions provided but not probe_xs/probe_ys, derive them
         elif self.probe_positions is not None:
@@ -207,9 +216,13 @@ class MultisliceCalculator:
             self.probe_positions = [(lx/2, ly/2)]  # Center probe
             self.probe_xs = [lx/2] ; self.probe_ys = [ly/2]
 
-        # Create probe on the correct device from the start
-        # defer_shifts=True so calculator controls when to expand the probe cube (see loop_probes)
-        self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions,cropping=probe_cropping, defer_shifts=True)
+        if self.prism:
+            # Prism algorithm works by passing a series of sinusoids (fourier components shared by all probes) through the sample. "PrismProbe" will therefore give us a series of sinusoids, and there is a reconstruction step later
+            self.base_probe = PrismProbe(xs, ys, self.aperture, self.voltage_eV, device=self.device, nkx=self.prism, kth=self.kth)
+        else:
+            # OR, we'll propagate our series of real-space probes.
+            # need to make sure they're on the correct device, and defer_shifts=True means the calculator controls when to expand the probe cube (see loop_probes)
+            self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions,cropping=probe_cropping, defer_shifts=True)
 
         if not self.loop_probes:
             self.base_probe.applyShifts()
@@ -254,6 +267,7 @@ class MultisliceCalculator:
         ax.scatter(pp[:,0],pp[:,1],c='r')
         plt.show()
 
+    #@profile
     def run(self) -> WFData:
 
 
@@ -268,14 +282,15 @@ class MultisliceCalculator:
 
 
         nc,npt,nx,ny = self.base_probe._array.shape
-        self.n_probes = nc*len(self.base_probe.probe_positions)
+        self.n_probes = nc*len(self.probe_positions)
         # Storage: [probe, frame, x, y, layer] - matches WFData expected format
         self.n_layers = self.nz if "slices" in self.cache_levels else 1
-        if self.use_memmap:
-            self.wavefunction_data = memmap((self.n_probes, self.n_frames, self.nx, self.ny, self.n_layers),
+        if self.store_full:
+            if self.use_memmap:
+                self.wavefunction_data = memmap((self.n_probes, self.n_frames, ceil(self.nx/self.kth), ceil(self.ny/self.kth), self.n_layers),
                                                    dtype=self.complex_dtype, filename = self.output_dir / "wdf_memmap.npy" )
-        else:
-            self.wavefunction_data = zeros((self.n_probes, self.n_frames, self.nx, self.ny, self.n_layers),
+            else:
+                self.wavefunction_data = zeros((self.n_probes, self.n_frames, ceil(self.nx/self.kth), ceil(self.ny/self.kth), self.n_layers),
                                                    dtype=self.complex_dtype, device=self.device)
 
         # Process frames with caching and multiprocessing
@@ -287,12 +302,29 @@ class MultisliceCalculator:
         if isinstance(self.base_probe._array,np.ndarray) and TORCH_AVAILABLE:
             self.base_probe._array = xp.tensor(self.base_probe._array)
 
+        if self.ADF: # create a dummy HAADFData object, first so we can hijack its getMask function, and later we'll load it up
+            kwargs = {}
+            if not isinstance(self.ADF,bool):
+                kwargs["inner_mrad"],kwargs["outer_mrad"] = self.ADF
+            from ..postprocessing.haadf_data import HAADFData
+            array = zeros((self.n_probes,1,1,1,1),dtype=self.complex_dtype)
+            array += xp.arange(self.n_probes)[:,None,None,None,None] # we'll use this as an index to map nth probe to the ADF grid coordinates i,j
+            wf = WFData(probe_positions=self.probe_positions,probe_xs=self.probe_xs,probe_ys=self.probe_ys,
+                time=None,kxs=self.kxs[::self.kth],kys=self.kys[::self.kth],xs=self.xs,ys=self.ys,
+                layer=None,array=array,probe=self.base_probe,cache_dir=self.output_dir)
+            self.ADF = HAADFData(wf)
+            self.ADFmask = absolute(self.ADF.getMask(**kwargs)) # HAADFData infers mask dtype from _wf_array dtype, but we'll absolute^2 later
+            self.ADFindex = absolute(self.ADF._wf_array[0,:,:,0,0,0,0]).to(int)
+            self.ADF._array = zeros(self.ADFindex.shape,dtype=self.complex_dtype)
+
         # Process frames one at a time with tqdm progress tracking
         with tqdm(total=self.n_frames, desc="Processing frames", unit="frame") as pbar:
             for frame_idx in range(self.n_frames):
+                #if sum(absolute(self.wavefunction_data[:,frame_idx,:,:,:]),axis=(0,1,2,3))>0: # p,t,x,y,l indices
+                #continue
                 cache_file = self.output_dir / f"frame_{frame_idx}.npy"
                 # Show detailed progress for single-frame runs
-                show_progress = (frame_idx == 0 and self.n_frames == 1)
+                show_progress = (frame_idx == 0 and self.n_frames == 1 and not self.loop_probes)
 
                 # special case: no frames cached, but we clearly finished and got to tacaw. if so, don't bother regenerating
                 # this allows cache_levels = [] to be used for disk space savings
@@ -311,6 +343,9 @@ class MultisliceCalculator:
 
                 # frame_data should always be shaped: n_probes,nkx,nky,n_layers,1 (idk why there's a trailing 1)
                 cache_exists,frame_data = checkCache(cache_file,self.cache_levels)
+                if cache_exists and not self.prism:
+                    intensities = einsum('pxyln,xy->p',absolute(frame_data)**2,self.ADFmask)
+                    self.ADF._array += intensities[self.ADFindex]
 
                 if not os.path.exists(self.output_dir / f"kx.npy"):
                     np.save(self.output_dir / f"kx.npy",to_cpu(self.kxs))
@@ -328,15 +363,17 @@ class MultisliceCalculator:
                     #n_probes = nc*npt
                     nc,npt,nx,ny = self.base_probe._array.shape ; npt = len(self.base_probe.probe_positions)
                     n_slices = len(self.zs)
-                    npt = len(self.base_probe.probe_positions)
-                    if self.base_probe.cropping:
-                        nx,ny = self.base_probe.cropping,self.base_probe.cropping
+                    n_waves = len(self.base_probe.probe_positions)
+                    #n_waves =
+                    #if self.base_probe.cropping:
+                    #    nx,ny = self.base_probe.cropping,self.base_probe.cropping
 
                     # frame_data is always: p,x,y,l,1 (self.wavefunction_data expects p,t,x,y,l, since we loop time. recall Propagate gave l,p,x,y)
-                    if self.use_memmap:
-                        frame_data = memmap((self.n_probes, nx, ny, self.n_layers,1), dtype=self.complex_dtype, filename = cache_file )
-                    else:
-                        frame_data = zeros((self.n_probes, nx, ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
+                    if self.store_full or self.prism:
+                        if self.use_memmap:
+                            frame_data = memmap((n_waves, ceil(nx/self.kth), ceil(ny/self.kth), self.n_layers,1), dtype=self.complex_dtype, filename = cache_file )
+                        else:
+                            frame_data = zeros((n_waves, ceil(nx/self.kth), ceil(ny/self.kth), self.n_layers,1), dtype=self.complex_dtype, device=self.device)
 
                     #batched_probes = create_batched_probes(self.base_probe, self.probe_positions, self.device)
                     # Propagate returns: [l,p,x,y] where l,p are both optional (if store_all_slices=True, and if n_probes>1)
@@ -348,21 +385,6 @@ class MultisliceCalculator:
                             # new temporary probe pulled from base_probe's array
                             probe = self.base_probe.copy(selected_probes=slice(p,p+chunksize))
                             probe.applyShifts()
-                            #print(probe.array.shape)
-                            #array = self.base_probe._array[:,0,None,:,:]*ones(chunksize)[None,:,None,None]
-                            #array = self.base_probe.placeProbe(array,x,y)
-                            #probe = Probe(xs = self.base_probe.xs,
-                            #              ys = self.base_probe.ys,
-                            #              mrad = self.base_probe.mrad,
-                            #              eV = self.base_probe.eV,
-                            #              array=array,
-                            #              device=self.base_probe.device)
-
-                            #for i,(x,y) in enumerate(self.base_probe.probe_positions[p:p+chunksize]):
-                            #    x,y = self.base_probe.probe_positions[p]
-                            #    array[i,:,:],_ = placeProbe(array,x,y)
-
-                            #probe.applyShifts()
                             # propagate single probe
                             exit_waves_single = Propagate(probe , potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) ) # [l],p,x,y indices
                             # expand out to fixed l,p,x,y indices
@@ -374,7 +396,14 @@ class MultisliceCalculator:
                                 diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
                                 if self.use_memmap:
                                     diffraction_patterns = to_cpu(diffraction_patterns)
-                                frame_data[p:p+chunksize,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
+                                if self.store_full or self.prism:
+                                    frame_data[p:p+chunksize,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
+                                if self.ADF and not self.prism:
+                                    #print(self.ADF._wf_array[0,:,:,0,0,0,0])
+                                    intensities = einsum('pxy,xy->p',absolute(diffraction_patterns[:,:,:])**2,self.ADFmask)
+                                    for i,pp in zip(intensities,range(p,p+chunksize)):
+                                        self.ADF._array[self.ADFindex==pp] += i
+
                     else:
                         # simultaneously propagate all probes at once, [l],p,x,y
                         exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
@@ -388,20 +417,37 @@ class MultisliceCalculator:
                             #cropped = diffraction_patterns[:,self.i1:self.i2,self.j1:self.j2]
                             if self.use_memmap:
                                 diffraction_patterns = to_cpu(diffraction_patterns)
-                            frame_data[:,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
+                            if self.store_full or self.prism:
+                                frame_data[:,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
+                            if self.ADF and not self.prism:
+                                intensities = einsum('pxy,xy->p',absolute(diffraction_patterns)**2,self.ADFmask)
+                                self.ADF._array += intensities[self.ADFindex]
+                                #self.ADF._array = einsum('pxyln,'frame_data
 
-                    if not self.use_memmap and ( "exitwaves" in self.cache_levels or "slices" in self.cache_levels ):
+
+                    if not self.use_memmap and ( "exitwaves" in self.cache_levels or "slices" in self.cache_levels ) and (self.store_full or self.prism):
                         # Convert to CPU numpy array for saving
                         frame_data_cpu = to_cpu(frame_data)
                         np.save(cache_file, frame_data_cpu)
                     frames_computed += 1
 
                 #print(frame_data.shape,self.wavefunction_data.shape)
-                cropped = frame_data[:,self.i1:self.i2,self.j1:self.j2,:,0]
+                if self.store_full or self.prism:
+                    cropped = frame_data[:,self.i1:self.i2,self.j1:self.j2,:,0]
                 #print(cropped.shape)
                 #if self.use_memmap:
                 #    cropped = to_cpu(cropped)
-                self.wavefunction_data[:, frame_idx, :, :, :] = cropped # load p,x,y,l,1 --> p,t,x,y,l indices
+
+                if self.prism:
+                    # Recall: Prism algorithm passes a series of sinusoids through the sample (fourier components shared by all real-space probes), so now for each real-space probe, we need to calculate the exitwaves from components
+                    kwarg ={}
+                    if self.ADF:
+                        kwarg["ADF"]=(self.ADF,self.ADFmask,self.ADFindex)
+                    if self.store_full:
+                        kwarg["load_into"]=self.wavefunction_data[:,frame_idx,:,:,0]
+                    self.base_probe.calculateProbesFromS(frame_data,self.probe_positions,**kwarg,chunksize=self.loop_probes)
+                elif self.store_full:
+                    self.wavefunction_data[:, frame_idx, :, :, :] = cropped # load p,x,y,l,1 --> p,t,x,y,l indices
                 # Update progress bar for this frame
                 pbar.update(1)
         
@@ -433,17 +479,20 @@ class MultisliceCalculator:
         layer_array = np.arange(self.nz) if "slices" in self.cache_levels else np.array([0])  # Layer indices
         
         # Package results
+        array = zeros((self.n_probes,1,1,1,1),dtype=self.complex_dtype)
+        if self.store_full:
+            array = self.wavefunction_data
         wf_data = WFData(
-            probe_positions=self.base_probe.probe_positions,
+            probe_positions=self.probe_positions,
             probe_xs=self.probe_xs,
             probe_ys=self.probe_ys,
             time=time_array,
-            kxs=self.kxs,
-            kys=self.kys,
+            kxs=self.kxs[::self.kth],
+            kys=self.kys[::self.kth],
             xs=self.xs,
             ys=self.ys,
             layer=layer_array,
-            array=self.wavefunction_data,
+            array=array,
             probe=self.base_probe,
             cache_dir=self.output_dir
         )
@@ -464,6 +513,10 @@ class MultisliceCalculator:
         
         # Save if requested - psi files already saved during processing
         
+        if self.ADF:
+            self.ADF._array /= self.n_frames # haadf_data divides by nc,nt,nl (from _wf_array's c,x,y,t,kx,ky,l)
+            return wf_data,self.ADF
+
         return wf_data
 
 logging_tracker=[]

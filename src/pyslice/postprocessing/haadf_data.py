@@ -8,7 +8,7 @@ import logging
 from .wf_data import WFData
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
-from pyslice.backend import zeros,to_cpu,mean,sum,absolute
+from pyslice.backend import zeros,to_cpu,mean,sum,absolute,einsum
 #from ..data.pyslice_serial import PySliceSerial
 
 logger = logging.getLogger(__name__)
@@ -143,6 +143,18 @@ class HAADFData(PySliceSerial, Signal):
             return np.asarray(raw)
         raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
 
+    def getMask(self, inner_mrad: float = 45, outer_mrad: float = 150):
+        q = xp.sqrt(self._kxs[:,None]**2 + self._kys[None,:]**2)
+        radius_inner = (inner_mrad * 1e-3) / self.probe.wavelength
+        radius_outer = (outer_mrad * 1e-3) / self.probe.wavelength
+
+        mask = zeros(q.shape, type_match = self._wf_array)
+        if isinstance(self._wf_array,np.memmap):
+            q = to_cpu(q)
+        mask[q >= radius_inner] = 1
+        mask[q >= radius_outer] = 0
+        return mask
+
     def calculateADF(self, inner_mrad: float = 45, outer_mrad: float = 150, preview: bool = False) -> np.ndarray:
         """
         Calculate the ADF (Annular Dark Field) image.
@@ -160,15 +172,16 @@ class HAADFData(PySliceSerial, Signal):
         #self._ys = xp.asarray(sorted(list(set(self.probe_positions[:,1]))), dtype=float_dtype)
         self._array = zeros((len(self._xs), len(self._ys)), type_match = self._wf_array)
 
-        q = xp.sqrt(self._kxs[:,None]**2 + self._kys[None,:]**2)
-        radius_inner = (inner_mrad * 1e-3) / self.probe.wavelength
-        radius_outer = (outer_mrad * 1e-3) / self.probe.wavelength
+        mask = self.getMask(inner_mrad, outer_mrad)
+        #q = xp.sqrt(self._kxs[:,None]**2 + self._kys[None,:]**2)
+        #radius_inner = (inner_mrad * 1e-3) / self.probe.wavelength
+        #radius_outer = (outer_mrad * 1e-3) / self.probe.wavelength
 
-        mask = zeros(q.shape, type_match = self._wf_array)
-        if isinstance(self._wf_array,np.memmap):
-            q = to_cpu(q)
-        mask[q >= radius_inner] = 1
-        mask[q >= radius_outer] = 0
+        #mask = zeros(q.shape, type_match = self._wf_array)
+        #if isinstance(self._wf_array,np.memmap):
+        #    q = to_cpu(q)
+        #mask[q >= radius_inner] = 1
+        #mask[q >= radius_outer] = 0
 
         probe_positions = xp.asarray(self.probe_positions, dtype=float_dtype)
 
@@ -201,10 +214,14 @@ class HAADFData(PySliceSerial, Signal):
 
         #collected = self._wf_array * mask[None,None,None,:,:,None] # c,x,y,t,kx,ky,l indices, mask is kx,ky
         #self._array = xp.mean(xp.sum(xp.absolute(collected),axis=(4,5)),axis=(0,3,4)) # sum over kx,ky, mean over c,t,l
-        for i in range(len(self._xs)): # looping doesn't blow up ram when we absolute it
-            for j in range(len(self._ys)):
-                collected = self._wf_array[:,i,j,:,:,:,:] * mask[None,None,:,:,None] # c,[x],[y],t,kx,ky,l indices, mask is kx,ky
-                self._array[i,j] = mean(sum(absolute(collected)**2,axis=(2,3)),axis=(0,1,2)) # sum |ψ|² over kx,ky, mean over c,t,l
+        #for i in range(len(self._xs)): # looping doesn't blow up ram when we absolute it
+        #    for j in range(len(self._ys)):
+        #        collected = self._wf_array[:,i,j,:,:,:,:] * mask[None,None,:,:,None] # c,[x],[y],t,kx,ky,l indices, mask is kx,ky
+        #        self._array[i,j] = mean(sum(absolute(collected)**2,axis=(2,3)),axis=(0,1,2)) # sum |ψ|² over kx,ky, mean over c,t,l
+        # TODO this should be einsum, but i'm not trying to test it right now...
+        nc,_,_,nt,_,_,nl = self._wf_array.shape
+        self._wf_array = absolute(self._wf_array)**2 ; mask = absolute(mask)
+        self._array = einsum('cxytkql,kq->xy',self._wf_array,mask)/(nc*nt*nl)
 
         # Update dimensions with computed xs, ys
         def to_numpy(x):
