@@ -12,12 +12,8 @@ wheels/
 # Large data directories (exclude from version control)
 psi_data/
 extras/
-examples/*
-!examples/hBN_GAP/
-
-examples/hBN_GAP/*
-!examples/hBN_GAP/test.py
-!examples/hBN_GAP/md.trj
+examples/outputs/
+examples/hBN_GAP/
 
 # Simulation results and output files
 test_results/
