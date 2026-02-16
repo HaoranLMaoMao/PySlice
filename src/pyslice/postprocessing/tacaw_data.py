@@ -542,7 +542,7 @@ class TACAWData(PySliceSerial, Signal):
         return np.absolute(dispersion)
 
     # Since there are multiple things returnable by the above functions, i'm just offering up a generic heatmap plotter function here, where you pass Z,x,y
-    def plot(self,intensities,xvals,yvals,xlabel="kx ($\\AA^{-1}$)",ylabel="ky ($\\AA^{-1}$)",filename=None,title=None):
+    def plot(self,intensities,xvals,yvals,xlabel="kx ($\\AA^{-1}$)",ylabel="ky ($\\AA^{-1}$)",filename=None,title=None,extent=None):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
         array = np.absolute(to_cpu(intensities)) # imshow convention: y,x. our convention: x,y
@@ -572,7 +572,8 @@ class TACAWData(PySliceSerial, Signal):
             elif yvals == "omega":
                 ylabel = "frequency (THz)" ; yvals = to_cpu(self.frequencies)
 
-        extent = ( np.amin(xvals) , np.amax(xvals) , np.amin(yvals) , np.amax(yvals) )
+        if extent is None:
+            extent = ( np.amin(xvals) , np.amax(xvals) , np.amin(yvals) , np.amax(yvals) )
         ax.imshow(array, cmap="inferno",extent=extent,aspect=aspect)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)

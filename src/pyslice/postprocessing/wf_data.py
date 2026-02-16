@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 from pathlib import Path
-from ..backend import mean,ones,zeros,reshape
+from ..backend import mean,ones,zeros,reshape,absolute,sum
 
 try:
     import torch ; xp = torch
@@ -151,7 +151,6 @@ class WFData(PySliceSerial, Signal):
         """Backward compatible alias for internal array (may be tensor or numpy)."""
         return self._array
 
-    @property
     def reshaped(self): # where self._array is indices probe,time,kx,ky,layer, we reshape to probe_x,probe_y,time,kx,ky,layer
         nc,nptp,nx,ny = self.probe._array.shape # recall: decoherence creates duplicate probes: num_copies,num_positions,x,y indices
         nptp = len(self.probe.probe_positions)
@@ -180,7 +179,8 @@ class WFData(PySliceSerial, Signal):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
 
-        array = xp.absolute(self._array[:,:,:,:,-1]) # probe, time, kx, ky, layer --> p,t,kx,ky
+        raw = self._array[:,:,:,:,-1] # probe, time, kx, ky, layer --> p,t,kx,ky
+        array = absolute(raw)
 
         if isinstance(whichProbe,str) and whichProbe=="mean":
             array = mean(abs(array),axis=0) # p,t,kx,ky --> t,kx,ky
@@ -210,8 +210,10 @@ class WFData(PySliceSerial, Signal):
 
             # Slice the array and coordinate arrays
             array = array[kx_mask, :][:, ky_mask]
-            actual_extent = (kxs_np[kx_mask][0], kxs_np[kx_mask][-1],
-                           kys_np[ky_mask][0], kys_np[ky_mask][-1])
+            kxs_np = kxs_np[kx_mask]
+            kys_np = kys_np[ky_mask]
+            actual_extent = (kxs_np[0], kxs_np[-1],
+                           kys_np[0], kys_np[-1])
         else:
             # Use full extent
             kxs_min = float(kxs_np.min())
@@ -227,7 +229,7 @@ class WFData(PySliceSerial, Signal):
 
         # Convert to numpy array if it's a tensor
         # Apply powerscaling to intensity (|Ψ|²)
-        img_data = (xp.absolute(array)**2)**powerscaling
+        img_data = (absolute(array)**2)**powerscaling
         if hasattr(img_data, 'cpu'):
             img_data = img_data.cpu().numpy()
         elif hasattr(img_data, '__array__'):

@@ -74,7 +74,7 @@ class HAADFData(PySliceSerial, Signal):
         self.cache_dir = wf_data.cache_dir
 
         # Store reference to source WFData array for ADF calculation
-        self._wf_array = wf_data.reshaped # nprobes,x,y,t,kx,ky,l indices
+        self._wf_array = wf_data.reshaped() # nprobes,x,y,t,kx,ky,l indices
 
         # Initialize ADF as None, will be computed by calculateADF
         self._array = None

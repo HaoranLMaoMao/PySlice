@@ -81,7 +81,8 @@ class MultisliceCalculator:
     
     def _generate_cache_key(self, trajectory, aperture, voltage_eV,
                            slice_thickness, sampling, probe_positions,
-                           spatial_decoherence, temporal_decoherence):
+                           spatial_decoherence, temporal_decoherence,
+                           probe_array=None):
         """Generate unique cache key for simulation parameters."""
         firstNAtoms = [ str(np.round(v,4)) for v in trajectory.positions[0,:100,0] ] # first timestep's first 10 atom's x positions
         params = {
@@ -101,6 +102,9 @@ class MultisliceCalculator:
             params['spatial_decoherence'] = spatial_decoherence
         if temporal_decoherence is not None:
             params['temporal_decoherence'] = temporal_decoherence
+        if probe_array is not None:
+            probe_np = np.ascontiguousarray(to_cpu(probe_array).ravel()[:1000])
+            params['probe_hash'] = hashlib.md5(probe_np.tobytes()).hexdigest()
         param_str = str(sorted(params.items()))
         return hashlib.md5(param_str.encode()).hexdigest()[:12]
     
@@ -256,7 +260,8 @@ class MultisliceCalculator:
         # Generate cache key and setup output directory
         cache_key = self._generate_cache_key(self.trajectory, self.aperture, self.voltage_eV,
                                            self.slice_thickness, self.sampling, self.probe_positions,
-                                           self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence )
+                                           self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence,
+                                           self.base_probe._array)
         #print(cache_key)
         self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+cache_key)
         self.output_dir.mkdir(parents=True, exist_ok=True)
