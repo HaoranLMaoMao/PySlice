@@ -30,7 +30,7 @@ run = "all"
 #run = "bigmemmap"
 #run = "bigmemloop"
 #run = "mongo"
-run = "memtacaw"
+#run = "memtacaw"
 
 def clean():
 	#if os.path.exists("psi_data"):
@@ -257,7 +257,8 @@ if run in [ "mongo", "all" ]:
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_mongo.png")
 
-if run == "memtacaw":
+if run in [ "memtacaw", "all" ]:
+	clean() ; print("running memtacaw")
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	calculator=MultisliceCalculator()											# TACAW CALCULATION: ALL TIMESTEPS, PARALLEL BEAM
 	calculator.setup(trajectory,aperture=0,voltage_eV=100e3,sampling=.1,slice_thickness=.5,use_memmap=True)

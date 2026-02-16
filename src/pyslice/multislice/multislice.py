@@ -671,6 +671,7 @@ class PrismProbe:
         # strategy: we need each probe's array (generated, shifted to position), FFT'd, cropped, so we can select fourier components
         # you can 1) create a dummy probe, call generate_single_probe and placeProbe, and reuse it every time, and this can be done in real or reciprocal space. or 2) you can just create a new probe each time (for a chunk of positions). i'm choosing 2 because it makes chunking easier
         #probe = Probe(self.xs, self.ys, self.mrad, self.eV, defer_shifts=True) # dummy probe so we can directly access Probe class functions
+        chunksize=max(1,chunksize) # handle 0 as chunksize
         for n,(x,y) in enumerate(tqdm(positions)):
             if n%chunksize!=0:
                 continue
