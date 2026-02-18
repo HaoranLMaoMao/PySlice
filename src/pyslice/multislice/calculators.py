@@ -343,7 +343,7 @@ class MultisliceCalculator:
 
                 # frame_data should always be shaped: n_probes,nkx,nky,n_layers,1 (idk why there's a trailing 1)
                 cache_exists,frame_data = checkCache(cache_file,self.cache_levels)
-                if cache_exists and not self.prism:
+                if cache_exists and not self.prism and self.ADF:
                     intensities = einsum('pxyln,xy->p',absolute(frame_data)**2,self.ADFmask)
                     self.ADF._array += intensities[self.ADFindex]
 
