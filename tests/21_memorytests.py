@@ -156,6 +156,7 @@ if run in [ "mindkloop", "all" ]: # same as 04_haadf.py, but with chunked looped
 	haadf.plot("outputs/figs/21_memorytests_mindkloop.png")
 
 
+# exclude bigref from "all" since it will likely OOM (that's kinda the point)
 if run in [ "bigref" ]: # same as 04_haadf.py, but bigger FOV. immediate OOM-kill on multislice (250x216 kpts, 50x50 probe positions, probecube is 250*216*50*50*128/8/1024^3=2GB, frame_data is the same, wavefunction_data is 3x, calculator's intermediate variable exit_waves_k is 2GB too, and Propagate has intermediate variables too)
 	clean() ; print("running bigref")
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
