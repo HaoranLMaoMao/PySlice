@@ -34,3 +34,8 @@ ln: failed to create symbolic link 'inputs/inputs': File exists
 ln: failed to create symbolic link 'outputs/outputs': File exists
 ln: failed to create symbolic link 'inputs/inputs': File exists
 ln: failed to create symbolic link 'outputs/outputs': File exists
+ln: failed to create symbolic link 'inputs/inputs': File exists
+ln: failed to create symbolic link 'outputs/outputs': File exists
+ln: failed to create symbolic link 'inputs/inputs': File exists
+ln: failed to create symbolic link 'outputs/outputs': File exists
+rmdir: failed to remove '../numpy': Directory not empty
