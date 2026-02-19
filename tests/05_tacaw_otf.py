@@ -47,4 +47,7 @@ for n,kwargs in enumerate(kwargCombos):
         tacaw=TACAWData(exitwaves,chunkFFT=kwargs["chunkFFT"])
         Z = tacaw.spectral_diffraction(30) #; print(Z.shape)
         differ(Z[:,:]**.1,"outputs/tacawotf-test.npy","TACAW SLICE")
+        diff=tacaw.diffraction().T
+        kx=np.asarray(tacaw.kxs) ; kx=kx[kx>=0] ; kx=kx[kx<=4/a] ; print("kx",kx.shape)
+        dispersion = tacaw.dispersion( kx , np.zeros(len(kx))+2/b )
 

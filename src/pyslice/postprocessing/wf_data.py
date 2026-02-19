@@ -194,7 +194,10 @@ class WFData(PySliceSerial, Signal):
         import time ; start = time.time()
         for p in whichProbe:
             for t in whichTimestep:
-                array+=abs(raw[p,t,:,:])
+                layer = absolute(raw[p,t,:,:])
+                if isinstance(raw,np.memmap):
+                    layer = asarray(layer)
+                array+=layer
         array/=(len(whichTimestep)*len(whichProbe))
         print("summation took",time.time()-start,"s")
         #array=abs(raw) # don't do this, it pulls memmaps into ram! 

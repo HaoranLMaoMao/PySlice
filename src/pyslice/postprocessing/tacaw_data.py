@@ -9,7 +9,7 @@ from .wf_data import WFData
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 #from ..data.pyslice_serial import PySliceSerial
-from pyslice.backend import to_cpu,fft,fftshift,mean,absolute,memmap
+from pyslice.backend import to_cpu,fft,fftshift,mean,absolute,memmap,sum
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -301,7 +301,7 @@ class TACAWData(PySliceSerial, Signal):
             all_spectra = []
             for i in range(len(self.probe_positions)):
                 probe_intensity = self._array[i]  # Shape: (frequency, kx, ky)
-                spectrum = xp.sum(probe_intensity, axis=(1, 2))  # Sum over kx, ky
+                spectrum = sum(probe_intensity, axis=(1, 2))  # Sum over kx, ky
                 all_spectra.append(spectrum)
 
             # Average all spectra
@@ -314,7 +314,7 @@ class TACAWData(PySliceSerial, Signal):
 
             # Sum intensity data over all k-space for this probe position
             probe_intensity = self._array[probe_index]  # Shape: (frequency, kx, ky)
-            spectrum = xp.sum(probe_intensity, axis=(1, 2))  # Sum over kx, ky
+            spectrum = sum(probe_intensity, axis=(1, 2))  # Sum over kx, ky
 
             # Convert to numpy if PyTorch tensor
             if TORCH_AVAILABLE and hasattr(spectrum, 'cpu'):
@@ -373,7 +373,7 @@ class TACAWData(PySliceSerial, Signal):
             all_diffractions = []
             for i in range(len(self.probe_positions)):
                 probe_intensity = self._array[i]  # Shape: (frequency, kx, ky)
-                diffraction_pattern = xp.sum(probe_intensity, axis=0)  # Sum over frequencies
+                diffraction_pattern = sum(probe_intensity, axis=0)  # Sum over frequencies
                 all_diffractions.append(diffraction_pattern)
 
             # Average all diffraction patterns
@@ -386,7 +386,7 @@ class TACAWData(PySliceSerial, Signal):
 
             # Sum intensity data over all frequencies for this probe position
             probe_intensity = self._array[probe_index]  # Shape: (frequency, kx, ky)
-            diffraction_pattern = xp.sum(probe_intensity, axis=0)  # Sum over frequencies
+            diffraction_pattern = sum(probe_intensity, axis=0)  # Sum over frequencies
 
             # Convert to numpy if PyTorch tensor
             if TORCH_AVAILABLE and hasattr(diffraction_pattern, 'cpu'):

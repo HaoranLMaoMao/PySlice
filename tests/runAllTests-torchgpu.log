@@ -20669,3 +20669,498 @@ summation took 0.012891769409179688 s
 ERROR: pySEA import failed, this functionality is not available
 (1, 100, 1495, 1295)
 kx (241,)
+Thu Feb 19 15:48:53 EST 2026
+python3 05_tacaw.py
+failed to import pySEA: No module named 'pySEA'
+Processing frames:   0%|          | 0/100 [00:00<?, ?frame/s]Processing frames:   1%|          | 1/100 [00:00<00:43,  2.26frame/s]Processing frames:   2%|▏         | 2/100 [00:00<00:27,  3.50frame/s]Processing frames:   3%|▎         | 3/100 [00:00<00:22,  4.24frame/s]Processing frames:   4%|▍         | 4/100 [00:00<00:20,  4.74frame/s]Processing frames:   5%|▌         | 5/100 [00:01<00:18,  5.14frame/s]Processing frames:   6%|▌         | 6/100 [00:01<00:17,  5.43frame/s]Processing frames:   7%|▋         | 7/100 [00:01<00:16,  5.56frame/s]Processing frames:   8%|▊         | 8/100 [00:01<00:16,  5.67frame/s]Processing frames:   9%|▉         | 9/100 [00:01<00:15,  5.72frame/s]Processing frames:  10%|█         | 10/100 [00:01<00:15,  5.83frame/s]Processing frames:  11%|█         | 11/100 [00:02<00:15,  5.88frame/s]Processing frames:  12%|█▏        | 12/100 [00:02<00:14,  5.89frame/s]Processing frames:  13%|█▎        | 13/100 [00:02<00:14,  5.94frame/s]Processing frames:  14%|█▍        | 14/100 [00:02<00:14,  5.99frame/s]Processing frames:  15%|█▌        | 15/100 [00:02<00:14,  6.00frame/s]Processing frames:  16%|█▌        | 16/100 [00:02<00:14,  5.98frame/s]Processing frames:  17%|█▋        | 17/100 [00:03<00:13,  6.02frame/s]Processing frames:  18%|█▊        | 18/100 [00:03<00:13,  6.02frame/s]Processing frames:  19%|█▉        | 19/100 [00:03<00:13,  6.02frame/s]Processing frames:  20%|██        | 20/100 [00:03<00:13,  6.00frame/s]Processing frames:  21%|██        | 21/100 [00:03<00:13,  6.01frame/s]Processing frames:  22%|██▏       | 22/100 [00:03<00:12,  6.03frame/s]Processing frames:  23%|██▎       | 23/100 [00:04<00:12,  6.06frame/s]Processing frames:  24%|██▍       | 24/100 [00:04<00:12,  6.02frame/s]Processing frames:  25%|██▌       | 25/100 [00:04<00:12,  6.02frame/s]Processing frames:  26%|██▌       | 26/100 [00:04<00:12,  5.97frame/s]Processing frames:  27%|██▋       | 27/100 [00:04<00:12,  6.01frame/s]Processing frames:  28%|██▊       | 28/100 [00:04<00:12,  5.74frame/s]Processing frames:  29%|██▉       | 29/100 [00:05<00:12,  5.82frame/s]Processing frames:  30%|███       | 30/100 [00:05<00:11,  5.85frame/s]Processing frames:  31%|███       | 31/100 [00:05<00:11,  5.89frame/s]Processing frames:  32%|███▏      | 32/100 [00:05<00:11,  5.89frame/s]Processing frames:  33%|███▎      | 33/100 [00:05<00:11,  5.94frame/s]Processing frames:  34%|███▍      | 34/100 [00:05<00:11,  5.95frame/s]Processing frames:  35%|███▌      | 35/100 [00:06<00:10,  5.99frame/s]Processing frames:  36%|███▌      | 36/100 [00:06<00:10,  5.97frame/s]Processing frames:  37%|███▋      | 37/100 [00:06<00:10,  5.96frame/s]Processing frames:  38%|███▊      | 38/100 [00:06<00:10,  5.99frame/s]Processing frames:  39%|███▉      | 39/100 [00:06<00:10,  6.00frame/s]Processing frames:  40%|████      | 40/100 [00:06<00:10,  5.97frame/s]Processing frames:  41%|████      | 41/100 [00:07<00:09,  5.98frame/s]Processing frames:  42%|████▏     | 42/100 [00:07<00:09,  5.99frame/s]Processing frames:  43%|████▎     | 43/100 [00:07<00:09,  5.93frame/s]Processing frames:  44%|████▍     | 44/100 [00:07<00:09,  5.98frame/s]Processing frames:  45%|████▌     | 45/100 [00:07<00:09,  5.99frame/s]Processing frames:  46%|████▌     | 46/100 [00:08<00:09,  5.99frame/s]Processing frames:  47%|████▋     | 47/100 [00:08<00:08,  6.01frame/s]Processing frames:  48%|████▊     | 48/100 [00:08<00:08,  5.97frame/s]Processing frames:  49%|████▉     | 49/100 [00:08<00:08,  5.96frame/s]Processing frames:  50%|█████     | 50/100 [00:08<00:08,  5.93frame/s]Processing frames:  51%|█████     | 51/100 [00:08<00:08,  5.96frame/s]Processing frames:  52%|█████▏    | 52/100 [00:09<00:08,  5.99frame/s]Processing frames:  53%|█████▎    | 53/100 [00:09<00:07,  6.01frame/s]Processing frames:  54%|█████▍    | 54/100 [00:09<00:07,  6.04frame/s]Processing frames:  55%|█████▌    | 55/100 [00:09<00:07,  5.96frame/s]Processing frames:  56%|█████▌    | 56/100 [00:09<00:07,  5.94frame/s]Processing frames:  57%|█████▋    | 57/100 [00:09<00:07,  5.95frame/s]Processing frames:  58%|█████▊    | 58/100 [00:10<00:07,  5.95frame/s]Processing frames:  59%|█████▉    | 59/100 [00:10<00:06,  5.95frame/s]Processing frames:  60%|██████    | 60/100 [00:10<00:06,  5.99frame/s]Processing frames:  61%|██████    | 61/100 [00:10<00:06,  6.01frame/s]Processing frames:  62%|██████▏   | 62/100 [00:10<00:06,  5.99frame/s]Processing frames:  63%|██████▎   | 63/100 [00:10<00:06,  6.01frame/s]Processing frames:  64%|██████▍   | 64/100 [00:11<00:06,  5.93frame/s]Processing frames:  65%|██████▌   | 65/100 [00:11<00:05,  5.96frame/s]Processing frames:  66%|██████▌   | 66/100 [00:11<00:05,  5.98frame/s]Processing frames:  67%|██████▋   | 67/100 [00:11<00:05,  5.99frame/s]Processing frames:  68%|██████▊   | 68/100 [00:11<00:05,  5.93frame/s]Processing frames:  69%|██████▉   | 69/100 [00:11<00:05,  5.92frame/s]Processing frames:  70%|███████   | 70/100 [00:12<00:05,  5.95frame/s]Processing frames:  71%|███████   | 71/100 [00:12<00:04,  5.98frame/s]Processing frames:  72%|███████▏  | 72/100 [00:12<00:04,  5.96frame/s]Processing frames:  73%|███████▎  | 73/100 [00:12<00:04,  5.92frame/s]Processing frames:  74%|███████▍  | 74/100 [00:12<00:04,  5.80frame/s]Processing frames:  75%|███████▌  | 75/100 [00:12<00:04,  5.87frame/s]Processing frames:  76%|███████▌  | 76/100 [00:13<00:04,  5.92frame/s]Processing frames:  77%|███████▋  | 77/100 [00:13<00:03,  5.94frame/s]Processing frames:  78%|███████▊  | 78/100 [00:13<00:03,  5.95frame/s]Processing frames:  79%|███████▉  | 79/100 [00:13<00:03,  5.97frame/s]Processing frames:  80%|████████  | 80/100 [00:13<00:03,  5.95frame/s]Processing frames:  81%|████████  | 81/100 [00:13<00:03,  5.96frame/s]Processing frames:  82%|████████▏ | 82/100 [00:14<00:03,  5.96frame/s]Processing frames:  83%|████████▎ | 83/100 [00:14<00:02,  6.01frame/s]Processing frames:  84%|████████▍ | 84/100 [00:14<00:02,  6.02frame/s]Processing frames:  85%|████████▌ | 85/100 [00:14<00:02,  6.04frame/s]Processing frames:  86%|████████▌ | 86/100 [00:14<00:02,  6.00frame/s]Processing frames:  87%|████████▋ | 87/100 [00:14<00:02,  5.99frame/s]Processing frames:  88%|████████▊ | 88/100 [00:15<00:02,  5.98frame/s]Processing frames:  89%|████████▉ | 89/100 [00:15<00:01,  5.56frame/s]Processing frames:  90%|█████████ | 90/100 [00:15<00:01,  5.66frame/s]Processing frames:  91%|█████████ | 91/100 [00:15<00:01,  5.74frame/s]Processing frames:  92%|█████████▏| 92/100 [00:15<00:01,  5.81frame/s]Processing frames:  93%|█████████▎| 93/100 [00:15<00:01,  5.82frame/s]Processing frames:  94%|█████████▍| 94/100 [00:16<00:01,  5.82frame/s]Processing frames:  95%|█████████▌| 95/100 [00:16<00:00,  5.88frame/s]Processing frames:  96%|█████████▌| 96/100 [00:16<00:00,  5.94frame/s]Processing frames:  97%|█████████▋| 97/100 [00:16<00:00,  5.95frame/s]Processing frames:  98%|█████████▊| 98/100 [00:16<00:00,  5.96frame/s]Processing frames:  99%|█████████▉| 99/100 [00:16<00:00,  5.96frame/s]Processing frames: 100%|██████████| 100/100 [00:17<00:00,  5.91frame/s]Processing frames: 100%|██████████| 100/100 [00:17<00:00,  5.85frame/s]
+summation took 0.026389122009277344 s
+(1495, 1295)
+ERROR: pySEA import failed, this functionality is not available
+(1, 100, 1495, 1295)
+kx (241,)
+Thu Feb 19 15:49:58 EST 2026
+python3 05_tacaw.py
+failed to import pySEA: No module named 'pySEA'
+Processing frames:   0%|          | 0/100 [00:00<?, ?frame/s]Processing frames:   1%|          | 1/100 [00:00<00:39,  2.51frame/s]Processing frames:   2%|▏         | 2/100 [00:00<00:26,  3.75frame/s]Processing frames:   3%|▎         | 3/100 [00:00<00:21,  4.48frame/s]Processing frames:   4%|▍         | 4/100 [00:00<00:19,  4.88frame/s]Processing frames:   5%|▌         | 5/100 [00:01<00:18,  5.08frame/s]Processing frames:   6%|▌         | 6/100 [00:01<00:17,  5.28frame/s]Processing frames:   7%|▋         | 7/100 [00:01<00:16,  5.48frame/s]Processing frames:   8%|▊         | 8/100 [00:01<00:16,  5.64frame/s]Processing frames:   9%|▉         | 9/100 [00:01<00:15,  5.78frame/s]Processing frames:  10%|█         | 10/100 [00:01<00:15,  5.81frame/s]Processing frames:  11%|█         | 11/100 [00:02<00:15,  5.88frame/s]Processing frames:  12%|█▏        | 12/100 [00:02<00:14,  5.92frame/s]Processing frames:  13%|█▎        | 13/100 [00:02<00:14,  5.96frame/s]Processing frames:  14%|█▍        | 14/100 [00:02<00:14,  6.00frame/s]Processing frames:  15%|█▌        | 15/100 [00:02<00:14,  6.02frame/s]Processing frames:  16%|█▌        | 16/100 [00:02<00:13,  6.04frame/s]Processing frames:  17%|█▋        | 17/100 [00:03<00:13,  6.07frame/s]Processing frames:  18%|█▊        | 18/100 [00:03<00:13,  6.03frame/s]Processing frames:  19%|█▉        | 19/100 [00:03<00:13,  6.02frame/s]Processing frames:  20%|██        | 20/100 [00:03<00:13,  6.01frame/s]Processing frames:  21%|██        | 21/100 [00:03<00:13,  6.00frame/s]Processing frames:  22%|██▏       | 22/100 [00:03<00:12,  6.03frame/s]Processing frames:  23%|██▎       | 23/100 [00:04<00:12,  6.05frame/s]Processing frames:  24%|██▍       | 24/100 [00:04<00:12,  6.03frame/s]Processing frames:  25%|██▌       | 25/100 [00:04<00:12,  6.05frame/s]Processing frames:  26%|██▌       | 26/100 [00:04<00:12,  6.03frame/s]Processing frames:  27%|██▋       | 27/100 [00:04<00:12,  6.03frame/s]Processing frames:  28%|██▊       | 28/100 [00:04<00:11,  6.03frame/s]Processing frames:  29%|██▉       | 29/100 [00:05<00:11,  6.02frame/s]Processing frames:  30%|███       | 30/100 [00:05<00:11,  6.03frame/s]Processing frames:  31%|███       | 31/100 [00:05<00:11,  6.05frame/s]Processing frames:  32%|███▏      | 32/100 [00:05<00:11,  6.06frame/s]Processing frames:  33%|███▎      | 33/100 [00:05<00:11,  6.07frame/s]Processing frames:  34%|███▍      | 34/100 [00:05<00:10,  6.06frame/s]Processing frames:  35%|███▌      | 35/100 [00:06<00:10,  6.07frame/s]Processing frames:  36%|███▌      | 36/100 [00:06<00:10,  6.04frame/s]Processing frames:  37%|███▋      | 37/100 [00:06<00:10,  6.05frame/s]Processing frames:  38%|███▊      | 38/100 [00:06<00:10,  6.04frame/s]Processing frames:  39%|███▉      | 39/100 [00:06<00:10,  6.04frame/s]Processing frames:  40%|████      | 40/100 [00:06<00:09,  6.04frame/s]Processing frames:  41%|████      | 41/100 [00:07<00:09,  6.04frame/s]Processing frames:  42%|████▏     | 42/100 [00:07<00:09,  6.04frame/s]Processing frames:  43%|████▎     | 43/100 [00:07<00:09,  6.03frame/s]Processing frames:  44%|████▍     | 44/100 [00:07<00:09,  6.00frame/s]Processing frames:  45%|████▌     | 45/100 [00:07<00:09,  6.01frame/s]Processing frames:  46%|████▌     | 46/100 [00:07<00:08,  6.01frame/s]Processing frames:  47%|████▋     | 47/100 [00:08<00:08,  5.99frame/s]Processing frames:  48%|████▊     | 48/100 [00:08<00:08,  6.02frame/s]Processing frames:  49%|████▉     | 49/100 [00:08<00:08,  6.04frame/s]Processing frames:  50%|█████     | 50/100 [00:08<00:08,  6.07frame/s]Processing frames:  51%|█████     | 51/100 [00:08<00:08,  6.05frame/s]Processing frames:  52%|█████▏    | 52/100 [00:08<00:07,  6.04frame/s]Processing frames:  53%|█████▎    | 53/100 [00:09<00:07,  6.04frame/s]Processing frames:  54%|█████▍    | 54/100 [00:09<00:07,  6.04frame/s]Processing frames:  55%|█████▌    | 55/100 [00:09<00:07,  6.01frame/s]Processing frames:  56%|█████▌    | 56/100 [00:09<00:07,  6.02frame/s]Processing frames:  57%|█████▋    | 57/100 [00:09<00:07,  5.78frame/s]Processing frames:  58%|█████▊    | 58/100 [00:09<00:07,  5.84frame/s]Processing frames:  59%|█████▉    | 59/100 [00:10<00:06,  5.87frame/s]Processing frames:  60%|██████    | 60/100 [00:10<00:06,  5.90frame/s]Processing frames:  61%|██████    | 61/100 [00:10<00:06,  5.91frame/s]Processing frames:  62%|██████▏   | 62/100 [00:10<00:06,  5.91frame/s]Processing frames:  63%|██████▎   | 63/100 [00:10<00:06,  5.92frame/s]Processing frames:  64%|██████▍   | 64/100 [00:10<00:06,  5.83frame/s]Processing frames:  65%|██████▌   | 65/100 [00:11<00:05,  5.89frame/s]Processing frames:  66%|██████▌   | 66/100 [00:11<00:05,  5.90frame/s]Processing frames:  67%|██████▋   | 67/100 [00:11<00:05,  5.93frame/s]Processing frames:  68%|██████▊   | 68/100 [00:11<00:05,  5.84frame/s]Processing frames:  69%|██████▉   | 69/100 [00:11<00:05,  5.89frame/s]Processing frames:  70%|███████   | 70/100 [00:11<00:05,  5.90frame/s]Processing frames:  71%|███████   | 71/100 [00:12<00:04,  5.87frame/s]Processing frames:  72%|███████▏  | 72/100 [00:12<00:04,  5.89frame/s]Processing frames:  73%|███████▎  | 73/100 [00:12<00:04,  5.91frame/s]Processing frames:  74%|███████▍  | 74/100 [00:12<00:04,  5.96frame/s]Processing frames:  75%|███████▌  | 75/100 [00:12<00:04,  5.77frame/s]Processing frames:  76%|███████▌  | 76/100 [00:12<00:04,  5.79frame/s]Processing frames:  77%|███████▋  | 77/100 [00:13<00:03,  5.83frame/s]Processing frames:  78%|███████▊  | 78/100 [00:13<00:03,  5.86frame/s]Processing frames:  79%|███████▉  | 79/100 [00:13<00:03,  5.90frame/s]Processing frames:  80%|████████  | 80/100 [00:13<00:03,  5.94frame/s]Processing frames:  81%|████████  | 81/100 [00:13<00:03,  5.95frame/s]Processing frames:  82%|████████▏ | 82/100 [00:13<00:03,  5.99frame/s]Processing frames:  83%|████████▎ | 83/100 [00:14<00:02,  6.02frame/s]Processing frames:  84%|████████▍ | 84/100 [00:14<00:02,  6.02frame/s]Processing frames:  85%|████████▌ | 85/100 [00:14<00:02,  5.98frame/s]Processing frames:  86%|████████▌ | 86/100 [00:14<00:02,  6.00frame/s]Processing frames:  87%|████████▋ | 87/100 [00:14<00:02,  5.99frame/s]Processing frames:  88%|████████▊ | 88/100 [00:14<00:02,  5.99frame/s]Processing frames:  89%|████████▉ | 89/100 [00:15<00:01,  5.99frame/s]Processing frames:  90%|█████████ | 90/100 [00:15<00:01,  6.01frame/s]Processing frames:  91%|█████████ | 91/100 [00:15<00:01,  5.99frame/s]Processing frames:  92%|█████████▏| 92/100 [00:15<00:01,  5.97frame/s]Processing frames:  93%|█████████▎| 93/100 [00:15<00:01,  5.97frame/s]Processing frames:  94%|█████████▍| 94/100 [00:16<00:01,  4.90frame/s]Processing frames:  95%|█████████▌| 95/100 [00:16<00:00,  5.18frame/s]Processing frames:  96%|█████████▌| 96/100 [00:16<00:00,  5.38frame/s]Processing frames:  97%|█████████▋| 97/100 [00:16<00:00,  5.56frame/s]Processing frames:  98%|█████████▊| 98/100 [00:16<00:00,  5.68frame/s]Processing frames:  99%|█████████▉| 99/100 [00:16<00:00,  5.78frame/s]Processing frames: 100%|██████████| 100/100 [00:17<00:00,  5.85frame/s]Processing frames: 100%|██████████| 100/100 [00:17<00:00,  5.84frame/s]
+summation took 0.014042139053344727 s
+(1495, 1295)
+ERROR: pySEA import failed, this functionality is not available
+(1, 100, 1495, 1295)
+kx (241,)
+Thu Feb 19 15:53:31 EST 2026
+python3 05_tacaw_otf.py
+failed to import pySEA: No module named 'pySEA'
+RUNNING ITERATION 0 a HAADF WITH KWARGS: {'loop_probes': False, 'use_memmap': False, 'chunkFFT': False}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]Processing frames:   2%|▏         | 1/50 [00:00<00:09,  5.34frame/s]Processing frames:   6%|▌         | 3/50 [00:00<00:04, 10.26frame/s]Processing frames:  10%|█         | 5/50 [00:00<00:03, 12.40frame/s]Processing frames:  14%|█▍        | 7/50 [00:00<00:03, 13.56frame/s]Processing frames:  18%|█▊        | 9/50 [00:00<00:02, 14.22frame/s]Processing frames:  22%|██▏       | 11/50 [00:00<00:02, 14.57frame/s]Processing frames:  26%|██▌       | 13/50 [00:00<00:02, 14.67frame/s]Processing frames:  30%|███       | 15/50 [00:01<00:02, 15.06frame/s]Processing frames:  34%|███▍      | 17/50 [00:01<00:02, 15.20frame/s]Processing frames:  38%|███▊      | 19/50 [00:01<00:02, 15.45frame/s]Processing frames:  42%|████▏     | 21/50 [00:01<00:01, 15.69frame/s]Processing frames:  46%|████▌     | 23/50 [00:01<00:01, 15.70frame/s]Processing frames:  50%|█████     | 25/50 [00:01<00:01, 15.74frame/s]Processing frames:  54%|█████▍    | 27/50 [00:01<00:01, 15.72frame/s]Processing frames:  58%|█████▊    | 29/50 [00:01<00:01, 15.57frame/s]Processing frames:  62%|██████▏   | 31/50 [00:02<00:01, 15.63frame/s]Processing frames:  66%|██████▌   | 33/50 [00:02<00:01, 15.77frame/s]Processing frames:  70%|███████   | 35/50 [00:02<00:00, 15.63frame/s]Processing frames:  74%|███████▍  | 37/50 [00:02<00:00, 15.71frame/s]Processing frames:  78%|███████▊  | 39/50 [00:02<00:00, 15.67frame/s]Processing frames:  82%|████████▏ | 41/50 [00:02<00:00, 15.56frame/s]Processing frames:  86%|████████▌ | 43/50 [00:02<00:00, 15.48frame/s]Processing frames:  90%|█████████ | 45/50 [00:03<00:00, 15.39frame/s]Processing frames:  94%|█████████▍| 47/50 [00:03<00:00, 15.33frame/s]Processing frames:  98%|█████████▊| 49/50 [00:03<00:00, 15.38frame/s]Processing frames: 100%|██████████| 50/50 [00:03<00:00, 14.95frame/s]
+Traceback (most recent call last):
+  File "/home/qwe/PySlice/staging/torchgpu/05_tacaw_otf.py", line 50, in <module>
+    diff=tacaw.diffraction().T
+         ^^^^^^^^^^^^^^^^^^^
+  File "/home/qwe/PySlice/staging/torchgpu/../src/pyslice/postprocessing/tacaw_data.py", line 376, in diffraction
+    diffraction_pattern = sum(probe_intensity, axis=0)  # Sum over frequencies
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'axis' is an invalid keyword argument for sum()
+Thu Feb 19 15:54:50 EST 2026
+python3 05_tacaw_otf.py
+failed to import pySEA: No module named 'pySEA'
+RUNNING ITERATION 0 a HAADF WITH KWARGS: {'loop_probes': False, 'use_memmap': False, 'chunkFFT': False}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]Processing frames:   2%|▏         | 1/50 [00:00<00:09,  5.33frame/s]Processing frames:   6%|▌         | 3/50 [00:00<00:04, 10.02frame/s]Processing frames:  10%|█         | 5/50 [00:00<00:03, 12.33frame/s]Processing frames:  14%|█▍        | 7/50 [00:00<00:03, 13.38frame/s]Processing frames:  18%|█▊        | 9/50 [00:00<00:02, 14.19frame/s]Processing frames:  22%|██▏       | 11/50 [00:00<00:02, 14.79frame/s]Processing frames:  26%|██▌       | 13/50 [00:00<00:02, 14.85frame/s]Processing frames:  30%|███       | 15/50 [00:01<00:02, 15.16frame/s]Processing frames:  34%|███▍      | 17/50 [00:01<00:02, 15.58frame/s]Processing frames:  38%|███▊      | 19/50 [00:01<00:02, 15.43frame/s]Processing frames:  42%|████▏     | 21/50 [00:01<00:01, 15.62frame/s]Processing frames:  46%|████▌     | 23/50 [00:01<00:01, 15.76frame/s]Processing frames:  50%|█████     | 25/50 [00:01<00:01, 15.68frame/s]Processing frames:  54%|█████▍    | 27/50 [00:01<00:01, 15.72frame/s]Processing frames:  58%|█████▊    | 29/50 [00:01<00:01, 15.68frame/s]Processing frames:  62%|██████▏   | 31/50 [00:02<00:01, 15.41frame/s]Processing frames:  66%|██████▌   | 33/50 [00:02<00:01, 15.71frame/s]Processing frames:  70%|███████   | 35/50 [00:02<00:00, 15.77frame/s]Processing frames:  74%|███████▍  | 37/50 [00:02<00:00, 15.88frame/s]Processing frames:  78%|███████▊  | 39/50 [00:02<00:00, 15.86frame/s]Processing frames:  82%|████████▏ | 41/50 [00:02<00:00, 15.86frame/s]Processing frames:  86%|████████▌ | 43/50 [00:02<00:00, 15.94frame/s]Processing frames:  90%|█████████ | 45/50 [00:02<00:00, 15.85frame/s]Processing frames:  94%|█████████▍| 47/50 [00:03<00:00, 15.96frame/s]Processing frames:  98%|█████████▊| 49/50 [00:03<00:00, 16.04frame/s]Processing frames: 100%|██████████| 50/50 [00:03<00:00, 15.13frame/s]
+kx (41,)
+RUNNING ITERATION 0 b HAADF WITH KWARGS: {'loop_probes': False, 'use_memmap': False, 'chunkFFT': False}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]WARNING:root:One or more frames reloaded from cache: psi_data/torch_dffc8ad4e492
+Processing frames:  10%|█         | 5/50 [00:00<00:01, 40.94frame/s]Processing frames:  20%|██        | 10/50 [00:00<00:00, 43.51frame/s]Processing frames:  30%|███       | 15/50 [00:00<00:00, 40.04frame/s]Processing frames:  40%|████      | 20/50 [00:00<00:00, 40.93frame/s]Processing frames:  50%|█████     | 25/50 [00:00<00:00, 42.61frame/s]Processing frames:  60%|██████    | 30/50 [00:00<00:00, 42.03frame/s]Processing frames:  70%|███████   | 35/50 [00:00<00:00, 42.63frame/s]Processing frames:  80%|████████  | 40/50 [00:00<00:00, 42.54frame/s]Processing frames:  90%|█████████ | 45/50 [00:01<00:00, 42.31frame/s]Processing frames: 100%|██████████| 50/50 [00:01<00:00, 42.84frame/s]Processing frames: 100%|██████████| 50/50 [00:01<00:00, 42.27frame/s]
+kx (41,)
+RUNNING ITERATION 1 a HAADF WITH KWARGS: {'loop_probes': False, 'use_memmap': False, 'chunkFFT': True}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]Processing frames:   4%|▍         | 2/50 [00:00<00:03, 13.12frame/s]Processing frames:   8%|▊         | 4/50 [00:00<00:03, 14.48frame/s]Processing frames:  12%|█▏        | 6/50 [00:00<00:02, 14.87frame/s]Processing frames:  16%|█▌        | 8/50 [00:00<00:02, 15.11frame/s]Processing frames:  20%|██        | 10/50 [00:00<00:03, 11.51frame/s]Processing frames:  24%|██▍       | 12/50 [00:00<00:03, 12.49frame/s]Processing frames:  28%|██▊       | 14/50 [00:01<00:02, 13.42frame/s]Processing frames:  32%|███▏      | 16/50 [00:01<00:02, 14.04frame/s]Processing frames:  36%|███▌      | 18/50 [00:01<00:02, 14.65frame/s]Processing frames:  40%|████      | 20/50 [00:01<00:01, 15.09frame/s]Processing frames:  44%|████▍     | 22/50 [00:01<00:01, 15.29frame/s]Processing frames:  48%|████▊     | 24/50 [00:01<00:01, 15.28frame/s]Processing frames:  52%|█████▏    | 26/50 [00:01<00:01, 15.35frame/s]Processing frames:  56%|█████▌    | 28/50 [00:01<00:01, 15.41frame/s]Processing frames:  60%|██████    | 30/50 [00:02<00:01, 15.00frame/s]Processing frames:  64%|██████▍   | 32/50 [00:02<00:01, 15.17frame/s]Processing frames:  68%|██████▊   | 34/50 [00:02<00:01, 15.26frame/s]Processing frames:  72%|███████▏  | 36/50 [00:02<00:00, 15.34frame/s]Processing frames:  76%|███████▌  | 38/50 [00:02<00:00, 15.33frame/s]Processing frames:  80%|████████  | 40/50 [00:02<00:00, 15.38frame/s]Processing frames:  84%|████████▍ | 42/50 [00:02<00:00, 15.47frame/s]Processing frames:  88%|████████▊ | 44/50 [00:02<00:00, 15.60frame/s]Processing frames:  92%|█████████▏| 46/50 [00:03<00:00, 15.71frame/s]Processing frames:  96%|█████████▌| 48/50 [00:03<00:00, 15.88frame/s]Processing frames: 100%|██████████| 50/50 [00:03<00:00, 15.62frame/s]Processing frames: 100%|██████████| 50/50 [00:03<00:00, 14.88frame/s]
+  0%|          | 0/250 [00:00<?, ?it/s]100%|██████████| 250/250 [00:00<00:00, 3584.96it/s]
+kx (41,)
+RUNNING ITERATION 1 b HAADF WITH KWARGS: {'loop_probes': False, 'use_memmap': False, 'chunkFFT': True}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]Processing frames:  10%|█         | 5/50 [00:00<00:01, 40.32frame/s]Processing frames:  20%|██        | 10/50 [00:00<00:00, 41.66frame/s]Processing frames:  30%|███       | 15/50 [00:00<00:00, 41.10frame/s]Processing frames:  40%|████      | 20/50 [00:00<00:00, 41.53frame/s]Processing frames:  50%|█████     | 25/50 [00:00<00:00, 42.01frame/s]Processing frames:  60%|██████    | 30/50 [00:00<00:00, 42.19frame/s]Processing frames:  70%|███████   | 35/50 [00:00<00:00, 42.17frame/s]Processing frames:  80%|████████  | 40/50 [00:00<00:00, 43.06frame/s]Processing frames:  90%|█████████ | 45/50 [00:01<00:00, 42.24frame/s]Processing frames: 100%|██████████| 50/50 [00:01<00:00, 43.00frame/s]Processing frames: 100%|██████████| 50/50 [00:01<00:00, 42.30frame/s]
+kx (41,)
+RUNNING ITERATION 2 a HAADF WITH KWARGS: {'loop_probes': False, 'use_memmap': True, 'chunkFFT': False}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]Processing frames:   2%|▏         | 1/50 [00:00<00:06,  7.52frame/s]Processing frames:   6%|▌         | 3/50 [00:00<00:05,  9.13frame/s]Processing frames:   8%|▊         | 4/50 [00:00<00:05,  9.09frame/s]Processing frames:  10%|█         | 5/50 [00:00<00:04,  9.04frame/s]Processing frames:  12%|█▏        | 6/50 [00:00<00:04,  9.11frame/s]Processing frames:  14%|█▍        | 7/50 [00:00<00:04,  9.10frame/s]Processing frames:  18%|█▊        | 9/50 [00:00<00:04,  9.59frame/s]Processing frames:  20%|██        | 10/50 [00:01<00:04,  8.72frame/s]Processing frames:  22%|██▏       | 11/50 [00:01<00:04,  8.65frame/s]Processing frames:  24%|██▍       | 12/50 [00:01<00:04,  8.74frame/s]Processing frames:  26%|██▌       | 13/50 [00:01<00:04,  8.71frame/s]Processing frames:  30%|███       | 15/50 [00:01<00:03,  9.14frame/s]Processing frames:  32%|███▏      | 16/50 [00:01<00:03,  9.21frame/s]Processing frames:  34%|███▍      | 17/50 [00:01<00:03,  9.33frame/s]Processing frames:  36%|███▌      | 18/50 [00:01<00:03,  9.42frame/s]Processing frames:  40%|████      | 20/50 [00:02<00:03,  9.72frame/s]Processing frames:  44%|████▍     | 22/50 [00:02<00:02, 10.01frame/s]Processing frames:  46%|████▌     | 23/50 [00:02<00:02,  9.88frame/s]Processing frames:  48%|████▊     | 24/50 [00:02<00:02,  9.74frame/s]Processing frames:  50%|█████     | 25/50 [00:02<00:02,  9.54frame/s]Processing frames:  52%|█████▏    | 26/50 [00:02<00:02,  9.49frame/s]Processing frames:  54%|█████▍    | 27/50 [00:02<00:02,  9.33frame/s]Processing frames:  56%|█████▌    | 28/50 [00:03<00:02,  9.27frame/s]Processing frames:  58%|█████▊    | 29/50 [00:03<00:02,  9.34frame/s]Processing frames:  60%|██████    | 30/50 [00:03<00:02,  9.31frame/s]Processing frames:  62%|██████▏   | 31/50 [00:03<00:02,  9.49frame/s]Processing frames:  66%|██████▌   | 33/50 [00:03<00:01,  9.96frame/s]Processing frames:  70%|███████   | 35/50 [00:03<00:01,  9.91frame/s]Processing frames:  72%|███████▏  | 36/50 [00:03<00:01,  9.72frame/s]Processing frames:  74%|███████▍  | 37/50 [00:03<00:01,  9.57frame/s]Processing frames:  76%|███████▌  | 38/50 [00:04<00:01,  9.55frame/s]Processing frames:  80%|████████  | 40/50 [00:04<00:01,  9.80frame/s]Processing frames:  82%|████████▏ | 41/50 [00:04<00:00,  9.60frame/s]Processing frames:  84%|████████▍ | 42/50 [00:04<00:00,  9.39frame/s]Processing frames:  86%|████████▌ | 43/50 [00:04<00:00,  9.43frame/s]Processing frames:  88%|████████▊ | 44/50 [00:04<00:00,  9.50frame/s]Processing frames:  90%|█████████ | 45/50 [00:04<00:00,  9.43frame/s]Processing frames:  92%|█████████▏| 46/50 [00:04<00:00,  9.42frame/s]Processing frames:  94%|█████████▍| 47/50 [00:05<00:00,  9.30frame/s]Processing frames:  96%|█████████▌| 48/50 [00:05<00:00,  9.21frame/s]Processing frames:  98%|█████████▊| 49/50 [00:05<00:00,  9.23frame/s]Processing frames: 100%|██████████| 50/50 [00:05<00:00,  9.44frame/s]Processing frames: 100%|██████████| 50/50 [00:05<00:00,  9.39frame/s]
+kx (41,)
+RUNNING ITERATION 2 b HAADF WITH KWARGS: {'loop_probes': False, 'use_memmap': True, 'chunkFFT': False}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]Processing frames:   4%|▍         | 2/50 [00:00<00:02, 17.46frame/s]Processing frames:   8%|▊         | 4/50 [00:00<00:02, 17.75frame/s]Processing frames:  12%|█▏        | 6/50 [00:00<00:02, 17.01frame/s]Processing frames:  18%|█▊        | 9/50 [00:00<00:02, 19.26frame/s]Processing frames:  24%|██▍       | 12/50 [00:00<00:01, 19.64frame/s]Processing frames:  28%|██▊       | 14/50 [00:00<00:01, 19.58frame/s]Processing frames:  34%|███▍      | 17/50 [00:00<00:01, 20.50frame/s]Processing frames:  40%|████      | 20/50 [00:01<00:01, 19.99frame/s]Processing frames:  46%|████▌     | 23/50 [00:01<00:01, 20.39frame/s]Processing frames:  52%|█████▏    | 26/50 [00:01<00:01, 20.36frame/s]Processing frames:  58%|█████▊    | 29/50 [00:01<00:01, 20.21frame/s]Processing frames:  64%|██████▍   | 32/50 [00:01<00:00, 20.24frame/s]Processing frames:  70%|███████   | 35/50 [00:01<00:00, 20.52frame/s]Processing frames:  76%|███████▌  | 38/50 [00:01<00:00, 20.61frame/s]Processing frames:  82%|████████▏ | 41/50 [00:02<00:00, 20.87frame/s]Processing frames:  88%|████████▊ | 44/50 [00:02<00:00, 20.88frame/s]Processing frames:  94%|█████████▍| 47/50 [00:02<00:00, 20.59frame/s]Processing frames: 100%|██████████| 50/50 [00:02<00:00, 20.56frame/s]Processing frames: 100%|██████████| 50/50 [00:02<00:00, 20.15frame/s]
+rm: cannot remove 'psi_data/torch_dffc8ad4e492': Directory not empty
+kx (41,)
+RUNNING ITERATION 3 a HAADF WITH KWARGS: {'loop_probes': False, 'use_memmap': True, 'chunkFFT': True}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]Processing frames:   4%|▍         | 2/50 [00:00<00:04, 10.88frame/s]Processing frames:   8%|▊         | 4/50 [00:00<00:04, 10.31frame/s]Processing frames:  12%|█▏        | 6/50 [00:00<00:04,  9.11frame/s]Processing frames:  14%|█▍        | 7/50 [00:00<00:04,  9.30frame/s]Processing frames:  16%|█▌        | 8/50 [00:00<00:04,  9.29frame/s]Processing frames:  18%|█▊        | 9/50 [00:00<00:04,  9.34frame/s]Processing frames:  20%|██        | 10/50 [00:01<00:04,  9.19frame/s]Processing frames:  22%|██▏       | 11/50 [00:01<00:04,  9.38frame/s]Processing frames:  26%|██▌       | 13/50 [00:01<00:03, 10.03frame/s]Processing frames:  30%|███       | 15/50 [00:01<00:03, 10.10frame/s]Processing frames:  34%|███▍      | 17/50 [00:01<00:03, 10.21frame/s]Processing frames:  38%|███▊      | 19/50 [00:01<00:02, 10.46frame/s]Processing frames:  42%|████▏     | 21/50 [00:02<00:02, 10.61frame/s]Processing frames:  46%|████▌     | 23/50 [00:02<00:02, 10.22frame/s]Processing frames:  50%|█████     | 25/50 [00:02<00:02, 10.10frame/s]Processing frames:  54%|█████▍    | 27/50 [00:02<00:02, 10.04frame/s]Processing frames:  58%|█████▊    | 29/50 [00:02<00:02, 10.08frame/s]Processing frames:  62%|██████▏   | 31/50 [00:03<00:01, 10.09frame/s]Processing frames:  66%|██████▌   | 33/50 [00:03<00:01, 10.17frame/s]Processing frames:  70%|███████   | 35/50 [00:03<00:01, 10.14frame/s]Processing frames:  74%|███████▍  | 37/50 [00:03<00:01, 10.24frame/s]Processing frames:  78%|███████▊  | 39/50 [00:03<00:01, 10.06frame/s]Processing frames:  82%|████████▏ | 41/50 [00:04<00:00,  9.91frame/s]Processing frames:  84%|████████▍ | 42/50 [00:04<00:00,  9.89frame/s]Processing frames:  86%|████████▌ | 43/50 [00:04<00:00,  9.89frame/s]Processing frames:  90%|█████████ | 45/50 [00:04<00:00,  9.93frame/s]Processing frames:  92%|█████████▏| 46/50 [00:04<00:00,  9.85frame/s]Processing frames:  94%|█████████▍| 47/50 [00:04<00:00,  9.82frame/s]Processing frames:  96%|█████████▌| 48/50 [00:04<00:00,  9.78frame/s]Processing frames:  98%|█████████▊| 49/50 [00:04<00:00,  9.80frame/s]Processing frames: 100%|██████████| 50/50 [00:05<00:00,  9.44frame/s]Processing frames: 100%|██████████| 50/50 [00:05<00:00,  9.92frame/s]
+  0%|          | 0/250 [00:00<?, ?it/s]  0%|          | 1/250 [00:00<00:41,  6.00it/s]  2%|▏         | 5/250 [00:00<00:12, 20.03it/s]  4%|▎         | 9/250 [00:00<00:09, 25.95it/s]  5%|▌         | 13/250 [00:00<00:08, 28.54it/s]  7%|▋         | 17/250 [00:00<00:07, 30.62it/s]  8%|▊         | 21/250 [00:00<00:07, 29.84it/s] 10%|█         | 25/250 [00:00<00:07, 31.48it/s] 12%|█▏        | 29/250 [00:01<00:06, 31.93it/s] 13%|█▎        | 33/250 [00:01<00:06, 33.04it/s] 15%|█▍        | 37/250 [00:01<00:06, 33.56it/s] 16%|█▋        | 41/250 [00:01<00:06, 31.68it/s] 18%|█▊        | 45/250 [00:01<00:06, 33.28it/s] 20%|█▉        | 49/250 [00:01<00:05, 34.39it/s] 22%|██▏       | 54/250 [00:01<00:05, 36.28it/s] 23%|██▎       | 58/250 [00:01<00:05, 37.21it/s] 25%|██▍       | 62/250 [00:01<00:05, 37.09it/s] 27%|██▋       | 67/250 [00:02<00:04, 37.95it/s] 28%|██▊       | 71/250 [00:02<00:04, 38.46it/s] 30%|███       | 75/250 [00:02<00:04, 38.83it/s] 32%|███▏      | 79/250 [00:02<00:04, 38.91it/s] 33%|███▎      | 83/250 [00:02<00:04, 39.15it/s] 35%|███▍      | 87/250 [00:02<00:04, 38.91it/s] 36%|███▋      | 91/250 [00:02<00:04, 38.90it/s] 38%|███▊      | 95/250 [00:02<00:03, 39.10it/s] 40%|███▉      | 99/250 [00:02<00:03, 39.32it/s] 41%|████      | 103/250 [00:02<00:03, 39.43it/s] 43%|████▎     | 107/250 [00:03<00:03, 39.54it/s] 44%|████▍     | 111/250 [00:03<00:03, 39.08it/s] 46%|████▌     | 115/250 [00:03<00:03, 38.45it/s] 48%|████▊     | 119/250 [00:03<00:03, 38.82it/s] 49%|████▉     | 123/250 [00:03<00:03, 38.24it/s] 51%|█████     | 127/250 [00:03<00:03, 37.51it/s] 52%|█████▏    | 131/250 [00:03<00:03, 38.13it/s] 54%|█████▍    | 135/250 [00:03<00:03, 38.07it/s] 56%|█████▌    | 139/250 [00:03<00:02, 38.38it/s] 57%|█████▋    | 143/250 [00:04<00:02, 38.80it/s] 59%|█████▉    | 147/250 [00:04<00:02, 39.08it/s] 60%|██████    | 151/250 [00:04<00:02, 39.33it/s] 62%|██████▏   | 156/250 [00:04<00:02, 39.69it/s] 64%|██████▍   | 160/250 [00:04<00:02, 39.76it/s] 66%|██████▌   | 164/250 [00:04<00:02, 39.70it/s] 67%|██████▋   | 168/250 [00:04<00:02, 39.55it/s] 69%|██████▉   | 173/250 [00:04<00:01, 39.63it/s] 71%|███████   | 177/250 [00:04<00:01, 39.57it/s] 72%|███████▏  | 181/250 [00:04<00:01, 38.91it/s] 74%|███████▍  | 185/250 [00:05<00:01, 39.20it/s] 76%|███████▌  | 189/250 [00:05<00:01, 39.33it/s] 78%|███████▊  | 194/250 [00:05<00:01, 39.70it/s] 79%|███████▉  | 198/250 [00:05<00:01, 39.52it/s] 81%|████████  | 202/250 [00:05<00:01, 39.29it/s] 82%|████████▏ | 206/250 [00:05<00:01, 38.62it/s] 84%|████████▍ | 210/250 [00:05<00:01, 39.00it/s] 86%|████████▌ | 215/250 [00:05<00:00, 39.21it/s] 88%|████████▊ | 219/250 [00:05<00:00, 38.85it/s] 89%|████████▉ | 223/250 [00:06<00:00, 38.59it/s] 91%|█████████ | 227/250 [00:06<00:00, 38.93it/s] 92%|█████████▏| 231/250 [00:06<00:00, 39.22it/s] 94%|█████████▍| 235/250 [00:06<00:00, 38.83it/s] 96%|█████████▌| 240/250 [00:06<00:00, 39.47it/s] 98%|█████████▊| 244/250 [00:06<00:00, 39.05it/s]100%|██████████| 250/250 [00:06<00:00, 37.41it/s]
+kx (41,)
+RUNNING ITERATION 3 b HAADF WITH KWARGS: {'loop_probes': False, 'use_memmap': True, 'chunkFFT': True}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]Processing frames:   2%|▏         | 1/50 [00:00<00:14,  3.37frame/s]Processing frames:   6%|▌         | 3/50 [00:00<00:05,  8.53frame/s]Processing frames:  12%|█▏        | 6/50 [00:00<00:03, 13.12frame/s]Processing frames:  18%|█▊        | 9/50 [00:00<00:02, 16.19frame/s]Processing frames:  24%|██▍       | 12/50 [00:00<00:02, 18.47frame/s]Processing frames:  30%|███       | 15/50 [00:00<00:01, 19.51frame/s]Processing frames:  36%|███▌      | 18/50 [00:01<00:01, 19.79frame/s]Processing frames:  42%|████▏     | 21/50 [00:01<00:01, 21.15frame/s]Processing frames:  48%|████▊     | 24/50 [00:01<00:01, 21.03frame/s]Processing frames:  54%|█████▍    | 27/50 [00:01<00:01, 20.87frame/s]Processing frames:  60%|██████    | 30/50 [00:01<00:00, 21.57frame/s]Processing frames:  66%|██████▌   | 33/50 [00:01<00:00, 21.65frame/s]Processing frames:  72%|███████▏  | 36/50 [00:01<00:00, 22.80frame/s]Processing frames:  78%|███████▊  | 39/50 [00:02<00:00, 22.76frame/s]Processing frames:  84%|████████▍ | 42/50 [00:02<00:00, 22.74frame/s]Processing frames:  90%|█████████ | 45/50 [00:02<00:00, 23.11frame/s]Processing frames:  96%|█████████▌| 48/50 [00:02<00:00, 21.78frame/s]Processing frames: 100%|██████████| 50/50 [00:02<00:00, 19.71frame/s]
+rm: cannot remove 'psi_data/torch_dffc8ad4e492': Directory not empty
+kx (41,)
+RUNNING ITERATION 4 a HAADF WITH KWARGS: {'loop_probes': 10, 'use_memmap': False, 'chunkFFT': False}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 161.99it/s]
+Processing frames:   2%|▏         | 1/50 [00:00<00:05,  9.03frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.31it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 182.36it/s]
+Processing frames:   6%|▌         | 3/50 [00:00<00:04,  9.84frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 182.30it/s]
+Processing frames:   8%|▊         | 4/50 [00:00<00:04,  9.87frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 179.45it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 179.15it/s]
+Processing frames:  12%|█▏        | 6/50 [00:00<00:04, 10.11frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 179.01it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 175.94it/s]
+Processing frames:  16%|█▌        | 8/50 [00:00<00:04, 10.21frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 175.19it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 174.85it/s]
+Processing frames:  20%|██        | 10/50 [00:01<00:04,  9.99frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.61it/s]
+Processing frames:  22%|██▏       | 11/50 [00:01<00:03,  9.98frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.32it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 182.03it/s]
+Processing frames:  26%|██▌       | 13/50 [00:01<00:03, 10.02frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.82it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.18it/s]
+Processing frames:  30%|███       | 15/50 [00:01<00:03,  9.99frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.30it/s]
+Processing frames:  32%|███▏      | 16/50 [00:01<00:03,  9.92frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.74it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.71it/s]
+Processing frames:  36%|███▌      | 18/50 [00:01<00:03,  9.97frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.71it/s]
+Processing frames:  38%|███▊      | 19/50 [00:01<00:03,  9.95frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.47it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.83it/s]
+Processing frames:  42%|████▏     | 21/50 [00:02<00:02,  9.95frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.60it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.99it/s]
+Processing frames:  46%|████▌     | 23/50 [00:02<00:02,  9.98frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.05it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.73it/s]
+Processing frames:  50%|█████     | 25/50 [00:02<00:02, 10.00frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.89it/s]
+Processing frames:  52%|█████▏    | 26/50 [00:02<00:02,  9.98frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.86it/s]
+Processing frames:  54%|█████▍    | 27/50 [00:02<00:02,  9.96frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.82it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.56it/s]
+Processing frames:  58%|█████▊    | 29/50 [00:02<00:02,  9.99frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 175.41it/s]
+Processing frames:  60%|██████    | 30/50 [00:03<00:02,  9.97frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 179.00it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 182.58it/s]
+Processing frames:  64%|██████▍   | 32/50 [00:03<00:01, 10.21frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.40it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.87it/s]
+Processing frames:  68%|██████▊   | 34/50 [00:03<00:01, 10.23frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.19it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.81it/s]
+Processing frames:  72%|███████▏  | 36/50 [00:03<00:01, 10.23frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.20it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.91it/s]
+Processing frames:  76%|███████▌  | 38/50 [00:03<00:01, 10.24frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 174.58it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 174.96it/s]
+Processing frames:  80%|████████  | 40/50 [00:03<00:00, 10.19frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 174.52it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 174.85it/s]
+Processing frames:  84%|████████▍ | 42/50 [00:04<00:00, 10.16frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 174.83it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 175.39it/s]
+Processing frames:  88%|████████▊ | 44/50 [00:04<00:00, 10.14frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 175.53it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.47it/s]
+Processing frames:  92%|█████████▏| 46/50 [00:04<00:00, 10.17frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.97it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.29it/s]
+Processing frames:  96%|█████████▌| 48/50 [00:04<00:00, 10.20frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.47it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.94it/s]
+Processing frames: 100%|██████████| 50/50 [00:04<00:00, 10.11frame/s]Processing frames: 100%|██████████| 50/50 [00:04<00:00, 10.06frame/s]
+kx (41,)
+RUNNING ITERATION 4 b HAADF WITH KWARGS: {'loop_probes': 10, 'use_memmap': False, 'chunkFFT': False}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]WARNING:root:One or more frames reloaded from cache: psi_data/torch_e0d1fba54913
+Processing frames:   8%|▊         | 4/50 [00:00<00:01, 36.89frame/s]Processing frames:  18%|█▊        | 9/50 [00:00<00:01, 39.30frame/s]Processing frames:  28%|██▊       | 14/50 [00:00<00:00, 41.60frame/s]Processing frames:  38%|███▊      | 19/50 [00:00<00:00, 40.81frame/s]Processing frames:  48%|████▊     | 24/50 [00:00<00:00, 40.94frame/s]Processing frames:  58%|█████▊    | 29/50 [00:00<00:00, 41.09frame/s]Processing frames:  68%|██████▊   | 34/50 [00:00<00:00, 40.89frame/s]Processing frames:  78%|███████▊  | 39/50 [00:00<00:00, 41.91frame/s]Processing frames:  88%|████████▊ | 44/50 [00:01<00:00, 41.38frame/s]Processing frames:  98%|█████████▊| 49/50 [00:01<00:00, 41.49frame/s]Processing frames: 100%|██████████| 50/50 [00:01<00:00, 41.17frame/s]
+kx (41,)
+RUNNING ITERATION 5 a HAADF WITH KWARGS: {'loop_probes': 10, 'use_memmap': False, 'chunkFFT': True}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 179.06it/s]
+Processing frames:   2%|▏         | 1/50 [00:00<00:05,  9.73frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.15it/s]
+Processing frames:   4%|▍         | 2/50 [00:00<00:04,  9.65frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.18it/s]
+Processing frames:   6%|▌         | 3/50 [00:00<00:04,  9.63frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.62it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.09it/s]
+Processing frames:  10%|█         | 5/50 [00:00<00:04, 10.04frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.65it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.28it/s]
+Processing frames:  14%|█▍        | 7/50 [00:00<00:04, 10.02frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 175.58it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 174.62it/s]
+Processing frames:  18%|█▊        | 9/50 [00:00<00:04, 10.03frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 174.60it/s]
+Processing frames:  20%|██        | 10/50 [00:01<00:03, 10.02frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.96it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.99it/s]
+Processing frames:  24%|██▍       | 12/50 [00:01<00:03, 10.14frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.93it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.80it/s]
+Processing frames:  28%|██▊       | 14/50 [00:01<00:03, 10.05frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.85it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 182.18it/s]
+Processing frames:  32%|███▏      | 16/50 [00:01<00:03, 10.11frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 182.07it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.82it/s]
+Processing frames:  36%|███▌      | 18/50 [00:01<00:03, 10.13frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.54it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.32it/s]
+Processing frames:  40%|████      | 20/50 [00:01<00:02, 10.19frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.49it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.08it/s]
+Processing frames:  44%|████▍     | 22/50 [00:02<00:02, 10.29frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.85it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 175.83it/s]
+Processing frames:  48%|████▊     | 24/50 [00:02<00:02, 10.24frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.14it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.85it/s]
+Processing frames:  52%|█████▏    | 26/50 [00:02<00:02, 10.12frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.71it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.10it/s]
+Processing frames:  56%|█████▌    | 28/50 [00:02<00:02, 10.19frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.52it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 175.51it/s]
+Processing frames:  60%|██████    | 30/50 [00:02<00:01, 10.16frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.59it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.88it/s]
+Processing frames:  64%|██████▍   | 32/50 [00:03<00:01, 10.22frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 182.09it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 182.19it/s]
+Processing frames:  68%|██████▊   | 34/50 [00:03<00:01, 10.30frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.88it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.46it/s]
+Processing frames:  72%|███████▏  | 36/50 [00:03<00:01, 10.30frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.90it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.82it/s]
+Processing frames:  76%|███████▌  | 38/50 [00:03<00:01, 10.36frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 173.58it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 175.03it/s]
+Processing frames:  80%|████████  | 40/50 [00:03<00:00, 10.32frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 174.41it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 174.43it/s]
+Processing frames:  84%|████████▍ | 42/50 [00:04<00:00, 10.28frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 174.49it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 175.66it/s]
+Processing frames:  88%|████████▊ | 44/50 [00:04<00:00, 10.20frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 175.51it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 178.52it/s]
+Processing frames:  92%|█████████▏| 46/50 [00:04<00:00, 10.13frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 181.85it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 173.19it/s]
+Processing frames:  96%|█████████▌| 48/50 [00:04<00:00, 10.04frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.15it/s]
+
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 177.85it/s]
+Processing frames: 100%|██████████| 50/50 [00:04<00:00, 10.09frame/s]Processing frames: 100%|██████████| 50/50 [00:04<00:00, 10.15frame/s]
+  0%|          | 0/250 [00:00<?, ?it/s]100%|██████████| 250/250 [00:00<00:00, 3706.01it/s]
+kx (41,)
+RUNNING ITERATION 5 b HAADF WITH KWARGS: {'loop_probes': 10, 'use_memmap': False, 'chunkFFT': True}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]Processing frames:   8%|▊         | 4/50 [00:00<00:01, 38.56frame/s]Processing frames:  16%|█▌        | 8/50 [00:00<00:01, 38.59frame/s]Processing frames:  26%|██▌       | 13/50 [00:00<00:00, 41.02frame/s]Processing frames:  36%|███▌      | 18/50 [00:00<00:00, 40.01frame/s]Processing frames:  46%|████▌     | 23/50 [00:00<00:00, 40.46frame/s]Processing frames:  56%|█████▌    | 28/50 [00:00<00:00, 40.84frame/s]Processing frames:  66%|██████▌   | 33/50 [00:00<00:00, 40.93frame/s]Processing frames:  76%|███████▌  | 38/50 [00:00<00:00, 41.44frame/s]Processing frames:  86%|████████▌ | 43/50 [00:01<00:00, 40.83frame/s]Processing frames:  96%|█████████▌| 48/50 [00:01<00:00, 39.39frame/s]Processing frames: 100%|██████████| 50/50 [00:01<00:00, 39.98frame/s]
+kx (41,)
+RUNNING ITERATION 6 a HAADF WITH KWARGS: {'loop_probes': 10, 'use_memmap': True, 'chunkFFT': False}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 126.79it/s]
+Processing frames:   2%|▏         | 1/50 [00:00<00:06,  7.47frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 132.64it/s]
+Processing frames:   4%|▍         | 2/50 [00:00<00:06,  7.53frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 130.12it/s]
+Processing frames:   6%|▌         | 3/50 [00:00<00:06,  7.44frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 127.91it/s]
+Processing frames:   8%|▊         | 4/50 [00:00<00:06,  7.37frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 135.82it/s]
+Processing frames:  10%|█         | 5/50 [00:00<00:06,  7.45frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 136.51it/s]
+Processing frames:  12%|█▏        | 6/50 [00:00<00:05,  7.51frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 132.16it/s]
+Processing frames:  14%|█▍        | 7/50 [00:00<00:05,  7.56frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 124.54it/s]
+Processing frames:  16%|█▌        | 8/50 [00:01<00:05,  7.43frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 127.00it/s]
+Processing frames:  18%|█▊        | 9/50 [00:01<00:05,  7.45frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 126.57it/s]
+Processing frames:  20%|██        | 10/50 [00:01<00:05,  7.36frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.60it/s]
+Processing frames:  22%|██▏       | 11/50 [00:01<00:05,  7.27frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 123.82it/s]
+Processing frames:  24%|██▍       | 12/50 [00:01<00:05,  7.21frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 129.25it/s]
+Processing frames:  26%|██▌       | 13/50 [00:01<00:05,  7.08frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 129.65it/s]
+Processing frames:  28%|██▊       | 14/50 [00:01<00:05,  7.16frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 124.09it/s]
+Processing frames:  30%|███       | 15/50 [00:02<00:05,  6.98frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 133.76it/s]
+Processing frames:  32%|███▏      | 16/50 [00:02<00:04,  7.16frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 132.65it/s]
+Processing frames:  34%|███▍      | 17/50 [00:02<00:04,  7.31frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 130.44it/s]
+Processing frames:  36%|███▌      | 18/50 [00:02<00:04,  7.33frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 126.19it/s]
+Processing frames:  38%|███▊      | 19/50 [00:02<00:04,  7.25frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 125.49it/s]
+Processing frames:  40%|████      | 20/50 [00:02<00:04,  7.19frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 130.79it/s]
+Processing frames:  42%|████▏     | 21/50 [00:02<00:03,  7.31frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 140.12it/s]
+Processing frames:  44%|████▍     | 22/50 [00:03<00:03,  7.45frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 131.11it/s]
+Processing frames:  46%|████▌     | 23/50 [00:03<00:03,  7.48frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 133.95it/s]
+Processing frames:  48%|████▊     | 24/50 [00:03<00:03,  7.59frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 131.27it/s]
+Processing frames:  50%|█████     | 25/50 [00:03<00:03,  7.61frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 127.45it/s]
+Processing frames:  52%|█████▏    | 26/50 [00:03<00:03,  7.61frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 138.29it/s]
+Processing frames:  54%|█████▍    | 27/50 [00:03<00:03,  7.66frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 127.73it/s]
+Processing frames:  56%|█████▌    | 28/50 [00:03<00:02,  7.46frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 123.44it/s]
+Processing frames:  58%|█████▊    | 29/50 [00:03<00:02,  7.44frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 136.35it/s]
+Processing frames:  60%|██████    | 30/50 [00:04<00:02,  7.46frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 132.54it/s]
+Processing frames:  62%|██████▏   | 31/50 [00:04<00:02,  7.49frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 130.93it/s]
+Processing frames:  64%|██████▍   | 32/50 [00:04<00:02,  7.42frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 122.43it/s]
+Processing frames:  66%|██████▌   | 33/50 [00:04<00:02,  7.36frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 139.49it/s]
+Processing frames:  68%|██████▊   | 34/50 [00:04<00:02,  7.56frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 124.97it/s]
+Processing frames:  70%|███████   | 35/50 [00:04<00:02,  7.34frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 121.56it/s]
+Processing frames:  72%|███████▏  | 36/50 [00:04<00:01,  7.16frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A
+ 92%|█████████▏| 11/12 [00:00<00:00, 108.84it/s][A100%|██████████| 12/12 [00:00<00:00, 118.59it/s]
+Processing frames:  74%|███████▍  | 37/50 [00:05<00:01,  7.03frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.25it/s]
+Processing frames:  76%|███████▌  | 38/50 [00:05<00:01,  7.13frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 134.49it/s]
+Processing frames:  78%|███████▊  | 39/50 [00:05<00:01,  7.28frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.22it/s]
+Processing frames:  80%|████████  | 40/50 [00:05<00:01,  7.37frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 136.27it/s]
+Processing frames:  82%|████████▏ | 41/50 [00:05<00:01,  7.50frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 121.18it/s]
+Processing frames:  84%|████████▍ | 42/50 [00:05<00:01,  7.30frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 125.04it/s]
+Processing frames:  86%|████████▌ | 43/50 [00:05<00:00,  7.31frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 127.02it/s]
+Processing frames:  88%|████████▊ | 44/50 [00:05<00:00,  7.29frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 124.11it/s]
+Processing frames:  90%|█████████ | 45/50 [00:06<00:00,  7.19frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 131.69it/s]
+Processing frames:  92%|█████████▏| 46/50 [00:06<00:00,  7.24frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.07it/s]
+Processing frames:  94%|█████████▍| 47/50 [00:06<00:00,  7.29frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 135.91it/s]
+Processing frames:  96%|█████████▌| 48/50 [00:06<00:00,  7.44frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 127.99it/s]
+Processing frames:  98%|█████████▊| 49/50 [00:06<00:00,  7.49frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A
+ 92%|█████████▏| 11/12 [00:00<00:00, 109.82it/s][A100%|██████████| 12/12 [00:00<00:00, 119.65it/s]
+Processing frames: 100%|██████████| 50/50 [00:06<00:00,  7.33frame/s]Processing frames: 100%|██████████| 50/50 [00:06<00:00,  7.35frame/s]
+kx (41,)
+RUNNING ITERATION 6 b HAADF WITH KWARGS: {'loop_probes': 10, 'use_memmap': True, 'chunkFFT': False}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]Processing frames:   4%|▍         | 2/50 [00:00<00:02, 18.20frame/s]Processing frames:   8%|▊         | 4/50 [00:00<00:02, 18.49frame/s]Processing frames:  14%|█▍        | 7/50 [00:00<00:02, 20.05frame/s]Processing frames:  18%|█▊        | 9/50 [00:00<00:02, 19.64frame/s]Processing frames:  24%|██▍       | 12/50 [00:00<00:01, 20.76frame/s]Processing frames:  30%|███       | 15/50 [00:00<00:01, 21.94frame/s]Processing frames:  36%|███▌      | 18/50 [00:00<00:01, 21.66frame/s]Processing frames:  42%|████▏     | 21/50 [00:00<00:01, 21.99frame/s]Processing frames:  48%|████▊     | 24/50 [00:01<00:01, 22.85frame/s]Processing frames:  54%|█████▍    | 27/50 [00:01<00:00, 23.12frame/s]Processing frames:  60%|██████    | 30/50 [00:01<00:00, 22.75frame/s]Processing frames:  66%|██████▌   | 33/50 [00:01<00:00, 22.94frame/s]Processing frames:  72%|███████▏  | 36/50 [00:01<00:00, 22.83frame/s]Processing frames:  78%|███████▊  | 39/50 [00:01<00:00, 22.77frame/s]Processing frames:  84%|████████▍ | 42/50 [00:01<00:00, 22.44frame/s]Processing frames:  90%|█████████ | 45/50 [00:02<00:00, 22.29frame/s]Processing frames:  96%|█████████▌| 48/50 [00:02<00:00, 22.94frame/s]Processing frames: 100%|██████████| 50/50 [00:02<00:00, 22.12frame/s]
+rm: cannot remove 'psi_data/torch_e0d1fba54913': Directory not empty
+kx (41,)
+RUNNING ITERATION 7 a HAADF WITH KWARGS: {'loop_probes': 10, 'use_memmap': True, 'chunkFFT': True}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 122.79it/s]
+Processing frames:   2%|▏         | 1/50 [00:00<00:07,  6.73frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 122.64it/s]
+Processing frames:   4%|▍         | 2/50 [00:00<00:06,  6.97frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 135.87it/s]
+Processing frames:   6%|▌         | 3/50 [00:00<00:06,  7.11frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.67it/s]
+Processing frames:   8%|▊         | 4/50 [00:00<00:06,  7.15frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 129.58it/s]
+Processing frames:  10%|█         | 5/50 [00:00<00:06,  7.18frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 132.22it/s]
+Processing frames:  12%|█▏        | 6/50 [00:00<00:06,  7.23frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 136.47it/s]
+Processing frames:  14%|█▍        | 7/50 [00:00<00:05,  7.36frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 131.34it/s]
+Processing frames:  16%|█▌        | 8/50 [00:01<00:05,  7.20frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 135.50it/s]
+Processing frames:  18%|█▊        | 9/50 [00:01<00:05,  7.31frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 129.66it/s]
+Processing frames:  20%|██        | 10/50 [00:01<00:05,  7.33frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 132.03it/s]
+Processing frames:  22%|██▏       | 11/50 [00:01<00:05,  7.22frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 122.49it/s]
+Processing frames:  24%|██▍       | 12/50 [00:01<00:05,  7.11frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.38it/s]
+Processing frames:  26%|██▌       | 13/50 [00:01<00:05,  7.15frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.34it/s]
+Processing frames:  28%|██▊       | 14/50 [00:01<00:05,  7.19frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 130.01it/s]
+Processing frames:  30%|███       | 15/50 [00:02<00:04,  7.14frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.76it/s]
+Processing frames:  32%|███▏      | 16/50 [00:02<00:04,  7.19frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 131.04it/s]
+Processing frames:  34%|███▍      | 17/50 [00:02<00:04,  7.17frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 127.83it/s]
+Processing frames:  36%|███▌      | 18/50 [00:02<00:04,  7.16frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 136.78it/s]
+Processing frames:  38%|███▊      | 19/50 [00:02<00:04,  7.34frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 132.89it/s]
+Processing frames:  40%|████      | 20/50 [00:02<00:04,  7.20frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.72it/s]
+Processing frames:  42%|████▏     | 21/50 [00:02<00:04,  7.16frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 123.02it/s]
+Processing frames:  44%|████▍     | 22/50 [00:03<00:03,  7.04frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 129.90it/s]
+Processing frames:  46%|████▌     | 23/50 [00:03<00:03,  7.04frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.13it/s]
+Processing frames:  48%|████▊     | 24/50 [00:03<00:03,  7.10frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 125.06it/s]
+Processing frames:  50%|█████     | 25/50 [00:03<00:03,  7.04frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A
+ 92%|█████████▏| 11/12 [00:00<00:00, 103.32it/s][A100%|██████████| 12/12 [00:00<00:00, 112.57it/s]
+Processing frames:  52%|█████▏    | 26/50 [00:03<00:03,  6.86frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 127.09it/s]
+Processing frames:  54%|█████▍    | 27/50 [00:03<00:03,  6.97frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 130.63it/s]
+Processing frames:  56%|█████▌    | 28/50 [00:03<00:03,  7.06frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 124.96it/s]
+Processing frames:  58%|█████▊    | 29/50 [00:04<00:02,  7.06frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 133.38it/s]
+Processing frames:  60%|██████    | 30/50 [00:04<00:02,  7.14frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 138.85it/s]
+Processing frames:  62%|██████▏   | 31/50 [00:04<00:02,  7.29frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 131.93it/s]
+Processing frames:  64%|██████▍   | 32/50 [00:04<00:02,  7.33frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 132.89it/s]
+Processing frames:  66%|██████▌   | 33/50 [00:04<00:02,  7.31frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 130.33it/s]
+Processing frames:  68%|██████▊   | 34/50 [00:04<00:02,  7.33frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 137.88it/s]
+Processing frames:  70%|███████   | 35/50 [00:04<00:02,  7.44frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 132.69it/s]
+Processing frames:  72%|███████▏  | 36/50 [00:05<00:01,  7.42frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 126.65it/s]
+Processing frames:  74%|███████▍  | 37/50 [00:05<00:01,  7.25frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 126.71it/s]
+Processing frames:  76%|███████▌  | 38/50 [00:05<00:01,  7.15frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 123.78it/s]
+Processing frames:  78%|███████▊  | 39/50 [00:05<00:01,  7.14frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.08it/s]
+Processing frames:  80%|████████  | 40/50 [00:05<00:01,  7.10frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 125.23it/s]
+Processing frames:  82%|████████▏ | 41/50 [00:05<00:01,  7.03frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 130.10it/s]
+Processing frames:  84%|████████▍ | 42/50 [00:05<00:01,  7.04frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.84it/s]
+Processing frames:  86%|████████▌ | 43/50 [00:06<00:00,  7.15frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.68it/s]
+Processing frames:  88%|████████▊ | 44/50 [00:06<00:00,  7.11frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A
+ 92%|█████████▏| 11/12 [00:00<00:00, 107.42it/s][A100%|██████████| 12/12 [00:00<00:00, 117.04it/s]
+Processing frames:  90%|█████████ | 45/50 [00:06<00:00,  6.93frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 128.53it/s]
+Processing frames:  92%|█████████▏| 46/50 [00:06<00:00,  7.04frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 132.61it/s]
+Processing frames:  94%|█████████▍| 47/50 [00:06<00:00,  7.07frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 122.30it/s]
+Processing frames:  96%|█████████▌| 48/50 [00:06<00:00,  7.10frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 138.25it/s]
+Processing frames:  98%|█████████▊| 49/50 [00:06<00:00,  7.25frame/s]
+  0%|          | 0/12 [00:00<?, ?it/s][A100%|██████████| 12/12 [00:00<00:00, 136.48it/s]
+Processing frames: 100%|██████████| 50/50 [00:06<00:00,  7.26frame/s]Processing frames: 100%|██████████| 50/50 [00:06<00:00,  7.16frame/s]
+  0%|          | 0/250 [00:00<?, ?it/s]  0%|          | 1/250 [00:00<00:35,  6.97it/s]  2%|▏         | 5/250 [00:00<00:10, 22.91it/s]  4%|▎         | 9/250 [00:00<00:08, 28.15it/s]  5%|▌         | 13/250 [00:00<00:07, 30.71it/s]  7%|▋         | 17/250 [00:00<00:06, 33.30it/s]  8%|▊         | 21/250 [00:00<00:06, 33.29it/s] 10%|█         | 25/250 [00:00<00:06, 34.91it/s] 12%|█▏        | 29/250 [00:00<00:06, 36.17it/s] 13%|█▎        | 33/250 [00:01<00:05, 36.95it/s] 15%|█▍        | 37/250 [00:01<00:05, 37.22it/s] 16%|█▋        | 41/250 [00:01<00:05, 35.26it/s] 18%|█▊        | 45/250 [00:01<00:05, 35.76it/s] 20%|█▉        | 49/250 [00:01<00:05, 36.71it/s] 21%|██        | 53/250 [00:01<00:05, 37.52it/s] 23%|██▎       | 57/250 [00:01<00:05, 38.04it/s] 24%|██▍       | 61/250 [00:01<00:04, 38.54it/s] 26%|██▌       | 65/250 [00:01<00:04, 38.62it/s] 28%|██▊       | 69/250 [00:01<00:04, 38.83it/s] 29%|██▉       | 73/250 [00:02<00:04, 38.99it/s] 31%|███       | 78/250 [00:02<00:04, 39.51it/s] 33%|███▎      | 82/250 [00:02<00:04, 38.63it/s] 34%|███▍      | 86/250 [00:02<00:04, 39.00it/s] 36%|███▌      | 90/250 [00:02<00:04, 39.12it/s] 38%|███▊      | 94/250 [00:02<00:03, 39.31it/s] 39%|███▉      | 98/250 [00:02<00:03, 39.44it/s] 41%|████      | 102/250 [00:02<00:03, 39.49it/s] 42%|████▏     | 106/250 [00:02<00:03, 39.55it/s] 44%|████▍     | 110/250 [00:03<00:03, 39.67it/s] 46%|████▌     | 114/250 [00:03<00:03, 39.17it/s] 47%|████▋     | 118/250 [00:03<00:03, 39.21it/s] 49%|████▉     | 122/250 [00:03<00:03, 35.62it/s] 50%|█████     | 126/250 [00:03<00:03, 33.15it/s] 52%|█████▏    | 130/250 [00:03<00:03, 33.20it/s] 54%|█████▎    | 134/250 [00:03<00:03, 32.60it/s] 55%|█████▌    | 138/250 [00:03<00:03, 32.62it/s] 57%|█████▋    | 142/250 [00:03<00:03, 32.17it/s] 58%|█████▊    | 146/250 [00:04<00:03, 31.94it/s] 60%|██████    | 150/250 [00:04<00:03, 32.79it/s] 62%|██████▏   | 154/250 [00:04<00:02, 33.21it/s] 63%|██████▎   | 158/250 [00:04<00:02, 33.77it/s] 65%|██████▍   | 162/250 [00:04<00:02, 34.14it/s] 66%|██████▋   | 166/250 [00:04<00:02, 34.60it/s] 68%|██████▊   | 170/250 [00:04<00:02, 34.88it/s] 70%|██████▉   | 174/250 [00:04<00:02, 35.31it/s] 71%|███████   | 178/250 [00:05<00:02, 35.44it/s] 73%|███████▎  | 182/250 [00:05<00:01, 35.44it/s] 74%|███████▍  | 186/250 [00:05<00:01, 35.31it/s] 76%|███████▌  | 190/250 [00:05<00:01, 35.34it/s] 78%|███████▊  | 194/250 [00:05<00:01, 34.88it/s] 79%|███████▉  | 198/250 [00:05<00:01, 35.07it/s] 81%|████████  | 202/250 [00:05<00:01, 35.35it/s] 82%|████████▏ | 206/250 [00:05<00:01, 35.54it/s] 84%|████████▍ | 210/250 [00:05<00:01, 34.70it/s] 86%|████████▌ | 214/250 [00:06<00:01, 35.23it/s] 87%|████████▋ | 218/250 [00:06<00:00, 34.86it/s] 89%|████████▉ | 222/250 [00:06<00:00, 35.30it/s] 90%|█████████ | 226/250 [00:06<00:00, 35.66it/s] 92%|█████████▏| 230/250 [00:06<00:00, 35.26it/s] 94%|█████████▎| 234/250 [00:06<00:00, 35.76it/s] 95%|█████████▌| 238/250 [00:06<00:00, 36.08it/s] 97%|█████████▋| 242/250 [00:06<00:00, 35.69it/s] 98%|█████████▊| 246/250 [00:06<00:00, 36.02it/s]100%|██████████| 250/250 [00:06<00:00, 35.77it/s]
+kx (41,)
+RUNNING ITERATION 7 b HAADF WITH KWARGS: {'loop_probes': 10, 'use_memmap': True, 'chunkFFT': True}
+Processing frames:   0%|          | 0/50 [00:00<?, ?frame/s]Processing frames:   2%|▏         | 1/50 [00:00<00:13,  3.52frame/s]Processing frames:   6%|▌         | 3/50 [00:00<00:05,  8.87frame/s]Processing frames:  10%|█         | 5/50 [00:00<00:03, 12.41frame/s]Processing frames:  14%|█▍        | 7/50 [00:00<00:03, 14.33frame/s]Processing frames:  18%|█▊        | 9/50 [00:00<00:02, 15.70frame/s]Processing frames:  22%|██▏       | 11/50 [00:00<00:02, 16.50frame/s]Processing frames:  26%|██▌       | 13/50 [00:00<00:02, 17.36frame/s]Processing frames:  30%|███       | 15/50 [00:01<00:01, 18.00frame/s]Processing frames:  34%|███▍      | 17/50 [00:01<00:01, 18.54frame/s]Processing frames:  40%|████      | 20/50 [00:01<00:01, 19.91frame/s]Processing frames:  46%|████▌     | 23/50 [00:01<00:01, 19.85frame/s]Processing frames:  52%|█████▏    | 26/50 [00:01<00:01, 20.13frame/s]Processing frames:  58%|█████▊    | 29/50 [00:01<00:01, 20.36frame/s]Processing frames:  64%|██████▍   | 32/50 [00:01<00:00, 20.61frame/s]Processing frames:  70%|███████   | 35/50 [00:01<00:00, 20.65frame/s]Processing frames:  76%|███████▌  | 38/50 [00:02<00:00, 20.52frame/s]Processing frames:  82%|████████▏ | 41/50 [00:02<00:00, 20.27frame/s]Processing frames:  88%|████████▊ | 44/50 [00:02<00:00, 19.54frame/s]Processing frames:  92%|█████████▏| 46/50 [00:02<00:00, 19.56frame/s]Processing frames:  98%|█████████▊| 49/50 [00:02<00:00, 20.12frame/s]Processing frames: 100%|██████████| 50/50 [00:02<00:00, 18.29frame/s]
+kx (41,)
