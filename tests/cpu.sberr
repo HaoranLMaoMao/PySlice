@@ -6,36 +6,6 @@ cuda/11.4.0:
    Please note, CUDA/11.4.0 is required if compiling for NVIDIA K80 GPUs.
    Newer toolchain versions will not work for K80's.
 
--------------------------------------------------------------------------------ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-runAllTests.sh: line 24: 633293 Killed                  python3 $s >> ../tests/runAllTests-$1.log 2>> ../tests/runAllTests-$1.log
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
-ln: failed to create symbolic link 'inputs/inputs': File exists
-ln: failed to create symbolic link 'outputs/outputs': File exists
+-------------------------------------------------------------------------------mkdir: cannot create directory ‘../torchcpu’: File exists
 ln: failed to create symbolic link 'inputs/inputs': File exists
 ln: failed to create symbolic link 'outputs/outputs': File exists

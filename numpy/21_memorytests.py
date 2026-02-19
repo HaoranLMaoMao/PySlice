@@ -235,8 +235,7 @@ if run in [ "bigmemloop", "all" ]:
 
 # STRESS TEST: 1000x1000 probe positions (would be a 160 GB probe cube alone!) on uncropped trajectory (huge potential!). chunking is required to avoid the probe loop, memmaping is a good idea, and we're introducing autocropping to propagate a cropped proba through a cropped potential, which also means we limit our number of k-points. min_dk = 0.1 iA for a 0.1 A sampling means nkx,nky are 100x100 even for the full uncropped system.
 # OPE: frame_data is 41 GB (100 kx 100 ky 512 x 512 y)
-# do not include mongo in all
-if run in [ "mongo" ]:
+if run in [ "mongo", "all" ]:
 	clean() ; print("running mongo")
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	#trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC

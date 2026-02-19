@@ -1,4 +1,5 @@
 s="04_haadf_otf.py"
+s="21_memorytests.py"
 
 echo $(date) >> runAllTests-$1.log
 

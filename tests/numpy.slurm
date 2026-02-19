@@ -14,6 +14,6 @@ module load gcc
 # conda activate /home/qwe/.conda/envs/numpy_env
 source /home/qwe/numpyenv/bin/activate # switching to uv venvs
 
-bash runAllTests.sh numpy
-
+#bash runAllTests.sh numpy
+bash rerunOneTest.sh numpy
 

@@ -258,3 +258,13 @@ def ceil(v):
     if xp != np and type(v)==torch.Tensor:
         return int(xp.ceil(v))
     return int(np.ceil(v))
+
+def clone(a):
+    if hasattr(a,"clone"):
+        return a.clone()
+    try:
+        if hasattr(a,"copy"):
+            return a.copy()
+    except:
+        pass
+    return a

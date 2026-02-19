@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import logging
-from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop,einsum,ceil
+from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop,einsum,ceil,clone
 #from line_profiler import profile
 
 try:
@@ -256,20 +256,19 @@ class Probe:
             if attr[0]=="_" or "array" in attr:
                 continue
             val = getattr(self,attr)
-            if hasattr(val,"clone"):
-                val = val.clone()
+            val = clone(val)
             setattr(new_probe,attr,val)
         if selected_probes is not None:
             nc,npt,nx,ny = self._array.shape
             if npt == 1:
-                new_probe._array = self._array[:,:,:,:].clone()
+                new_probe._array = clone(self._array[:,:,:,:])
             else:
-                new_probe._array = self._array[:,selected_probes,:,:].clone()
+                new_probe._array = clone(self._array[:,selected_probes,:,:])
             new_probe.offsets = self.offsets[selected_probes,:]
             new_probe.probe_positions = self.probe_positions[selected_probes,:]
             #print("new",new_probe.offsets.shape,new_probe.probe_positions.shape)
         else:
-            new_probe._array = self._array.clone()
+            new_probe._array = clone(self._array)
             #print("no selected used")
         #new_probe.device = self.device
         #new_probe.array_numpy = self.array_numpy.copy()
@@ -736,20 +735,19 @@ class PrismProbe:
             if attr[0]=="_" or "array" in attr:
                 continue
             val = getattr(self,attr)
-            if hasattr(val,"clone"):
-                val = val.clone()
+            val = clone(val)
             setattr(new_probe,attr,val)
         if selected_probes is not None:
             nc,npt,nx,ny = self._array.shape
             if npt == 1:
-                new_probe._array = self._array[:,:,:,:].clone()
+                new_probe._array = clone(self._array[:,:,:,:])
             else:
-                new_probe._array = self._array[:,selected_probes,:,:].clone()
+                new_probe._array = clone(self._array[:,selected_probes,:,:])
             #new_probe.offsets = self.offsets[selected_probes,:]
             new_probe.probe_positions = self.probe_positions[selected_probes,:]
             #print("new",new_probe.offsets.shape,new_probe.probe_positions.shape)
         else:
-            new_probe._array = self._array.clone()
+            new_probe._array = clone(self._array)
             #print("no selected used")
         #new_probe.device = self.device
         #new_probe.array_numpy = self.array_numpy.copy()
@@ -862,10 +860,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         # Store wavefunction at this slice if requested (after transmission)
         if store_all_slices:
             # Clone/copy to avoid reference issues
-            if TORCH_AVAILABLE:
-                slice_wavefunctions.append(array.clone())
-            else:
-                slice_wavefunctions.append(array.copy())
+            slice_wavefunctions.append(clone(array))
 
         # Fresnel propagation to next slice (except for last slice)
         if z < len(potential.zs) - 1:
