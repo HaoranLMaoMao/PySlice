@@ -39,15 +39,15 @@ for ijklm in indices:
 #             {"ADF":True,"loop_probes":10,"use_memmap":True},
 #             {"ADF":True,"loop_probes":10,"use_memmap":True,"store_full":False} ]
 
-for i in range(2):
+for n,kwargs in enumerate(kwargCombos):
     os.system("rm -rf psi_data")
-    for n,kwargs in enumerate(kwargCombos):
+    for i in range(2):
         if not kwargs.get("ADF",False) and not kwargs.get("store_full",False): # skip nonsense combo (since ADF-in-post requires wavefunction_data returned)
             continue
         #if n<18:
         #    continue
         #os.system("rm -rf psi_data")
-        print("RUNNING ITERATION",n,"HAADF WITH KWARGS:",kwargs)
+        print("RUNNING ITERATION",n,["a","b"][i],"HAADF WITH KWARGS:",kwargs)
         trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()                   # LOAD TRAJECTORY
         trajectory=trajectory.slice_positions([0,10*a],[0,10*b])                        # TRIM TO 10x10 UC
         trajectory=trajectory.get_random_timesteps(3,seed=5)                            # SELECT 10 "RANDOM" TIMESTEPS (use seed for reproducibility)

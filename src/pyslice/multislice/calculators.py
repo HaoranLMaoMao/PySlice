@@ -35,7 +35,7 @@ from .multislice import Probe,PrismProbe,Propagate,create_batched_probes
 from .trajectory import Trajectory
 from ..postprocessing.wf_data import WFData
 from .sed import SED
-from ..backend import zeros,expand_dims,to_cpu,memmap,ones,sum,absolute,ceil,einsum
+from ..backend import zeros,expand_dims,to_cpu,memmap,ones,sum,absolute,ceil,einsum,asarray
 
 logger = logging.getLogger(__name__)
 
@@ -424,6 +424,9 @@ class MultisliceCalculator:
                                 frame_data[:,:,:,layer_idx,0] = diffraction_patterns[:,::self.kth,::self.kth] # load p,x,y --> p,x,y,l,1 indices
                             if self.ADF and not self.prism:
                                 intensities = einsum('pxy,xy->p',absolute(diffraction_patterns)**2,self.ADFmask)
+                                #print(type(self.ADF._array),type(intensities),type(self.ADFindex))
+                                if self.use_memmap:
+                                    intensities = asarray(intensities,device=self.device)
                                 self.ADF._array += intensities[self.ADFindex]
                                 #self.ADF._array = einsum('pxyln,'frame_data
 

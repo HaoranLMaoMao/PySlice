@@ -9,7 +9,7 @@ from .wf_data import WFData
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 #from ..data.pyslice_serial import PySliceSerial
-from pyslice.backend import to_cpu,fft,fftshift,mean,absolute
+from pyslice.backend import to_cpu,fft,fftshift,mean,absolute,memmap
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -84,6 +84,7 @@ class TACAWData(PySliceSerial, Signal):
         self.cache_dir = wf_data.cache_dir
         self.keep_complex = keep_complex
         self.chunkFFT = chunkFFT
+        self.use_memmap = isinstance(wf_data._array,np.memmap)
 
         # Store reference to source WFData array for FFT computation
         self._wf_array = wf_data._array
@@ -236,7 +237,11 @@ class TACAWData(PySliceSerial, Signal):
         #    wf_fft = np.fft.fftshift(wf_fft, axes=1)
 
         if self.chunkFFT: # looping through x (in case super giganormous FFTs blow your ram)
-            self._array = xp.zeros(wf_layer.shape, dtype = complex_dtype if self.keep_complex else float_dtype)
+            dtype = complex_dtype if self.keep_complex else float_dtype
+            if self.use_memmap:
+                self._array = memmap(wf_layer.shape, dtype=dtype, filename = self.cache_dir / "tacaw.npy")
+            else:
+                self._array = xp.zeros(wf_layer.shape, dtype = dtype)
 
             for i in tqdm(range(len(self._kxs))):
                 wf_mean = mean(wf_layer[:,:,i,:], axis=1, keepdims=True) # p,t,x,y,[l] indices
@@ -272,7 +277,8 @@ class TACAWData(PySliceSerial, Signal):
         # Ensure cache directory exists (may have been cleaned up by calculator)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         np.save(self.cache_dir / "tacaw_freq.npy", self._frequencies)
-        np.save(self.cache_dir / "tacaw.npy", self._array.detach().cpu().numpy() if TORCH_AVAILABLE and hasattr(self._array, 'cpu') else self._array)
+        if not self.use_memmap:
+            np.save(self.cache_dir / "tacaw.npy", to_cpu(self._array) )
 
     # Keep fft_from_wf_data as public alias for backward compatibility
     def fft_from_wf_data(self, layer_index: int = None):

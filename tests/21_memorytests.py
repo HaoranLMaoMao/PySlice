@@ -30,7 +30,7 @@ run = "all"
 #run = "bigmemmap"
 #run = "bigmemloop"
 #run = "mongo"
-#run = "memtacaw"
+run = "memtacaw"
 
 def clean():
 	#if os.path.exists("psi_data"):

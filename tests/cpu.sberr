@@ -9,3 +9,4 @@ cuda/11.4.0:
 -------------------------------------------------------------------------------mkdir: cannot create directory ‘../torchcpu’: File exists
 ln: failed to create symbolic link 'inputs/inputs': File exists
 ln: failed to create symbolic link 'outputs/outputs': File exists
+rmdir: failed to remove '../torchcpu': Directory not empty

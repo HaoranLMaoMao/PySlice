@@ -9,3 +9,4 @@ cuda/11.4.0:
 -------------------------------------------------------------------------------mkdir: cannot create directory ‘../numpy’: File exists
 ln: failed to create symbolic link 'inputs/inputs': File exists
 ln: failed to create symbolic link 'outputs/outputs': File exists
+slurmstepd: error: *** JOB 4613784 ON or-condo-c06 CANCELLED AT 2026-02-19T10:21:23 DUE TO TIME LIMIT ***

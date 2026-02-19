@@ -9,6 +9,4 @@ cuda/11.4.0:
 -------------------------------------------------------------------------------mkdir: cannot create directory ‘../torchgpu’: File exists
 ln: failed to create symbolic link 'inputs/inputs': File exists
 ln: failed to create symbolic link 'outputs/outputs': File exists
-rerunOneTest.sh: line 13: 285392 Killed                  python3 $s >> ../tests/runAllTests-$1.log 2>> ../tests/runAllTests-$1.log
 rmdir: failed to remove '../torchgpu': Directory not empty
-slurmstepd: error: Detected 1 oom_kill event in StepId=4613785.batch. Some of the step tasks have been OOM Killed.
