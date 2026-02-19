@@ -370,10 +370,13 @@ class MultisliceCalculator:
 
                     # frame_data is always: p,x,y,l,1 (self.wavefunction_data expects p,t,x,y,l, since we loop time. recall Propagate gave l,p,x,y)
                     if self.store_full or self.prism:
+                        fd_nx = ceil(nx/self.kth) ; fd_ny = ceil(ny/self.kth)
+                        if self.base_probe.cropping:
+                            fd_nx = self.base_probe.cropping ; fd_ny = self.base_probe.cropping
                         if self.use_memmap:
-                            frame_data = memmap((n_waves, ceil(nx/self.kth), ceil(ny/self.kth), self.n_layers,1), dtype=self.complex_dtype, filename = cache_file )
+                            frame_data = memmap((n_waves, fd_nx, fd_ny, self.n_layers,1), dtype=self.complex_dtype, filename = cache_file )
                         else:
-                            frame_data = zeros((n_waves, ceil(nx/self.kth), ceil(ny/self.kth), self.n_layers,1), dtype=self.complex_dtype, device=self.device)
+                            frame_data = zeros((n_waves, fd_nx, fd_ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
 
                     #batched_probes = create_batched_probes(self.base_probe, self.probe_positions, self.device)
                     # Propagate returns: [l,p,x,y] where l,p are both optional (if store_all_slices=True, and if n_probes>1)
@@ -447,6 +450,8 @@ class MultisliceCalculator:
                         kwarg["load_into"]=self.wavefunction_data[:,frame_idx,:,:,0]
                     self.base_probe.calculateProbesFromS(frame_data,self.probe_positions,**kwarg,chunksize=self.loop_probes)
                 elif self.store_full:
+                    if self.use_memmap:
+                        cropped = to_cpu(cropped)
                     self.wavefunction_data[:, frame_idx, :, :, :] = cropped # load p,x,y,l,1 --> p,t,x,y,l indices
                 # Update progress bar for this frame
                 pbar.update(1)
