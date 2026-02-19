@@ -16,7 +16,7 @@ module load gcc
 # conda activate /home/qwe/.conda/envs/pyslice_env
 source /home/qwe/torchenv/bin/activate # switching to uv venvs
 
-#bash runAllTests.sh torchgpu
+bash runAllTests.sh torchgpu
 #python3 21_memorytests.py
 #python3 22_prism.py
-python3 04_haadf_otf.py >> runAllTests-torchgpu.log 2>> runAllTests-torchgpu.log
+#python3 04_haadf_otf.py >> runAllTests-torchgpu.log 2>> runAllTests-torchgpu.log
