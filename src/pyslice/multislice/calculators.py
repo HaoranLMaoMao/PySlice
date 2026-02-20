@@ -286,11 +286,14 @@ class MultisliceCalculator:
         # Storage: [probe, frame, x, y, layer] - matches WFData expected format
         self.n_layers = self.nz if "slices" in self.cache_levels else 1
         if self.store_full:
+            fd_nx = ceil(nx/self.kth) ; fd_ny = ceil(ny/self.kth)
+            if self.base_probe.cropping:
+                fd_nx = self.base_probe.cropping ; fd_ny = self.base_probe.cropping
             if self.use_memmap:
-                self.wavefunction_data = memmap((self.n_probes, self.n_frames, ceil(self.nx/self.kth), ceil(self.ny/self.kth), self.n_layers),
+                self.wavefunction_data = memmap((self.n_probes, self.n_frames, fd_nx, fd_ny, self.n_layers),
                                                    dtype=self.complex_dtype, filename = self.output_dir / "wdf_memmap.npy" )
             else:
-                self.wavefunction_data = zeros((self.n_probes, self.n_frames, ceil(self.nx/self.kth), ceil(self.ny/self.kth), self.n_layers),
+                self.wavefunction_data = zeros((self.n_probes, self.n_frames, fd_nx, fn_ny, self.n_layers),
                                                    dtype=self.complex_dtype, device=self.device)
 
         # Process frames with caching and multiprocessing

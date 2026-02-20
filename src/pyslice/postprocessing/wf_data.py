@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 from pathlib import Path
-from ..backend import mean,ones,zeros,reshape,absolute,sum
+from ..backend import mean,ones,zeros,reshape,absolute,sum,asarray
 
 try:
     import torch ; xp = torch
