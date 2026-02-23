@@ -218,6 +218,7 @@ class MultisliceCalculator:
 
         self.probe_indices = np.arange(len(self.probe_positions))
         if len(self.probe_positions)>1 and self.aperture>1 and self.min_dk:
+            self.probe_indices = []
             for i,p in enumerate(tqdm(self.probe_positions)):
                 d_to_nearest_atom = np.sqrt( np.sum( (p[None,:]-self.trajectory.positions[0,:,:2])**2,axis=1) )
                 d_to_nearest_atom = np.amin( d_to_nearest_atom )
