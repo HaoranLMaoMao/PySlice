@@ -139,6 +139,7 @@ def memmap(dims,dtype=DEFAULT_FLOAT_DTYPE,filename=None):
         dtype = { xp.complex128:np.complex128, xp.complex64:np.complex64,
                  xp.float64:np.float64, xp.float32:np.float32 }[ dtype ]
     mode = 'w+' #'r+' if os.path.exists(filename) else 'w+'
+    print("creating memmap",mode,dtype,dims,"->",filename)
     return open_memmap(filename, dtype=dtype, mode=mode, shape=dims)
 
 def absolute(array):

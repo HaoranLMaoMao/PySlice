@@ -406,6 +406,9 @@ class Probe:
             i1=nx//2-self.cropping//2 ; i2=i1+self.cropping     # |_______i1___.___i2_______| for initial centered probe at lx/2,ly/2
             j1=ny//2-self.cropping//2 ; j2=j1+self.cropping
             self._array = self._array[:,0,None,i1:i2,j1:j2] * ones(len(self.probe_positions))[None,:,None,None]
+            import matplotlib.pyplot as plt
+            plt.imshow(np.absolute(to_cpu(self._array[0,0,:,:])))
+            plt.savefig("probecropping.png")
         else:
             self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
         # loop through probe positions
