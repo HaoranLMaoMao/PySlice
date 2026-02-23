@@ -19,7 +19,7 @@ types={1:"B",2:"N"}
 a,b=2.4907733333333337,2.1570729817355123
 
 # each kwarg and it's options
-options = { "loop_probes":[False,10], "use_memmap":[False,True], "chunkFFT":[False,True] }
+options = { "loop_probes":[False,10], "use_memmap":[False,True], "chunkFFT":[False,True] , "min_dk":[0,.1] , "kth":[1,3] }
 args = list(options.keys())
 # all permutations: [0,0,0,0,0], [0,0,0,0,1], and so on
 indices = list(itertools.product([0,1],repeat=len(args)))
@@ -34,7 +34,7 @@ for n,kwargs in enumerate(kwargCombos):
     for i in range(2):
         #if n<18:
         #    continue
-        print("RUNNING ITERATION",n,["a","b"][i],"HAADF WITH KWARGS:",kwargs)
+        print("RUNNING ITERATION",n,"/",len(kwargCombos),["a","b"][i],"HAADF WITH KWARGS:",kwargs)
         trajectory = Loader(dump,timestep=dt,atom_mapping=types).load()                   # LOAD TRAJECTORY
         trajectory = trajectory.slice_positions([0,10*a],[0,10*b])                        # TRIM TO 10x10 UC
         trajectory = trajectory.slice_timesteps(0,100,2)

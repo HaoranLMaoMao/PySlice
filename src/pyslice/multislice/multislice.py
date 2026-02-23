@@ -662,8 +662,8 @@ class PrismProbe:
             result = load_into
         else:
             ADF,ADFmask,ADFindex = ADF ; result = None
-
-        array = reshape(array,(self.nx_cropped,self.ny_cropped,ceil(self.nx/self.kth),ceil(self.ny/self.kth))) # eikx,eiky,kx,ky
+        npt,nkx,nky,_,_ = array.shape
+        array = reshape(array,(self.nx_cropped,self.ny_cropped,nkx,nky)) # eikx,eiky,kx,ky
         # preview an arbitrary exit wave? (note: calculator will have done shift(fft(realspace)), so we should invert those steps)
         #import matplotlib.pyplot as plt
         #fig, ax = plt.subplots()
