@@ -197,7 +197,7 @@ class MultisliceCalculator:
         self.keep_kxs_indices = xp.arange(self.nx)[kx_mask==1][::self.kth]
         self.keep_kys_indices = xp.arange(self.ny)[ky_mask==1][::self.kth]
         self.nx = len(self.keep_kxs_indices) ; self.ny = len(self.keep_kys_indices)
-        print("kxs",len(self.kxs),"kys",len(self.kys),"nx",self.nx,"ny",self.ny,"keepkx",len(self.keep_kxs_indices),"keepky",len(self.keep_kys_indices))
+        #print("kxs",len(self.kxs),"kys",len(self.kys),"nx",self.nx,"ny",self.ny,"keepkx",len(self.keep_kxs_indices),"keepky",len(self.keep_kys_indices))
 
         # Preferred to pass probe_xs and probe_ys from which we will define a grid
         if self.probe_xs is not None and self.probe_ys is not None:
@@ -270,7 +270,7 @@ class MultisliceCalculator:
         array = np.absolute(to_cpu(potential.array))[:,::-1,0].T # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
         xs = to_cpu(potential.xs) ; ys = to_cpu(potential.ys)
         extent = (np.amin(xs),np.amax(xs),np.amin(ys),np.amax(ys))
-        print(extent)
+        #print(extent)
         ax.imshow(array, cmap="inferno", extent=extent)
         ax.set_xlabel("x ($\\AA$)") ; ax.set_ylabel("y ($\\AA$)")
         pp = np.asarray(self.base_probe.probe_positions)
@@ -305,7 +305,7 @@ class MultisliceCalculator:
             else:
                 self.wavefunction_data = zeros((fd_npt, self.n_frames, fd_nx, fd_ny, self.n_layers),
                                                    dtype=self.complex_dtype, device=self.device)
-            print("wavefunction_data",self.wavefunction_data.shape)
+            #print("wavefunction_data",self.wavefunction_data.shape)
 
         # Process frames with caching and multiprocessing
         total_start_time = time.time()
@@ -391,7 +391,7 @@ class MultisliceCalculator:
                             frame_data = memmap((n_waves, fd_nx, fd_ny, self.n_layers,1), dtype=self.complex_dtype, filename = cache_file )
                         else:
                             frame_data = zeros((n_waves, fd_nx, fd_ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
-                        print("frame_data",frame_data.shape)
+                        #print("frame_data",frame_data.shape)
 
                     #batched_probes = create_batched_probes(self.base_probe, self.probe_positions, self.device)
                     # Propagate returns: [l,p,x,y] where l,p are both optional (if store_all_slices=True, and if n_probes>1)
@@ -512,7 +512,7 @@ class MultisliceCalculator:
         array = zeros((self.n_probes,1,1,1,1),dtype=self.complex_dtype)
         if self.store_full:
             array = self.wavefunction_data
-        print(array.shape,self.kxs.shape,self.kys.shape)
+        #print(array.shape,self.kxs.shape,self.kys.shape)
         wf_data = WFData(
             probe_positions=self.probe_positions,
             probe_xs=self.probe_xs,

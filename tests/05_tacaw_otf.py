@@ -18,6 +18,10 @@ dt=.005
 types={1:"B",2:"N"}
 a,b=2.4907733333333337,2.1570729817355123
 
+skip = -1
+if len(sys.argv)>1:
+    skip = int(sys.argv[-1])
+
 # each kwarg and it's options
 options = { "loop_probes":[False,10], "use_memmap":[False,True], "chunkFFT":[False,True] , "min_dk":[0,.1] , "kth":[1,3] }
 args = list(options.keys())
@@ -32,8 +36,8 @@ for ijklm in indices:
 for n,kwargs in enumerate(kwargCombos):
     os.system("rm -rf psi_data")
     for i in range(2):
-        #if n<18:
-        #    continue
+        if n<=skip:
+            continue
         print("RUNNING ITERATION",n,"/",len(kwargCombos),["a","b"][i],"HAADF WITH KWARGS:",kwargs)
         trajectory = Loader(dump,timestep=dt,atom_mapping=types).load()                   # LOAD TRAJECTORY
         trajectory = trajectory.slice_positions([0,10*a],[0,10*b])                        # TRIM TO 10x10 UC
@@ -46,7 +50,8 @@ for n,kwargs in enumerate(kwargCombos):
         exitwaves = calculator.run()
         tacaw=TACAWData(exitwaves,chunkFFT=kwargs["chunkFFT"])
         Z = tacaw.spectral_diffraction(30) #; print(Z.shape)
-        differ(Z[:,:]**.1,"outputs/tacawotf-test.npy","TACAW SLICE")
+        if kwargs["kth"]==1 and kwargs["min_dk"]==0:
+            differ(Z[:,:]**.1,"outputs/tacawotf-test.npy","TACAW SLICE")
         diff=tacaw.diffraction().T
         kx=np.asarray(tacaw.kxs) ; kx=kx[kx>=0] ; kx=kx[kx<=4/a] ; print("kx",kx.shape)
         dispersion = tacaw.dispersion( kx , np.zeros(len(kx))+2/b )
