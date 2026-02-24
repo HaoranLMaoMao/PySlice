@@ -406,8 +406,10 @@ class MultisliceCalculator:
                             if len(chunk)==0:
                                 break
                             chunks.append(chunk)
+                        pbar2 = tqdm(total = npt, desc = "looping probes", unit="probe")
                     else:
                         chunks.append( xp.arange(npt) )
+                        pbar2 = None
                     for selected in chunks:
                         if len(selected)==npt:
                             probe = self.base_probe
@@ -435,7 +437,8 @@ class MultisliceCalculator:
                                 intensities = einsum('pxy,xy->p',absolute(diffraction_patterns[:,:,:])**2,self.ADFmask)
                                 for i,pp in zip(intensities,selected):
                                     self.ADF._array[self.ADFindex==pp] += i
-
+                        if pbar2 is not None:
+                            pbar2.update(len(selected))
 #                    else:
 #                        # simultaneously propagate all probes at once, [l],p,x,y
 #                        exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
