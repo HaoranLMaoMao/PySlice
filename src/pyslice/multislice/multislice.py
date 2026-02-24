@@ -202,7 +202,7 @@ class Probe:
             self._array= self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)[None,None,:,:]*ones((1,1))[:,:,None,None]
 
         self.cropping = cropping
-        self.offsets = np.zeros((len(self.probe_positions),2),dtype=int) # these are used when we have cropped the probe
+        self.offsets = zeros((len(self.probe_positions),2),dtype="int") # these are used when we have cropped the probe
 
         # NEW PHILOSOPHY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have
         # a bajillion probes, then this cube might be huge! instead, callers (e.g. calculator) pass
@@ -265,7 +265,7 @@ class Probe:
             else:
                 new_probe._array = clone(self._array[:,selected_probes,:,:])
             new_probe.offsets = self.offsets[selected_probes,:]
-            new_probe.probe_positions = self.probe_positions[selected_probes,:]
+            new_probe.probe_positions = self.probe_positions[to_cpu(selected_probes),:]
             #print("new",new_probe.offsets.shape,new_probe.probe_positions.shape)
         else:
             new_probe._array = clone(self._array)
@@ -416,7 +416,8 @@ class Probe:
             if px-self.lx/2 == 0 and py-self.ly/2 == 0:
                     continue
 
-            self._array[:,i,:,:],self.offsets[i,:] = self.placeProbe(self._array[:,i,:,:], px, py )
+            self._array[:,i,:,:],(dpx,dpy) = self.placeProbe(self._array[:,i,:,:], px, py )
+            self.offsets[i,0] = int(dpx) ; self.offsets[i,1] = int(dpy)
 
         nc,npt,nx,ny = self._array.shape #; print("applyShifts expands to",nc,npt,nx,ny)
 

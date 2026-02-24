@@ -397,62 +397,69 @@ class MultisliceCalculator:
 
                     #batched_probes = create_batched_probes(self.base_probe, self.probe_positions, self.device)
                     # Propagate returns: [l,p,x,y] where l,p are both optional (if store_all_slices=True, and if n_probes>1)
+                    chunks = []
                     if self.loop_probes:
                         chunksize = self.loop_probes if isinstance(self.loop_probes,int) else 1
-                        for p in tqdm(range(npt)):
-                            if p%chunksize!=0:
-                                continue
-                            # new temporary probe pulled from base_probe's array
-                            selected = [ p for p in range(p,p+chunksize) if p in self.probe_indices ] #; print("\nselected",selected,"\n")
-                            if len(selected)==0:
-                                continue
-                            probe = self.base_probe.copy(selected_probes=selected)
-                            probe.applyShifts()
-                            # propagate single probe
-                            exit_waves_single = Propagate(probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) ) # [l],p,x,y indices
-                            # expand out to fixed l,p,x,y indices
-                            exit_waves_single = expand_dims(exit_waves_single,0) if len(exit_waves_single.shape)==3 else exit_waves_single
-                            # FFT and load into frame_data
-                            kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
-                            for layer_idx in range(self.n_layers):
-                                exit_waves_k = xp.fft.fft2(exit_waves_single[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
-                                diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
-                                #if not self.prism:
-                                diffraction_patterns = diffraction_patterns[:,self.keep_kxs_indices,:][:,:,self.keep_kys_indices]*self.kth**2
-                                if self.use_memmap:
-                                    diffraction_patterns = to_cpu(diffraction_patterns)
-                                if self.store_full or self.prism:
-                                    frame_data[selected,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
-                                if self.ADF and not self.prism:
-                                    #print(self.ADF._wf_array[0,:,:,0,0,0,0])
-                                    intensities = einsum('pxy,xy->p',absolute(diffraction_patterns[:,:,:])**2,self.ADFmask)
-                                    for i,pp in zip(intensities,selected):
-                                        self.ADF._array[self.ADFindex==pp] += i
-
+                        for i in range(10000000):
+                            chunk = xp.arange(i*chunksize,(i+1)*chunksize)
+                            chunk = chunk[chunk<npt]
+                            if len(chunk)==0:
+                                break
+                            chunks.append(chunk)
                     else:
-                        # simultaneously propagate all probes at once, [l],p,x,y
-                        exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
+                        chunks.append( xp.arange(npt) )
+                    for selected in chunks:
+                        if len(selected)==npt:
+                            probe = self.base_probe
+                        else:
+                            probe = self.base_probe.copy(selected_probes=selected)
+                        probe.applyShifts()
+                        # propagate single probe
+                        exit_waves_single = Propagate(probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) ) # [l],p,x,y indices
                         # expand out to fixed l,p,x,y indices
-                        exit_waves_batch = expand_dims(exit_waves_batch,0) if len(exit_waves_batch.shape)==3 else exit_waves_batch
+                        exit_waves_single = expand_dims(exit_waves_single,0) if len(exit_waves_single.shape)==3 else exit_waves_single
                         # FFT and load into frame_data
+                        kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
                         for layer_idx in range(self.n_layers):
-                            kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
-                            exit_waves_k = xp.fft.fft2(exit_waves_batch[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
+                            exit_waves_k = xp.fft.fft2(exit_waves_single[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
                             diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
-                            #cropped = diffraction_patterns[:,self.i1:self.i2,self.j1:self.j2]
                             #if not self.prism:
                             diffraction_patterns = diffraction_patterns[:,self.keep_kxs_indices,:][:,:,self.keep_kys_indices]*self.kth**2
                             if self.use_memmap:
                                 diffraction_patterns = to_cpu(diffraction_patterns)
+                                selected = to_cpu(selected)
                             if self.store_full or self.prism:
-                                frame_data[:,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
+                                frame_data[selected,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
                             if self.ADF and not self.prism:
-                                intensities = einsum('pxy,xy->p',absolute(diffraction_patterns)**2,self.ADFmask)
-                                #print(type(self.ADF._array),type(intensities),type(self.ADFindex))
-                                if self.use_memmap:
-                                    intensities = asarray(intensities,device=self.device)
-                                self.ADF._array += intensities[self.ADFindex]
-                                #self.ADF._array = einsum('pxyln,'frame_data
+                                #print(self.ADF._wf_array[0,:,:,0,0,0,0])
+                                intensities = einsum('pxy,xy->p',absolute(diffraction_patterns[:,:,:])**2,self.ADFmask)
+                                for i,pp in zip(intensities,selected):
+                                    self.ADF._array[self.ADFindex==pp] += i
+
+#                    else:
+#                        # simultaneously propagate all probes at once, [l],p,x,y
+#                        exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
+#                        # expand out to fixed l,p,x,y indices
+#                        exit_waves_batch = expand_dims(exit_waves_batch,0) if len(exit_waves_batch.shape)==3 else exit_waves_batch
+#                        # FFT and load into frame_data
+#                        for layer_idx in range(self.n_layers):
+#                            kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
+#                            exit_waves_k = xp.fft.fft2(exit_waves_batch[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
+#                            diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
+#                            #cropped = diffraction_patterns[:,self.i1:self.i2,self.j1:self.j2]
+#                            #if not self.prism:
+#                            diffraction_patterns = diffraction_patterns[:,self.keep_kxs_indices,:][:,:,self.keep_kys_indices]*self.kth**2
+#                            if self.use_memmap:
+#                                diffraction_patterns = to_cpu(diffraction_patterns)
+#                            if self.store_full or self.prism:
+#                                frame_data[:,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
+#                            if self.ADF and not self.prism:
+#                                intensities = einsum('pxy,xy->p',absolute(diffraction_patterns)**2,self.ADFmask)
+#                                #print(type(self.ADF._array),type(intensities),type(self.ADFindex))
+#                                if self.use_memmap:
+#                                    intensities = asarray(intensities,device=self.device)
+#                                self.ADF._array += intensities[self.ADFindex]
+#                                #self.ADF._array = einsum('pxyln,'frame_data
 
 
                     if not self.use_memmap and ( "exitwaves" in self.cache_levels or "slices" in self.cache_levels ) and (self.store_full or self.prism):
