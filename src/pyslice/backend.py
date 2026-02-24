@@ -42,6 +42,7 @@ except ImportError:
     TORCH_AVAILABLE = False
 
 DEFAULT_DEVICE, DEFAULT_FLOAT_DTYPE, DEFAULT_COMPLEX_DTYPE = config
+DEFAULT_INT_TYPE=int
 del config
 
 # Aliases for convenience
@@ -126,7 +127,8 @@ def zeros(dims, dtype=None, device=None, type_match=None):
         device=DEFAULT_DEVICE
     # string handling for dtype, "float" --> float
     if isinstance(dtype,str):
-        dtype=DEFAULT_FLOAT_DTYPE if dtype=="float" else DEFAULT_COMPLEX_DTYPE
+        dtype={"float":DEFAULT_FLOAT_DTYPE,"complex":DEFAULT_COMPLEX_DTYPE,"int":DEFAULT_INT_TYPE}[dtype]
+        #dtype=DEFAULT_FLOAT_DTYPE if dtype=="float" else DEFAULT_COMPLEX_DTYPE
     # infer if we're using torch or numpy (numpy does not take device arg)
     if xp != np:
         array = xp.zeros(dims, dtype=dtype, device=device)

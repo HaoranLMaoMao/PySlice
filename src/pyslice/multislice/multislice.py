@@ -8,7 +8,7 @@ try:
     import torch ; xp = torch
     TORCH_AVAILABLE = True
     if torch.cuda.is_available():
-        device = torch.device('cuda')
+        device = torch.device('cuda:0')
     elif torch.backends.mps.is_available():
         device = torch.device('mps')
     else:
@@ -202,7 +202,7 @@ class Probe:
             self._array= self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)[None,None,:,:]*ones((1,1))[:,:,None,None]
 
         self.cropping = cropping
-        self.offsets = np.zeros((len(self.probe_positions),2),dtype=int) # these are used when we have cropped the probe
+        self.offsets = zeros((len(self.probe_positions),2),dtype=int) # these are used when we have cropped the probe
 
         # NEW PHILOSOPHY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have
         # a bajillion probes, then this cube might be huge! instead, callers (e.g. calculator) pass
@@ -416,7 +416,8 @@ class Probe:
             if px-self.lx/2 == 0 and py-self.ly/2 == 0:
                     continue
 
-            self._array[:,i,:,:],self.offsets[i,:] = self.placeProbe(self._array[:,i,:,:], px, py )
+            self._array[:,i,:,:],(dxp,dyp) = self.placeProbe(self._array[:,i,:,:], px, py )
+            self.offsets[i,0] = int(dxp) ; self.offsets[i,1] = int(dyp)
 
         nc,npt,nx,ny = self._array.shape #; print("applyShifts expands to",nc,npt,nx,ny)
 
@@ -767,7 +768,7 @@ class PrismProbe:
 # transmission function t = exp(i σ O) where O is our object (or potential slice), Eq 6.59
 # ψ₂ = ℱ⁻¹[ P * ℱ[ t * ψ₁ ] ], Eq 6.67, noting the relationship: 𝒞[ f(x),g(x) ] = ℱ⁻¹[ ℱ[f(x)] * ℱ[g(x)] ] = ℱ⁻¹[ f(k) * g(k) ]
 # or as code: array = t * array ; fft_array = fft(array) ; propagated_fft = P * fft_array ; array = ifft(propagated_fft)
-def Propagate(probe, potential, device=None, progress=False, onthefly=True, store_all_slices=False):
+def PropagateThread(probe, potential, progress=False, onthefly=True, store_all_slices=False, chunk=None):
     """
     PyTorch-accelerated multislice propagation function.
     Supports both single probe and batched multi-probe processing.
@@ -791,10 +792,18 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     # Initialize wavefunction with probe(s) - shape: (n_probes, nx, ny)
     nc,npt,nx,ny = probe._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
     array = probe._array.reshape((nc*npt,nx,ny)) # "flatten" first two indices
-    probe_wavelengths = probe.wavelengths[:,None]*ones(npt)[None,:] # also expand wavelengths and eVs arrays to cover all probe positions npt
+    offsets = probe.offsets
+    o = ones(npt).to(device) ; chunk = chunk.to(device)
+    print(offsets.device,probe.wavelengths.device,o.device,array.device,chunk.device,device)
+    probe_wavelengths = probe.wavelengths[:,None]*o[None,:] # also expand wavelengths and eVs arrays to cover all probe positions npt
     probe_wavelengths = probe_wavelengths.reshape(nc*npt)
-    probe_eVs = probe.eVs[:,None]*ones(npt)[None,:]
+    probe_eVs = probe.eVs[:,None]*o[None,:]
     probe_eVs = probe_eVs.reshape(nc*npt)
+    if chunk is not None:
+        array = array[chunk,:,:]
+        offsets = offsets[chunk]
+        probe_wavelengths = probe_wavelengths[chunk]
+        probe_eVs = probe_eVs[chunk]
 
     # Calculate interaction parameter (Kirkland Eq 5.6)
     E0_eV = m_electron * c_light**2 / q_electron
@@ -822,6 +831,8 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     aa_aperture = antialias_aperture(kx, ky)
 
     # Fold anti-aliasing aperture into propagator to bandwidth-limit wavefunction at every slice
+    k_squared = k_squared.to(device) ; aa_aperture = aa_aperture.to(device)
+    print(probe_wavelengths.device,k_squared.device,aa_aperture.device)
     P = xp.exp(-1j * xp.pi * probe_wavelengths[:,None,None] * dz * k_squared[None,:,:]) * aa_aperture[None,:,:] # Kirkland2010 Eq 6.65
 
     if progress:
@@ -848,7 +859,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
 
         if probe.cropping:
             t = zeros( (len(sigma), probe.cropping, probe.cropping ), type_match=P)
-            for p,o in enumerate(probe.offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
+            for p,o in enumerate(offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
                 pot = xp.roll(potential_slice,-o[0],0)[:probe.cropping,:]
                 pot = xp.roll(pot,-o[1],1)[:,:probe.cropping]
                 #pot = xp.roll(potential_slice,list(-o),(0,1))[:probe.cropping,:probe.cropping]
@@ -889,6 +900,34 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     #if array.shape[0] == 1:
     #    return array.squeeze(0)
     return array # okay for Propagate to return a Tensor. we probably don't want to move things off-gpu yet
+
+try: 
+    n = xp.cuda.device_count()
+    if n<=1:
+        print(n,"torch devices found, using single-threaded Propagate")
+        Propagate = PropagateThread
+    else:
+        class PropParallel(xp.nn.Module):
+            def __init__(self,ids,a,b,*args,**kwargs):
+                super().__init__()
+            def forward(self,ids,a,b,*args,**kwargs):
+                kwargs["chunk"]=ids
+                #print("args",args,"kwargs",kwargs)
+                return PropagateThread(a,b,*args,**kwargs)
+        def Propagate(probe, potential, *args, **kwargs):
+            nc,npt,nx,ny = probe._array.shape
+            ids = xp.arange(nc*npt,device=device)
+            model = PropParallel(ids,probe,potential,*args,**kwargs)
+            model = xp.nn.DataParallel(model)
+            model.to(device)
+            return model(ids,probe,potential,*args,**kwargs)
+            #ida=ids[:len(ids)//2] ; idb=ids[len(ids)//2:]
+            #kwargs["chunk"]=ida
+            #return PropagateThread(probe,potential,*args,**kwargs)
+        print(n,"torch devices found, using multi-threaded Propagate")
+except Exception as e:
+    print("multi-thread setup failed, falling back to Propagate single thread")
+    Propagate = PropagateThread
 
 # Given a real-space entrance and real-space exit wave, calculate the object the wave must have passed through: ψ₁ -> O -> ψ₂, given ψ₁,ψ₂, find O
 # From Kirkland2010:

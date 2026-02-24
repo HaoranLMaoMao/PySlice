@@ -409,7 +409,7 @@ class MultisliceCalculator:
                             probe = self.base_probe.copy(selected_probes=selected)
                             probe.applyShifts()
                             # propagate single probe
-                            exit_waves_single = Propagate(probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) ) # [l],p,x,y indices
+                            exit_waves_single = Propagate(probe, potential, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) ) # [l],p,x,y indices
                             # expand out to fixed l,p,x,y indices
                             exit_waves_single = expand_dims(exit_waves_single,0) if len(exit_waves_single.shape)==3 else exit_waves_single
                             # FFT and load into frame_data
@@ -431,7 +431,7 @@ class MultisliceCalculator:
 
                     else:
                         # simultaneously propagate all probes at once, [l],p,x,y
-                        exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
+                        exit_waves_batch = Propagate(self.base_probe, potential, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
                         # expand out to fixed l,p,x,y indices
                         exit_waves_batch = expand_dims(exit_waves_batch,0) if len(exit_waves_batch.shape)==3 else exit_waves_batch
                         # FFT and load into frame_data
