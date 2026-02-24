@@ -38,7 +38,7 @@ for n,kwargs in enumerate(kwargCombos):
     for i in range(2):
         if n<=skip:
             continue
-        print("RUNNING ITERATION",n,"/",len(kwargCombos),["a","b"][i],"HAADF WITH KWARGS:",kwargs)
+        print("RUNNING ITERATION",n,"/",len(kwargCombos),["a","b"][i],"TACAW WITH KWARGS:",kwargs)
         trajectory = Loader(dump,timestep=dt,atom_mapping=types).load()                   # LOAD TRAJECTORY
         trajectory = trajectory.slice_positions([0,10*a],[0,10*b])                        # TRIM TO 10x10 UC
         trajectory = trajectory.slice_timesteps(0,100,2)

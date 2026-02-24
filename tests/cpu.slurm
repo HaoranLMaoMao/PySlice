@@ -14,6 +14,6 @@ module load gcc
 # conda activate /home/qwe/.conda/envs/pyslice_env
 source /home/qwe/torchenv/bin/activate # switching to uv venvs
 
-#bash runAllTests.sh torchcpu
-bash rerunOneTest.sh torchcpu
+bash runAllTests.sh torchcpu
+#bash rerunOneTest.sh torchcpu
 

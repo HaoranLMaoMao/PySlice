@@ -7,6 +7,10 @@ cuda/11.4.0:
    Newer toolchain versions will not work for K80's.
 
 -------------------------------------------------------------------------------mkdir: cannot create directory ‘../torchgpu’: File exists
+cp: cannot stat '64': No such file or directory
+cp: cannot stat '64': No such file or directory
 ln: failed to create symbolic link 'inputs/inputs': File exists
 ln: failed to create symbolic link 'outputs/outputs': File exists
+rm: cannot remove '64': No such file or directory
+rm: cannot remove '64': No such file or directory
 rmdir: failed to remove '../torchgpu': Directory not empty

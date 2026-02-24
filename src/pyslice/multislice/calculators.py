@@ -35,7 +35,7 @@ from .multislice import Probe,PrismProbe,Propagate,create_batched_probes
 from .trajectory import Trajectory
 from ..postprocessing.wf_data import WFData
 from .sed import SED
-from ..backend import zeros,expand_dims,to_cpu,memmap,ones,sum,absolute,ceil,einsum,asarray
+from ..backend import zeros,expand_dims,to_cpu,memmap,ones,sum,absolute,ceil,einsum,asarray,astype
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +133,8 @@ class MultisliceCalculator:
         prism = False,
         kth=1,
         ADF=False,
-        store_full=True
+        store_full=True,
+        skip_vacuum=False
     ):
         """
         Set up multislice simulation using PyTorch acceleration.
@@ -174,6 +175,7 @@ class MultisliceCalculator:
         self.kth = kth                 # int: Δk=1/L, nk = nx. huge systems waste RAM with ultra-fine Δk. this sparsifies the exitwaves via ::kth
         self.ADF = ADF                 # bool or (inner,outer): allows on-the-fly calculation of the ADF signal
         self.store_full = store_full   # bool: if ADF=True and prism=False, this skips storing of the full [t],x,y,kx,ky 5D exit data
+        self.skip_vacuum = skip_vacuum # bool: if True, we skip propagation of probes in locations where there are no atoms
 
         # Set up spatial grids
         xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=sampling,slice_thickness=slice_thickness)
@@ -217,7 +219,7 @@ class MultisliceCalculator:
 
         # if probes are over vacuum (e.g. nanoparticles), we don't need to propagate them?
         self.probe_indices = np.arange(len(self.probe_positions))
-        if len(self.probe_positions)>1 and self.aperture>1 and self.min_dk:
+        if self.skip_vacuum and len(self.probe_positions)>1 and self.aperture>1 and self.min_dk:
             self.probe_indices = []
             for i,p in enumerate(tqdm(self.probe_positions)):
                 d_to_nearest_atom = np.sqrt( np.sum( (p[None,:]-self.trajectory.positions[0,:,:2])**2,axis=1) )
@@ -328,7 +330,7 @@ class MultisliceCalculator:
                 layer=None,array=array,probe=self.base_probe,cache_dir=self.output_dir)
             self.ADF = HAADFData(wf)
             self.ADFmask = absolute(self.ADF.getMask(**kwargs)) # HAADFData infers mask dtype from _wf_array dtype, but we'll absolute^2 later
-            self.ADFindex = absolute(self.ADF._wf_array[0,:,:,0,0,0,0]).to(int)
+            self.ADFindex = astype(absolute(self.ADF._wf_array[0,:,:,0,0,0,0]),int)
             self.ADF._array = zeros(self.ADFindex.shape,dtype=self.complex_dtype)
 
         # Process frames one at a time with tqdm progress tracking
