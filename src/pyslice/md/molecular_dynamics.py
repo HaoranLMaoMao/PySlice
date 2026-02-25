@@ -689,3 +689,65 @@ def analyze_md_trajectory(
 
     except Exception as e:
         logger.error(f"Analysis failed: {e}")
+
+
+
+class FAIRChemMDCalculator(MDCalculator):
+    """
+    Molecular dynamics calculator using FAIRChem force fields.
+
+    Integrates with PySlice's Trajectory and Loader infrastructure.
+    """
+
+    def __init__(self, model_name: str = 'uma-s-1p1', task_name: str = 'omat', device: str = 'cpu', workers: int = 1, cache_dir: Optional[str] = None):
+        """
+        Initialize MD calculator.
+
+        Args:
+            model_name: FAIRChem model to use
+            task_name: Task name for FAIRChem model
+            device: Device for FAIRChem calculations ('cpu', 'cuda', etc.)
+            workers: Number of workers for FAIRChem calculations
+            cache_dir: Optional local cache directory for FAIRChem models
+        """
+        self.model_name = model_name
+        self.task_name = task_name
+        self.device = device
+        self.cache_dir = cache_dir
+        self.calculator = None
+        self.workers = workers
+
+        logger.info(f"Initialized MDCalculator with model: {model_name}")
+
+    def _setup_calculator(self) -> bool:
+        """Load FAIRChem calculator."""
+        try:
+            logger.info(f"Loading {self.model_name} model...")
+
+            from fairchem.core import pretrained_mlip, FAIRChemCalculator
+
+            # Not sure if this works also for fairchem, but in case MPS support is similar to ORB, we load on CPU then move
+            if self.device == 'mps':
+                logger.info("MPS detected: loading on CPU, converting to float32, moving to MPS...")
+                predictor = pretrained_mlip.get_predict_unit(
+                    self.model_name, device='cpu', workers=self.workers,
+                    #inference_settings="turbo",
+                    cache_dir=self.cache_dir,
+                )
+                predictor = predictor.to('mps')
+            else:
+                predictor = pretrained_mlip.get_predict_unit(
+                    self.model_name, device=self.device, workers=self.workers,
+                    #inference_settings="turbo",
+                    cache_dir=self.cache_dir,
+                )
+
+            self.calculator = FAIRChemCalculator(predictor, task_name=self.task_name)
+
+            logger.info(f"Successfully loaded {self.model_name} on {self.device}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to load FAIRChem model {self.model_name}: {e}")
+            print(traceback.format_exc())
+            return False
