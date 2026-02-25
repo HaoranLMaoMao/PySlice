@@ -13,6 +13,7 @@ from ase.md.npt import NPT
 from ase import units
 from ase.io import write, Trajectory as ASETrajectory
 from ase import Atoms
+from fairchem.core.units.mlip_unit import InferenceSettings
 
 from ..multislice.trajectory import Trajectory
 from ..io.loader import Loader
@@ -699,7 +700,12 @@ class FAIRChemMDCalculator(MDCalculator):
     Integrates with PySlice's Trajectory and Loader infrastructure.
     """
 
-    def __init__(self, model_name: str = 'uma-s-1p1', task_name: str = 'omat', device: str = 'cpu', workers: int = 1):
+    def __init__(self, 
+                 model_name: str = 'uma-s-1p1', 
+                 task_name: str = 'omat', 
+                 device: str = 'cpu', 
+                 workers: int = 1, 
+                 inference_settings: InferenceSettings | str = 'default'):
         """
         Initialize MD calculator.
 
@@ -715,6 +721,7 @@ class FAIRChemMDCalculator(MDCalculator):
         self.device = device
         self.calculator = None
         self.workers = workers
+        self.inference_settings = inference_settings
 
         logger.info(f"Initialized MDCalculator with model: {model_name}")
 
@@ -730,13 +737,13 @@ class FAIRChemMDCalculator(MDCalculator):
                 logger.info("MPS detected: loading on CPU, converting to float32, moving to MPS...")
                 predictor = pretrained_mlip.get_predict_unit(
                     self.model_name, device='cpu', workers=self.workers,
-                    #inference_settings="turbo",
+                    inference_settings=self.inference_settings,
                 )
                 predictor = predictor.to('mps')
             else:
                 predictor = pretrained_mlip.get_predict_unit(
                     self.model_name, device=self.device, workers=self.workers,
-                    #inference_settings="turbo",
+                    inference_settings=self.inference_settings,
                 )
 
             self.calculator = FAIRChemCalculator(predictor, task_name=self.task_name)
