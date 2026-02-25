@@ -699,7 +699,7 @@ class FAIRChemMDCalculator(MDCalculator):
     Integrates with PySlice's Trajectory and Loader infrastructure.
     """
 
-    def __init__(self, model_name: str = 'uma-s-1p1', task_name: str = 'omat', device: str = 'cpu', workers: int = 1, cache_dir: Optional[str] = None):
+    def __init__(self, model_name: str = 'uma-s-1p1', task_name: str = 'omat', device: str = 'cpu', workers: int = 1):
         """
         Initialize MD calculator.
 
@@ -713,7 +713,6 @@ class FAIRChemMDCalculator(MDCalculator):
         self.model_name = model_name
         self.task_name = task_name
         self.device = device
-        self.cache_dir = cache_dir
         self.calculator = None
         self.workers = workers
 
@@ -732,14 +731,12 @@ class FAIRChemMDCalculator(MDCalculator):
                 predictor = pretrained_mlip.get_predict_unit(
                     self.model_name, device='cpu', workers=self.workers,
                     #inference_settings="turbo",
-                    cache_dir=self.cache_dir,
                 )
                 predictor = predictor.to('mps')
             else:
                 predictor = pretrained_mlip.get_predict_unit(
                     self.model_name, device=self.device, workers=self.workers,
                     #inference_settings="turbo",
-                    cache_dir=self.cache_dir,
                 )
 
             self.calculator = FAIRChemCalculator(predictor, task_name=self.task_name)
