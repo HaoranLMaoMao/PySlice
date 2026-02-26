@@ -411,8 +411,10 @@ class MultisliceCalculator:
                             #chunk = chunk[chunk<npt]
                             # only keep chunk indices if they're also in probe_indices
                             chunk = chunk[xp.any(self.probe_indices[None,:]==chunk[:,None],axis=1)]
-                            if len(chunk)==0:
+                            if (i+1)*chunksize>npt:
                                 break
+                            if len(chunk)==0:
+                                continue
                             chunks.append(chunk)
                         pbar2 = tqdm(total = npt, desc = "looping probes", unit="probe")
                     else:
