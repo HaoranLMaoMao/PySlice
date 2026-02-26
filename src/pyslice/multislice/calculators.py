@@ -283,7 +283,7 @@ class MultisliceCalculator:
 
 
         # if probes are over vacuum (e.g. nanoparticles), we don't need to propagate them?
-        self.probe_indices = np.arange(len(self.probe_positions))
+        self.probe_indices = xp.arange(len(self.probe_positions))
         if self.skip_vacuum and len(self.probe_positions)>1 and self.aperture>1 and self.min_dk:
             if os.path.exists(self.output_dir / f"probe_indices.npy"):
                 self.probe_indices = np.load(self.output_dir / f"probe_indices.npy")
@@ -448,7 +448,7 @@ class MultisliceCalculator:
                                 for i,pp in zip(intensities,selected):
                                     self.ADF._array[self.ADFindex==pp] += i
                         if pbar2 is not None:
-                            pbar2.update(len(selected))
+                            pbar2.update(int(max(selected))-pbar2.n)
 #                    else:
 #                        # simultaneously propagate all probes at once, [l],p,x,y
 #                        exit_waves_batch = Propagate(self.base_probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) )
