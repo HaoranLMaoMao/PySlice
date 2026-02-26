@@ -25,7 +25,7 @@ if len(sys.argv)>2:
     end = int(sys.argv[2])
 
 # each kwarg and it's options
-options = { "ADF":[False,True], "loop_probes":[False,10], "use_memmap":[False,True], "prism":[False,25], "store_full":[True,False], "min_dk":[0,.1], "kth":[1,3] }
+options = { "ADF":[False,True], "loop_probes":[False,10], "use_memmap":[False,True], "prism":[False,25], "store_full":[True,False], "min_dk":[0.0,.1], "kth":[1,3], "skip_vacuum":[False,True] }
 args = list(options.keys())
 # all permutations: [0,0,0,0,0], [0,0,0,0,1], and so on
 indices = list(itertools.product([0,1],repeat=len(args)))
@@ -33,6 +33,10 @@ kwargCombos = []
 for ijklm in indices:
     dic = { k:options[k][n] for k,n in zip(args,ijklm) }
     kwargCombos.append( dic )
+
+#for n,kwargs in enumerate(kwargCombos):
+#    print(str(n)+"/"+str(len(kwargCombos))+"\t"+"  ".join([k[:7]+":"+str(v)[:4] for k,v in kwargs.items()]))
+#sys.exit()
 
 for n,kwargs in enumerate(kwargCombos):
     os.system("rm -rf psi_data")

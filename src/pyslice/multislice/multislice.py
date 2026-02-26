@@ -850,8 +850,8 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         if probe.cropping:
             t = zeros( (len(sigma), probe.cropping, probe.cropping ), type_match=P)
             for p,o in enumerate(probe.offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
-                pot = xp.roll(potential_slice,-o[0],0)[:probe.cropping,:]
-                pot = xp.roll(pot,-o[1],1)[:,:probe.cropping]
+                pot = xp.roll(potential_slice,int(-o[0]),0)[:probe.cropping,:]
+                pot = xp.roll(pot,int(-o[1]),1)[:,:probe.cropping]
                 #pot = xp.roll(potential_slice,list(-o),(0,1))[:probe.cropping,:probe.cropping]
                 t[p,:,:]=xp.exp(1j*sigma[p]*pot)
         else:

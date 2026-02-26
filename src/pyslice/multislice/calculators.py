@@ -185,11 +185,11 @@ class MultisliceCalculator:
         self.nx = nx ; self.ny = ny ; self.nz = nz
         self.dx = xs[1]-xs[0] ; self.dy = ys[1]-ys[0] ; self.dy = ys[1]-ys[0]
 
-        probe_cropping = 0
+        self.probe_cropping = 0
         if self.min_dk > 0: # dk = 1/L = 1/(nx*sampling)
             nx = int(np.round(1/(self.min_dk*self.sampling)))
             self.nx = nx ; self.ny = nx
-            probe_cropping = nx
+            self.probe_cropping = nx
 
         self.kxs = xp.fft.fftshift(xp.fft.fftfreq(self.nx, self.sampling))  # k-space in 1/Å
         self.kys = xp.fft.fftshift(xp.fft.fftfreq(self.ny, self.sampling))  # k-space in 1/Å
@@ -217,24 +217,13 @@ class MultisliceCalculator:
             self.probe_positions = [(lx/2, ly/2)]  # Center probe
             self.probe_xs = [lx/2] ; self.probe_ys = [ly/2]
 
-        # if probes are over vacuum (e.g. nanoparticles), we don't need to propagate them?
-        self.probe_indices = np.arange(len(self.probe_positions))
-        if self.skip_vacuum and len(self.probe_positions)>1 and self.aperture>1 and self.min_dk:
-            self.probe_indices = []
-            for i,p in enumerate(tqdm(self.probe_positions)):
-                d_to_nearest_atom = np.sqrt( np.sum( (p[None,:]-self.trajectory.positions[0,:,:2])**2,axis=1) )
-                d_to_nearest_atom = np.amin( d_to_nearest_atom )
-                if d_to_nearest_atom < probe_cropping*self.sampling:
-                    self.probe_indices.append(i)
-            print("filtered to",len(self.probe_indices),"probe positions")
-
         if self.prism:
             # Prism algorithm works by passing a series of sinusoids (fourier components shared by all probes) through the sample. "PrismProbe" will therefore give us a series of sinusoids, and there is a reconstruction step later
             self.base_probe = PrismProbe(xs, ys, self.aperture, self.voltage_eV, device=self.device, nkx=self.prism, kth=self.kth)
         else:
             # OR, we'll propagate our series of real-space probes.
             # need to make sure they're on the correct device, and defer_shifts=True means the calculator controls when to expand the probe cube (see loop_probes)
-            self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions,cropping=probe_cropping, defer_shifts=True)
+            self.base_probe = Probe(xs, ys, self.aperture, self.voltage_eV, device=self.device, probe_xs=self.probe_xs, probe_ys=self.probe_ys, probe_positions=self.probe_positions,cropping=self.probe_cropping, defer_shifts=True)
 
         if not self.loop_probes:
             self.base_probe.applyShifts()
@@ -291,6 +280,23 @@ class MultisliceCalculator:
         #print(cache_key)
         self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+cache_key)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+
+        # if probes are over vacuum (e.g. nanoparticles), we don't need to propagate them?
+        self.probe_indices = np.arange(len(self.probe_positions))
+        if self.skip_vacuum and len(self.probe_positions)>1 and self.aperture>1 and self.min_dk:
+            if os.path.exists(self.output_dir / f"probe_indices.npy"):
+                self.probe_indices = np.load(self.output_dir / f"probe_indices.npy")
+            else:
+                self.probe_indices = []
+                for i,p in enumerate(tqdm(self.probe_positions)):
+                    d_to_nearest_atom = np.sqrt( np.sum( (p[None,:]-self.trajectory.positions[0,:,:2])**2,axis=1) )
+                    d_to_nearest_atom = np.amin( d_to_nearest_atom )
+                    if d_to_nearest_atom < self.probe_cropping*self.sampling:
+                        self.probe_indices.append(i)
+                np.save(self.output_dir / f"probe_indices.npy", self.probe_indices)
+            self.probe_indices = asarray(self.probe_indices)
+            print("filtered to",len(self.probe_indices),"probe positions")
 
 
         nc,npt,nx,ny = self.base_probe._array.shape
@@ -402,7 +408,9 @@ class MultisliceCalculator:
                         chunksize = self.loop_probes if isinstance(self.loop_probes,int) else 1
                         for i in range(10000000):
                             chunk = xp.arange(i*chunksize,(i+1)*chunksize)
-                            chunk = chunk[chunk<npt]
+                            #chunk = chunk[chunk<npt]
+                            # only keep chunk indices if they're also in probe_indices
+                            chunk = chunk[xp.any(self.probe_indices[None,:]==chunk[:,None],axis=1)]
                             if len(chunk)==0:
                                 break
                             chunks.append(chunk)
