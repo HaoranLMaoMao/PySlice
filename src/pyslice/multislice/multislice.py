@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import logging
-from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop,einsum,ceil
+from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop,einsum,ceil,clone
 #from line_profiler import profile
 
 try:
@@ -202,7 +202,7 @@ class Probe:
             self._array= self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)[None,None,:,:]*ones((1,1))[:,:,None,None]
 
         self.cropping = cropping
-        self.offsets = np.zeros((len(self.probe_positions),2),dtype=int) # these are used when we have cropped the probe
+        self.offsets = zeros((len(self.probe_positions),2),dtype="int") # these are used when we have cropped the probe
 
         # NEW PHILOSOPHY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have
         # a bajillion probes, then this cube might be huge! instead, callers (e.g. calculator) pass
@@ -256,20 +256,19 @@ class Probe:
             if attr[0]=="_" or "array" in attr:
                 continue
             val = getattr(self,attr)
-            if hasattr(val,"clone"):
-                val = val.clone()
+            val = clone(val)
             setattr(new_probe,attr,val)
         if selected_probes is not None:
             nc,npt,nx,ny = self._array.shape
             if npt == 1:
-                new_probe._array = self._array[:,:,:,:].clone()
+                new_probe._array = clone(self._array[:,:,:,:])
             else:
-                new_probe._array = self._array[:,selected_probes,:,:].clone()
+                new_probe._array = clone(self._array[:,selected_probes,:,:])
             new_probe.offsets = self.offsets[selected_probes,:]
-            new_probe.probe_positions = self.probe_positions[selected_probes,:]
+            new_probe.probe_positions = self.probe_positions[to_cpu(selected_probes),:]
             #print("new",new_probe.offsets.shape,new_probe.probe_positions.shape)
         else:
-            new_probe._array = self._array.clone()
+            new_probe._array = clone(self._array)
             #print("no selected used")
         #new_probe.device = self.device
         #new_probe.array_numpy = self.array_numpy.copy()
@@ -407,6 +406,9 @@ class Probe:
             i1=nx//2-self.cropping//2 ; i2=i1+self.cropping     # |_______i1___.___i2_______| for initial centered probe at lx/2,ly/2
             j1=ny//2-self.cropping//2 ; j2=j1+self.cropping
             self._array = self._array[:,0,None,i1:i2,j1:j2] * ones(len(self.probe_positions))[None,:,None,None]
+            import matplotlib.pyplot as plt
+            plt.imshow(np.absolute(to_cpu(self._array[0,0,:,:])))
+            plt.savefig("probecropping.png")
         else:
             self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
         # loop through probe positions
@@ -414,7 +416,8 @@ class Probe:
             if px-self.lx/2 == 0 and py-self.ly/2 == 0:
                     continue
 
-            self._array[:,i,:,:],self.offsets[i,:] = self.placeProbe(self._array[:,i,:,:], px, py )
+            self._array[:,i,:,:],(dpx,dpy) = self.placeProbe(self._array[:,i,:,:], px, py )
+            self.offsets[i,0] = int(dpx) ; self.offsets[i,1] = int(dpy)
 
         nc,npt,nx,ny = self._array.shape #; print("applyShifts expands to",nc,npt,nx,ny)
 
@@ -660,8 +663,8 @@ class PrismProbe:
             result = load_into
         else:
             ADF,ADFmask,ADFindex = ADF ; result = None
-
-        array = reshape(array,(self.nx_cropped,self.ny_cropped,ceil(self.nx/self.kth),ceil(self.ny/self.kth))) # eikx,eiky,kx,ky
+        npt,nkx,nky,_,_ = array.shape
+        array = reshape(array,(self.nx_cropped,self.ny_cropped,nkx,nky)) # eikx,eiky,kx,ky
         # preview an arbitrary exit wave? (note: calculator will have done shift(fft(realspace)), so we should invert those steps)
         #import matplotlib.pyplot as plt
         #fig, ax = plt.subplots()
@@ -736,20 +739,19 @@ class PrismProbe:
             if attr[0]=="_" or "array" in attr:
                 continue
             val = getattr(self,attr)
-            if hasattr(val,"clone"):
-                val = val.clone()
+            val = clone(val)
             setattr(new_probe,attr,val)
         if selected_probes is not None:
             nc,npt,nx,ny = self._array.shape
             if npt == 1:
-                new_probe._array = self._array[:,:,:,:].clone()
+                new_probe._array = clone(self._array[:,:,:,:])
             else:
-                new_probe._array = self._array[:,selected_probes,:,:].clone()
+                new_probe._array = clone(self._array[:,selected_probes,:,:])
             #new_probe.offsets = self.offsets[selected_probes,:]
             new_probe.probe_positions = self.probe_positions[selected_probes,:]
             #print("new",new_probe.offsets.shape,new_probe.probe_positions.shape)
         else:
-            new_probe._array = self._array.clone()
+            new_probe._array = clone(self._array)
             #print("no selected used")
         #new_probe.device = self.device
         #new_probe.array_numpy = self.array_numpy.copy()
@@ -848,8 +850,8 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         if probe.cropping:
             t = zeros( (len(sigma), probe.cropping, probe.cropping ), type_match=P)
             for p,o in enumerate(probe.offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
-                pot = xp.roll(potential_slice,-o[0],0)[:probe.cropping,:]
-                pot = xp.roll(pot,-o[1],1)[:,:probe.cropping]
+                pot = xp.roll(potential_slice,int(-o[0]),0)[:probe.cropping,:]
+                pot = xp.roll(pot,int(-o[1]),1)[:,:probe.cropping]
                 #pot = xp.roll(potential_slice,list(-o),(0,1))[:probe.cropping,:probe.cropping]
                 t[p,:,:]=xp.exp(1j*sigma[p]*pot)
         else:
@@ -862,10 +864,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         # Store wavefunction at this slice if requested (after transmission)
         if store_all_slices:
             # Clone/copy to avoid reference issues
-            if TORCH_AVAILABLE:
-                slice_wavefunctions.append(array.clone())
-            else:
-                slice_wavefunctions.append(array.copy())
+            slice_wavefunctions.append(clone(array))
 
         # Fresnel propagation to next slice (except for last slice)
         if z < len(potential.zs) - 1:

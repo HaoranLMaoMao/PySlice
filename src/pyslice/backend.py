@@ -106,6 +106,11 @@ def asarray(arraylike, dtype=None, device=None):
         array = xp.asarray(arraylike, dtype=dtype)
     return array
 
+def astype(arraylike,dtype):
+    if hasattr(arraylike,"to"): # torch
+        return arraylike.to(dtype)
+    return arraylike.astype(dtype) # numpy
+
 def zeros(dims, dtype=None, device=None, type_match=None):
     if type_match is not None: # pass an array, and we either infer dtype from the first element, or you also specified a dtype
         if dtype is None:
@@ -121,7 +126,7 @@ def zeros(dims, dtype=None, device=None, type_match=None):
         device=DEFAULT_DEVICE
     # string handling for dtype, "float" --> float
     if isinstance(dtype,str):
-        dtype=DEFAULT_FLOAT_DTYPE if dtype=="float" else DEFAULT_COMPLEX_DTYPE
+        dtype={"float":DEFAULT_FLOAT_DTYPE,"complex":DEFAULT_COMPLEX_DTYPE,"int":int}[dtype]
     # infer if we're using torch or numpy (numpy does not take device arg)
     if xp != np:
         array = xp.zeros(dims, dtype=dtype, device=device)
@@ -139,6 +144,7 @@ def memmap(dims,dtype=DEFAULT_FLOAT_DTYPE,filename=None):
         dtype = { xp.complex128:np.complex128, xp.complex64:np.complex64,
                  xp.float64:np.float64, xp.float32:np.float32 }[ dtype ]
     mode = 'w+' #'r+' if os.path.exists(filename) else 'w+'
+    #print("creating memmap",mode,dtype,dims,"->",filename)
     return open_memmap(filename, dtype=dtype, mode=mode, shape=dims)
 
 def absolute(array):
@@ -258,3 +264,13 @@ def ceil(v):
     if xp != np and type(v)==torch.Tensor:
         return int(xp.ceil(v))
     return int(np.ceil(v))
+
+def clone(a):
+    if hasattr(a,"clone"):
+        return a.clone()
+    try:
+        if hasattr(a,"copy"):
+            return a.copy()
+    except:
+        pass
+    return a

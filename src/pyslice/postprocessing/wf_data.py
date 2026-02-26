@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 from pathlib import Path
-from ..backend import mean,ones,zeros,reshape,absolute,sum
+from ..backend import mean,ones,zeros,reshape,absolute,sum,asarray
 
 try:
     import torch ; xp = torch
@@ -181,17 +181,35 @@ class WFData(PySliceSerial, Signal):
         fig, ax = plt.subplots()
 
         raw = self._array[:,:,:,:,-1] # probe, time, kx, ky, layer --> p,t,kx,ky
-        array = absolute(raw)
-
+        npt,nt,nkx,nky = raw.shape
+        array = zeros((nkx,nky))
         if isinstance(whichProbe,str) and whichProbe=="mean":
-            array = mean(abs(array),axis=0) # p,t,kx,ky --> t,kx,ky
-        else:
-            array = array[whichProbe] 
-
+            whichProbe = np.arange(npt)
+        elif isinstance(whichProbe,int):
+            whichProbe = [whichProbe]
         if isinstance(whichTimestep,str) and whichTimestep=="mean":
-            array = mean(array,axis=0) # t,kx,ky --> kx,ky
-        else:
-            array = array[whichTimestep] 
+            whichTimestep = np.arange(nt)
+        elif isinstance(whichtimestep,int):
+            whichTimestep = [whichTimestep]
+        import time ; start = time.time()
+        for p in whichProbe:
+            for t in whichTimestep:
+                layer = absolute(raw[p,t,:,:])
+                if isinstance(raw,np.memmap):
+                    layer = asarray(layer)
+                array+=layer
+        array/=(len(whichTimestep)*len(whichProbe))
+        print("summation took",time.time()-start,"s")
+        #array=abs(raw) # don't do this, it pulls memmaps into ram! 
+        #if isinstance(whichProbe,str) and whichProbe=="mean":
+        #    array = mean(abs(array),axis=0) # p,t,kx,ky --> t,kx,ky
+        #else:
+        #    array = array[whichProbe] 
+        #
+        #if isinstance(whichTimestep,str) and whichTimestep=="mean":
+        #    array = mean(array,axis=0) # t,kx,ky --> kx,ky
+        #else:
+        #    array = array[whichTimestep] 
 
         # Convert kxs and kys to numpy for indexing
         if hasattr(self.kxs, 'cpu'):
