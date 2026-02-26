@@ -288,10 +288,11 @@ class MultisliceCalculator:
             if os.path.exists(self.output_dir / f"probe_indices.npy"):
                 self.probe_indices = np.load(self.output_dir / f"probe_indices.npy")
             else:
+                xy_atoms = asarray(self.trajectory.positions[0,:,:2])
                 self.probe_indices = []
                 for i,p in enumerate(tqdm(self.probe_positions)):
-                    d_to_nearest_atom = np.sqrt( np.sum( (p[None,:]-self.trajectory.positions[0,:,:2])**2,axis=1) )
-                    d_to_nearest_atom = np.amin( d_to_nearest_atom )
+                    p = asarray(p)
+                    d_to_nearest_atom = xp.sqrt( xp.amin( xp.sum( (p[None,:]-xy_atoms)**2,axis=1) ) )
                     if d_to_nearest_atom < self.probe_cropping*self.sampling:
                         self.probe_indices.append(i)
                 np.save(self.output_dir / f"probe_indices.npy", self.probe_indices)
