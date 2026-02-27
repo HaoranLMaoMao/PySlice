@@ -260,6 +260,7 @@ class Probe:
             val = clone(val)
             setattr(new_probe,attr,val)
         if selected_probes is not None:
+            selected_probes = to_cpu(selected_probes)
             nc,npt,nx,ny = self._array.shape
             if npt == 1:
                 new_probe._array = clone(self._array[:,:,:,:])
@@ -855,24 +856,26 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
             potential_slice = potential._array[:, :, z]
 
         if probe.cropping:
-            #print("probe rolling") ; start = time.time()
-            t = zeros( (len(sigma), probe.cropping, probe.cropping ), type_match=P)
+            #t = zeros( (len(sigma), probe.cropping, probe.cropping ), type_match=P)
+            #print("probe rolling") ; start = time.time() 
             # Usually you want vectorized, but this inflates to full npt,nx,ny before cropping: bad on RAM
             #rollx = list(probe.offsets[:,0]) ; z = [1]*len(rollx)
             #pot = xp.roll(potential_slice[None,:,:],rollx,z)[:,:probe.cropping,:]
             #rolly = list(probe.offsets[:,1]) ; z = [2]*len(rolly)
             #pot = xp.roll(pot[:,:,:],rolly,z)[:,:,:probe.cropping]
             nx,ny = potential_slice.shape
+            xr = xp.arange(nx) ; yr = xp.arange(ny)
+            pot_stack = zeros( (len(sigma),probe.cropping,probe.cropping) )
             for p,o in enumerate(probe.offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
                 # rolling the whole thing: slow (5s per on Nick's particles)
                 #pot = xp.roll(potential_slice,int(-o[0]),0)[:probe.cropping,:]
                 #pot = xp.roll(pot,int(-o[1]),1)[:,:probe.cropping]
                 # rolling indices: faster (0.7s per on Nick's particles)
-                xi = np.roll(np.arange(nx),o[0])[:probe.cropping]
-                yi = np.roll(np.arange(ny),o[1])[:probe.cropping]
-                pot = potential_slice[xi,:][:,yi]
-                t[p,:,:]=xp.exp(1j*sigma[p]*pot)
+                xi = xp.roll(xr,o[0])[:probe.cropping]
+                yi = xp.roll(yr,o[1])[:probe.cropping]
+                pot_stack[p] = potential_slice[xi,:][:,yi]
             #print("(done)",time.time()-start)
+            t=xp.exp(1j*sigma[:,None,None]*pot_stack)
 
         else:
             t = xp.exp(1j * sigma[:,None,None] * potential_slice[None,:,:]) # Kirkland2010 Eq 6.59. n,x,y indices
