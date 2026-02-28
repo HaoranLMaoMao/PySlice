@@ -864,16 +864,23 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
             #rolly = list(probe.offsets[:,1]) ; z = [2]*len(rolly)
             #pot = xp.roll(pot[:,:,:],rolly,z)[:,:,:probe.cropping]
             nx,ny = potential_slice.shape
+            #xr = xp.arange(nx) ; yr = xp.arange(ny)
+            #pot_stack = zeros( (len(sigma),probe.cropping,probe.cropping) )
+            #for p,o in enumerate(probe.offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
+            #    # rolling the whole thing: slow (5s per on Nick's particles)
+            #    #pot = xp.roll(potential_slice,int(-o[0]),0)[:probe.cropping,:]
+            #    #pot = xp.roll(pot,int(-o[1]),1)[:,:probe.cropping]
+            #    # rolling indices: faster (0.7s per on Nick's particles)
+            #    xi = xp.roll(xr,-o[0])[:probe.cropping]
+            #    yi = xp.roll(yr,-o[1])[:probe.cropping]
+            #    pot_stack[p] = potential_slice[xi,:][:,yi]
+            # full indexing is even faster
+            xi = xp.zeros((len(sigma),probe.cropping),dtype=int) ; yi = xp.zeros((len(sigma),probe.cropping),dtype=int)
             xr = xp.arange(nx) ; yr = xp.arange(ny)
-            pot_stack = zeros( (len(sigma),probe.cropping,probe.cropping) )
-            for p,o in enumerate(probe.offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
-                # rolling the whole thing: slow (5s per on Nick's particles)
-                #pot = xp.roll(potential_slice,int(-o[0]),0)[:probe.cropping,:]
-                #pot = xp.roll(pot,int(-o[1]),1)[:,:probe.cropping]
-                # rolling indices: faster (0.7s per on Nick's particles)
-                xi = xp.roll(xr,o[0])[:probe.cropping]
-                yi = xp.roll(yr,o[1])[:probe.cropping]
-                pot_stack[p] = potential_slice[xi,:][:,yi]
+            for p,(x,y) in enumerate(probe.offsets):
+                xi[p,:] = xp.roll(xr,-x)[:probe.cropping]
+                yi[p,:] = xp.roll(yr,-y)[:probe.cropping]
+            pot_stack=potential_slice[xi[:,:,None],yi[:,None,:]]
             #print("(done)",time.time()-start)
             t=xp.exp(1j*sigma[:,None,None]*pot_stack)
 
