@@ -244,6 +244,16 @@ class MultisliceCalculator:
             self.complex_dtype = np.complex128
             self.float_dtype = np.float64
 
+        # cache key is calculated TWICE: once during setup (so the user only needs to setup to infer where their cache folder will go), and again during run (just in case the user does something funky)
+        # Generate cache key and setup output directory
+        self.cache_key = self._generate_cache_key(self.trajectory, self.aperture, self.voltage_eV,
+                                           self.slice_thickness, self.sampling, self.probe_positions,
+                                           self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence,
+                                           self.base_probe._array)
+        #print(cache_key)
+        self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+self.cache_key)
+        #self.output_dir.mkdir(parents=True, exist_ok=True)
+
     def preview_probes(self):
         positions = self.trajectory.positions[0]
         atom_types = self.trajectory.atom_types
@@ -271,12 +281,14 @@ class MultisliceCalculator:
     #@profile
     def run(self) -> WFData:
 
-
+        # cache key is calculated TWICE: once during setup (so the user only needs to setup to infer where their cache folder will go), and again during run (just in case the user does something funky)
         # Generate cache key and setup output directory
         cache_key = self._generate_cache_key(self.trajectory, self.aperture, self.voltage_eV,
                                            self.slice_thickness, self.sampling, self.probe_positions,
                                            self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence,
                                            self.base_probe._array)
+        if self.cache_key != cache_key:
+            self.cache_key = cache_key
         #print(cache_key)
         self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+cache_key)
         self.output_dir.mkdir(parents=True, exist_ok=True)
