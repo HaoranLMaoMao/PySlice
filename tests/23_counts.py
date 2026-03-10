@@ -33,4 +33,4 @@ for counts in [1e3,1e4,1e5,1e6]:
     # RUN MULTISLICE
     exitwaves = calculator.run()
     exitwaves.counts(counts)
-    exitwaves.plot(filename="outputs/figs/22,counts_"+str(counts)+".png",powerscaling=.1,extent=(-2,2,-2,2))
+    exitwaves.plot(filename="outputs/figs/22,counts_"+str(counts)+".png",powerscaling=.1,extent=(-2,2,-2,2),title=str(int(counts))+" counts")
