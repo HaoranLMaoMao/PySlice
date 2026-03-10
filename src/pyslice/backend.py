@@ -265,6 +265,17 @@ def ceil(v):
         return int(xp.ceil(v))
     return int(np.ceil(v))
 
+def cumsum(a):
+    if xp != np and type(a)==torch.Tensor:
+        return xp.cumsum(a,dim=0)
+    return xp.cumsum(a)
+
+def randfloats(N):
+    N=int(N)
+    if xp != np:
+        return xp.rand(N)
+    return np.random.random(N)
+
 def clone(a):
     if hasattr(a,"clone"):
         return a.clone()
