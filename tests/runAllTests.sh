@@ -15,7 +15,8 @@ scripts=( "00_probe.py"
 	"11_SED.py"
 	"12_aberrations.py"
 	"04_haadf_otf.py"
-	"05_tacaw_otf.py" )
+	"05_tacaw_otf.py"
+	"23_counts.py" )
 
 echo $(date) > runAllTests-$1.log
 

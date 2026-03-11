@@ -25,7 +25,7 @@ trajectory=trajectory.slice_positions([0,20*a],[0,20*b])
 # SELECT 10 "RANDOM" TIMESTEPS (use seed for reproducibility)
 trajectory=trajectory.get_random_timesteps(3,seed=5)
 
-for counts in [1e3,1e4,1e5,1e6]:
+for counts in [1e3,1e4,1e5]:
     # CREATE CALCULATOR OBJECT
     calculator=MultisliceCalculator()
     # SET UP MULTISLICE FOR TEM DIFFRACTION
