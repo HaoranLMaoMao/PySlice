@@ -1,6 +1,6 @@
 import numpy as np
 from tqdm import tqdm
-import logging
+import logging,time
 from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop,einsum,ceil,clone
 #from line_profiler import profile
 
@@ -202,7 +202,8 @@ class Probe:
             self._array= self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)[None,None,:,:]*ones((1,1))[:,:,None,None]
 
         self.cropping = cropping
-        self.offsets = zeros((len(self.probe_positions),2),dtype="int") # these are used when we have cropped the probe
+        #self.offsets = [[0,0] for i in range(len(self.probe_positions)) ]
+        self.offsets = np.zeros((len(self.probe_positions),2),dtype="int") # these are used when we have cropped the probe
 
         # NEW PHILOSOPHY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have
         # a bajillion probes, then this cube might be huge! instead, callers (e.g. calculator) pass
@@ -259,6 +260,7 @@ class Probe:
             val = clone(val)
             setattr(new_probe,attr,val)
         if selected_probes is not None:
+            selected_probes = to_cpu(selected_probes)
             nc,npt,nx,ny = self._array.shape
             if npt == 1:
                 new_probe._array = clone(self._array[:,:,:,:])
@@ -789,6 +791,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     if device is not None and not TORCH_AVAILABLE:
         raise ImportError("PyTorch not available. Please install PyTorch.")
     
+    #print("prop prep") ; start = time.time()
     # Initialize wavefunction with probe(s) - shape: (n_probes, nx, ny)
     nc,npt,nx,ny = probe._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
     array = probe._array.reshape((nc*npt,nx,ny)) # "flatten" first two indices
@@ -825,6 +828,9 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     # Fold anti-aliasing aperture into propagator to bandwidth-limit wavefunction at every slice
     P = xp.exp(-1j * xp.pi * probe_wavelengths[:,None,None] * dz * k_squared[None,:,:]) * aa_aperture[None,:,:] # Kirkland2010 Eq 6.65
 
+    #print("(done)",time.time()-start)
+
+
     if progress:
         localtqdm = tqdm
         print("propagating through slices")
@@ -843,17 +849,41 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         # Transmission function: t = exp(iσV(x,y,z))
         # All tensors should already be on the correct device from creation
         if onthefly:
+            #print("calculateSlice") ; start = time.time()
             potential_slice = potential.calculateSlice(z)
+            #print("(done)",time.time()-start)
         else:
             potential_slice = potential._array[:, :, z]
 
         if probe.cropping:
-            t = zeros( (len(sigma), probe.cropping, probe.cropping ), type_match=P)
-            for p,o in enumerate(probe.offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
-                pot = xp.roll(potential_slice,int(-o[0]),0)[:probe.cropping,:]
-                pot = xp.roll(pot,int(-o[1]),1)[:,:probe.cropping]
-                #pot = xp.roll(potential_slice,list(-o),(0,1))[:probe.cropping,:probe.cropping]
-                t[p,:,:]=xp.exp(1j*sigma[p]*pot)
+            #t = zeros( (len(sigma), probe.cropping, probe.cropping ), type_match=P)
+            #print("probe rolling") ; start = time.time() 
+            # Usually you want vectorized, but this inflates to full npt,nx,ny before cropping: bad on RAM
+            #rollx = list(probe.offsets[:,0]) ; z = [1]*len(rollx)
+            #pot = xp.roll(potential_slice[None,:,:],rollx,z)[:,:probe.cropping,:]
+            #rolly = list(probe.offsets[:,1]) ; z = [2]*len(rolly)
+            #pot = xp.roll(pot[:,:,:],rolly,z)[:,:,:probe.cropping]
+            nx,ny = potential_slice.shape
+            #xr = xp.arange(nx) ; yr = xp.arange(ny)
+            #pot_stack = zeros( (len(sigma),probe.cropping,probe.cropping) )
+            #for p,o in enumerate(probe.offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
+            #    # rolling the whole thing: slow (5s per on Nick's particles)
+            #    #pot = xp.roll(potential_slice,int(-o[0]),0)[:probe.cropping,:]
+            #    #pot = xp.roll(pot,int(-o[1]),1)[:,:probe.cropping]
+            #    # rolling indices: faster (0.7s per on Nick's particles)
+            #    xi = xp.roll(xr,-o[0])[:probe.cropping]
+            #    yi = xp.roll(yr,-o[1])[:probe.cropping]
+            #    pot_stack[p] = potential_slice[xi,:][:,yi]
+            # full indexing is even faster
+            xi = xp.zeros((len(sigma),probe.cropping),dtype=int) ; yi = xp.zeros((len(sigma),probe.cropping),dtype=int)
+            xr = xp.arange(nx) ; yr = xp.arange(ny)
+            for p,(x,y) in enumerate(probe.offsets):
+                xi[p,:] = xp.roll(xr,-x)[:probe.cropping]
+                yi[p,:] = xp.roll(yr,-y)[:probe.cropping]
+            pot_stack=potential_slice[xi[:,:,None],yi[:,None,:]]
+            #print("(done)",time.time()-start)
+            t=xp.exp(1j*sigma[:,None,None]*pot_stack)
+
         else:
             t = xp.exp(1j * sigma[:,None,None] * potential_slice[None,:,:]) # Kirkland2010 Eq 6.59. n,x,y indices
 
@@ -871,9 +901,11 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
             # Vectorized FFT over spatial dimensions for all probes
             kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
             #print(kwarg,array.dtype,array.shape)
+            #print("FFT / multiply / iFFT") ; start = time.time()
             fft_array = xp.fft.fft2(array, **kwarg)
             propagated_fft = P * fft_array
             array = xp.fft.ifft2(propagated_fft, **kwarg)
+            #print("(done)",time.time()-start)
 
     # Return results based on what was requested
     if store_all_slices:

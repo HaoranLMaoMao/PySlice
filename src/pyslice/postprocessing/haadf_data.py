@@ -245,7 +245,7 @@ class HAADFData(PySliceSerial, Signal):
 
         return self.data  # Return numpy array for backward compatibility
 
-    def plot(self, filename=None):
+    def plot(self, filename=None, title=None):
         """
         Plot the HAADF image.
 
@@ -268,6 +268,9 @@ class HAADFData(PySliceSerial, Signal):
         ax.imshow(absolute(array), cmap="inferno", extent=extent)
         ax.set_xlabel("x ($\\AA$)")
         ax.set_ylabel("y ($\\AA$)")
+
+        if title is not None:
+            ax.set_title(title)
 
         if filename is not None:
             plt.savefig(filename)

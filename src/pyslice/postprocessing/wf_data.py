@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 from pathlib import Path
-from ..backend import mean,ones,zeros,reshape,absolute,sum,asarray
+from ..backend import mean,ones,zeros,reshape,absolute,sum,asarray,cumsum,randfloats,histogram
 
 try:
     import torch ; xp = torch
@@ -85,6 +85,7 @@ class WFData(PySliceSerial, Signal):
         self._layer = layer
         self.probe = probe
         self.cache_dir = cache_dir
+        self.probability = None
 
         # Helper to convert tensors to numpy for Dimensions
         def to_numpy(x):
@@ -176,7 +177,19 @@ class WFData(PySliceSerial, Signal):
             return np.asarray(raw)
         raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
 
-    def plot_reciprocal(self,filename=None,whichProbe="mean",whichTimestep="mean",powerscaling=0.25,extent=None,nuke_zerobeam=False):
+    def counts(self,N):
+        if self.probability is None:
+            self.probability = self._array
+            npt,nt,nx,ny,nl = self._array.shape
+            ary = self._array/xp.sum(xp.absolute(self._array))                  # normalized: ensure values arerelative probabilities of each voxel
+            ary = xp.absolute(ary.reshape(npt*nt*nx*ny*nl))
+            self.buckets = zeros(len(ary)+1,type_match=ary)
+            self.buckets[1:] = cumsum(ary)                                      # cumsum means we can "select" a voxel with a random float 0-1
+        detector_hits = asarray(randfloats(N))                                  # randomly "select" histogram bins based on each bin's relative size
+        hist = histogram(detector_hits,bins=self.buckets)
+        self._array = asarray(hist.reshape((npt,nt,nx,ny,nl)))
+
+    def plot_reciprocal(self,filename=None,whichProbe="mean",whichTimestep="mean",powerscaling=0.25,extent=None,nuke_zerobeam=False,title=None):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
 
@@ -253,9 +266,12 @@ class WFData(PySliceSerial, Signal):
             img_data = img_data.cpu().numpy()
         elif hasattr(img_data, '__array__'):
             img_data = np.asarray(img_data)
-        ax.imshow(img_data, cmap="inferno", extent=actual_extent, origin='lower')
+        ax.imshow(img_data, cmap="inferno", extent=actual_extent, origin='lower',aspect=1)
         ax.set_xlabel("kx ($\\AA^{-1}$)")
         ax.set_ylabel("ky ($\\AA^{-1}$)")
+
+        if title is not None:
+            ax.set_title(title)
 
         if filename is not None:
             plt.savefig(filename)

@@ -244,6 +244,16 @@ class MultisliceCalculator:
             self.complex_dtype = np.complex128
             self.float_dtype = np.float64
 
+        # cache key is calculated TWICE: once during setup (so the user only needs to setup to infer where their cache folder will go), and again during run (just in case the user does something funky)
+        # Generate cache key and setup output directory
+        self.cache_key = self._generate_cache_key(self.trajectory, self.aperture, self.voltage_eV,
+                                           self.slice_thickness, self.sampling, self.probe_positions,
+                                           self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence,
+                                           self.base_probe._array)
+        #print(cache_key)
+        self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+self.cache_key)
+        #self.output_dir.mkdir(parents=True, exist_ok=True)
+
     def preview_probes(self):
         positions = self.trajectory.positions[0]
         atom_types = self.trajectory.atom_types
@@ -271,12 +281,14 @@ class MultisliceCalculator:
     #@profile
     def run(self) -> WFData:
 
-
+        # cache key is calculated TWICE: once during setup (so the user only needs to setup to infer where their cache folder will go), and again during run (just in case the user does something funky)
         # Generate cache key and setup output directory
         cache_key = self._generate_cache_key(self.trajectory, self.aperture, self.voltage_eV,
                                            self.slice_thickness, self.sampling, self.probe_positions,
                                            self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence,
                                            self.base_probe._array)
+        if self.cache_key != cache_key:
+            self.cache_key = cache_key
         #print(cache_key)
         self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+cache_key)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -381,8 +393,9 @@ class MultisliceCalculator:
                 if cache_exists:
                     frames_cached += 1
                 else:
+                    #print("create potential") ; start = time.time()
                     potential = Potential(self.xs, self.ys, self.zs, positions, atom_type_names, kind="kirkland", device=self.device, slice_axis=self.slice_axis, progress=show_progress, cache_dir=cache_file.parent if "potentials" in self.cache_levels else None, frame_idx = frame_idx)
-
+                    #print("(done)",time.time()-start)
                     #n_probes = nc*npt
                     nc,npt,nx,ny = self.base_probe._array.shape ; npt = len(self.base_probe.probe_positions)
                     n_slices = len(self.zs)
@@ -391,6 +404,7 @@ class MultisliceCalculator:
                     #if self.base_probe.cropping:
                     #    nx,ny = self.base_probe.cropping,self.base_probe.cropping
 
+                    #print("create frame_data") ; start = time.time()
                     # frame_data is always: p,x,y,l,1 (self.wavefunction_data expects p,t,x,y,l, since we loop time. recall Propagate gave l,p,x,y)
                     if self.store_full or self.prism:
                         fd_nx = self.nx ; fd_ny = self.ny ; fd_npt = self.n_probes
@@ -401,9 +415,11 @@ class MultisliceCalculator:
                         else:
                             frame_data = zeros((n_waves, fd_nx, fd_ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
                         #print("frame_data",frame_data.shape)
+                    #print("(done)",time.time()-start)
 
                     #batched_probes = create_batched_probes(self.base_probe, self.probe_positions, self.device)
                     # Propagate returns: [l,p,x,y] where l,p are both optional (if store_all_slices=True, and if n_probes>1)
+                    #print("chunking") ; start = time.time()
                     chunks = []
                     if self.loop_probes:
                         chunksize = self.loop_probes if isinstance(self.loop_probes,int) else 1
@@ -421,6 +437,8 @@ class MultisliceCalculator:
                     else:
                         chunks.append( xp.arange(npt) )
                         pbar2 = None
+                    #print("(done)",time.time()-start)
+
                     for selected in chunks:
                         if len(selected)==npt:
                             probe = self.base_probe
@@ -428,7 +446,10 @@ class MultisliceCalculator:
                             probe = self.base_probe.copy(selected_probes=selected)
                         probe.applyShifts()
                         # propagate single probe
+                        #print("propagate") ; start = time.time()
                         exit_waves_single = Propagate(probe, potential, self.device, progress=show_progress, onthefly=True, store_all_slices = ("slices" in self.cache_levels) ) # [l],p,x,y indices
+                        #print("(done)",time.time()-start)
+
                         # expand out to fixed l,p,x,y indices
                         exit_waves_single = expand_dims(exit_waves_single,0) if len(exit_waves_single.shape)==3 else exit_waves_single
                         # FFT and load into frame_data
