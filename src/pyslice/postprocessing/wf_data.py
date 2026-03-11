@@ -266,7 +266,7 @@ class WFData(PySliceSerial, Signal):
             img_data = img_data.cpu().numpy()
         elif hasattr(img_data, '__array__'):
             img_data = np.asarray(img_data)
-        ax.imshow(img_data, cmap="inferno", extent=actual_extent, origin='lower')
+        ax.imshow(img_data, cmap="inferno", extent=actual_extent, origin='lower',aspect=1)
         ax.set_xlabel("kx ($\\AA^{-1}$)")
         ax.set_ylabel("ky ($\\AA^{-1}$)")
 
