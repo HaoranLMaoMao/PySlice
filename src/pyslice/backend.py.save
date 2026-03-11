@@ -271,9 +271,6 @@ def cumsum(a):
     return xp.cumsum(a)
 
 def histogram(a,bins):
-    #print(bins)
-    #print(bins[1:]-bins[:-1])
-    #return np.histogram(to_cpu(a),bins=to_cpu(bins))
     #if xp!=np and type(a)==torch.Tensor: # WHY ARE WE DOING THIS OURSELVES? not-implemented error for torch cuda
     #    #hist = zeros(len(bins)-1,type_match=bins)
     #    #mask = zeros(len(a),type_match=bins)
@@ -283,15 +280,18 @@ def histogram(a,bins):
     #    #    hist[i] = xp.sum(mask)
     #    #return hist
     hist = zeros(len(bins)-1,type_match=a)
-    for chunk in chunkIDs(len(bins)-1,1000):
-        db = bins[chunk+1]-bins[chunk]
-        diff = a[None,:]-bins[chunk,None]
+    chunks = [ 
+    i1=-1000
+    while True:
+        i1+=1000 ; i2=i1+1000
+        db = bins[i1+1:i2]-bins[i1:-1]
+        diff = a[None,:]-bins[:-1,None]
         diff[diff>db[:,None]]=-1
         diff[diff<0]=-1
         diff[diff!=-1]=1
         diff[diff==-1]=0
-        hist[chunk]=xp.sum(diff,axis=1)
-    return hist
+        return xp.sum(diff,axis=1)
+
     #return np.histogram(to_cpu(a),bins=to_cpu(bins))[0]
     #return np.histogram(a,bins=bins)[0]
 
@@ -310,13 +310,3 @@ def clone(a):
     except:
         pass
     return a
-
-def chunkIDs(N,chunksize=1000):
-    chunks = [] ; i=0
-    while True:
-        chunk = xp.arange(i*chunksize,min((i+1)*chunksize,N))
-        chunks.append( chunk )
-        i += 1
-        if i*chunksize >= N:
-            break
-    return chunks

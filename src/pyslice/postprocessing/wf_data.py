@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 from pathlib import Path
-from ..backend import mean,ones,zeros,reshape,absolute,sum,asarray,cumsum,randfloats
+from ..backend import mean,ones,zeros,reshape,absolute,sum,asarray,cumsum,randfloats,histogram
 
 try:
     import torch ; xp = torch
@@ -186,7 +186,7 @@ class WFData(PySliceSerial, Signal):
             self.buckets = zeros(len(ary)+1,type_match=ary)
             self.buckets[1:] = cumsum(ary)                                      # cumsum means we can "select" a voxel with a random float 0-1
         detector_hits = asarray(randfloats(N))                                  # randomly "select" histogram bins based on each bin's relative size
-        hist,_ = xp.histogram(detector_hits,bins=self.buckets)
+        hist = histogram(detector_hits,bins=self.buckets)
         self._array = asarray(hist.reshape((npt,nt,nx,ny,nl)))
 
     def plot_reciprocal(self,filename=None,whichProbe="mean",whichTimestep="mean",powerscaling=0.25,extent=None,nuke_zerobeam=False,title=None):
