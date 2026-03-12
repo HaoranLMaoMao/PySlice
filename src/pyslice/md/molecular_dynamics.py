@@ -220,6 +220,7 @@ class MDCalculator:
         save_interval: int = 10,
         output_dir: Optional[Path] = None,
         save_xyz: bool = True,
+        rng: Optional[np.random.Generator] = None,
     ):
         """
         Set up MD simulation.
@@ -269,6 +270,10 @@ class MDCalculator:
         self.output_dir = Path(output_dir) if output_dir is not None else Path.cwd()
         self.save_xyz = save_xyz
 
+        if rng is None:
+            rng = np.random.default_rng()
+        self.rng = rng
+
         # Set up calculator
         if not self._setup_calculator():
             raise RuntimeError("Failed to setup ORB calculator")
@@ -277,7 +282,7 @@ class MDCalculator:
 
         # Initialize velocities
         logger.info(f"Initializing velocities for T = {temperature} K")
-        MaxwellBoltzmannDistribution(self.atoms, temperature_K=temperature)
+        MaxwellBoltzmannDistribution(self.atoms, temperature_K=temperature, rng=self.rng)
 
         # Remove center of mass motion
         self.atoms.arrays['momenta'] -= self.atoms.arrays['momenta'].mean(axis=0)
@@ -287,7 +292,7 @@ class MDCalculator:
 
         if ensemble.lower() == 'nvt':
             self.dyn = Langevin(self.atoms, timestep * units.fs,
-                              temperature_K=temperature, friction=friction)
+                              temperature_K=temperature, friction=friction, rng=self.rng)
         elif ensemble.lower() == 'npt':
             self.dyn = NPT(self.atoms, timestep * units.fs,
                          temperature_K=temperature,
@@ -300,7 +305,7 @@ class MDCalculator:
         else:
             logger.warning(f"Unknown ensemble {ensemble}, using NVT")
             self.dyn = Langevin(self.atoms, timestep * units.fs,
-                              temperature_K=temperature, friction=friction)
+                              temperature_K=temperature, friction=friction, rng=self.rng)
 
     def run_equilibration(
         self,
@@ -411,7 +416,7 @@ class MDCalculator:
         if not equilibrated:
             logger.warning(f"\n[WARN] Maximum steps ({self.max_equilibration_steps}) reached without full convergence")
             logger.info(f"Proceeding to production anyway...")
-
+        
         # Get statistics
         eq_stats = convergence_checker.get_statistics()
         logger.info(f"\nEquilibration Statistics:")
