@@ -291,21 +291,37 @@ class MDCalculator:
         logger.info(f"Setting up {ensemble.upper()} ensemble")
 
         if ensemble.lower() == 'nvt':
-            self.dyn = Langevin(self.atoms, timestep * units.fs,
-                              temperature_K=temperature, friction=friction, rng=self.rng)
+            self.dyn = Langevin(
+                self.atoms,
+                timestep * units.fs,
+                temperature_K=temperature,
+                friction=friction / units.fs,
+                rng=self.rng,
+            )
         elif ensemble.lower() == 'npt':
-            self.dyn = NPT(self.atoms, timestep * units.fs,
-                         temperature_K=temperature,
-                         externalstress=pressure,
-                         ttime=25*units.fs,
-                         pfactor=75*units.fs**2)
+            self.dyn = NPT(
+                self.atoms,
+                timestep * units.fs,
+                temperature_K=temperature,
+                externalstress=pressure,
+                ttime=25*units.fs,
+                pfactor=75*units.fs**2,
+            )
         elif ensemble.lower() == 'nve':
             from ase.md.verlet import VelocityVerlet
-            self.dyn = VelocityVerlet(self.atoms, timestep * units.fs)
+            self.dyn = VelocityVerlet(
+                self.atoms,
+                timestep * units.fs,
+            )
         else:
             logger.warning(f"Unknown ensemble {ensemble}, using NVT")
-            self.dyn = Langevin(self.atoms, timestep * units.fs,
-                              temperature_K=temperature, friction=friction, rng=self.rng)
+            self.dyn = Langevin(
+                self.atoms,
+                timestep * units.fs,
+                temperature_K=temperature,
+                friction=friction / units.fs,
+                rng=self.rng,
+            )
 
     def run_equilibration(
         self,
