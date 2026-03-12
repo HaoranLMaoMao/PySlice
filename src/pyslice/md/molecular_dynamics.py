@@ -474,17 +474,28 @@ class MDCalculator:
                        f"{self.production_ensemble.upper()} (friction={self.production_friction}) for production")
 
             if self.production_ensemble.lower() == 'nvt':
-                self.dyn = Langevin(self.atoms, self.timestep * units.fs,
-                                  temperature_K=self.temperature, friction=self.production_friction)
+                self.dyn = Langevin(
+                    self.atoms,
+                    self.timestep * units.fs,
+                    temperature_K=self.temperature,
+                    friction=self.production_friction / units.fs,
+                    rng=self.rng,
+                )
             elif self.production_ensemble.lower() == 'npt':
-                self.dyn = NPT(self.atoms, self.timestep * units.fs,
-                             temperature_K=self.temperature,
-                             externalstress=self.pressure,
-                             ttime=25*units.fs,
-                             pfactor=75*units.fs**2)
+                self.dyn = NPT(
+                    self.atoms,
+                    self.timestep * units.fs,
+                    temperature_K=self.temperature,
+                    externalstress=self.pressure,
+                    ttime=25*units.fs,
+                    pfactor=75*units.fs**2,
+                )
             elif self.production_ensemble.lower() == 'nve':
                 from ase.md.verlet import VelocityVerlet
-                self.dyn = VelocityVerlet(self.atoms, self.timestep * units.fs)
+                self.dyn = VelocityVerlet(
+                    self.atoms,
+                    self.timestep * units.fs,
+                )
                 logger.info("  NVE ensemble: microcanonical dynamics (no thermostat noise)")
             else:
                 logger.warning(f"Unknown production ensemble {self.production_ensemble}, keeping current")
