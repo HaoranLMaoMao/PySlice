@@ -227,23 +227,21 @@ class TACAWData(PySliceSerial, Signal):
         indices = np.linspace(0, len(self._time),  self.n_chunks + 1, dtype=int)
         dt = self._time[1] - self._time[0]
         # Compute frequencies from time sampling
-        n_freq = self.n_chunks
-        self._frequencies = np.fft.fftfreq(n_freq, d=dt)
+        self._frequencies = np.fft.fftfreq(self.n_chunks, d=dt)
         self._frequencies = np.fft.fftshift(self._frequencies)
 
-        self._array = None
+        # Perform FFT along time axis (axis=1) for each probe position and k-point
+        # Following abeels.py approach: subtract mean to avoid high zero-frequency peak
+        # then Compute intensity |Ψ(ω,q)|² from the frequency-domain wavefunction
 
-        for i in range(self.n_chunks):
-            i1 = indices[i]
-            i2 = indices[i+1]
+        if self.chunkFFT: # looping through x (in case super giganormous FFTs blow your ram)
+            shape = (wf_layer.shape[0], self.n_chunks, wf_layer.shape[2], wf_layer.shape[3])
+            self._array = xp.zeros(shape, dtype = complex_dtype if self.keep_complex else float_dtype)
 
-            # Perform FFT along time axis (axis=1) for each probe position and k-point
-            # Following abeels.py approach: subtract mean to avoid high zero-frequency peak
-            # then Compute intensity |Ψ(ω,q)|² from the frequency-domain wavefunction
+            for i in range(self.n_chunks):
+                i1 = indices[i]
+                i2 = indices[i+1]
 
-            if self.chunkFFT: # looping through x (in case super giganormous FFTs blow your ram)
-                self._array = xp.zeros(wf_layer.shape, dtype = complex_dtype if self.keep_complex else float_dtype)
-                
                 for i in tqdm(range(len(self._kxs))):
                     wf_mean = mean(wf_layer[:,slice(i1,i2),i,:], axis=1, keepdims=True) # p,t,x,y,[l] indices
                     wf_fft = fft(wf_layer[:,slice(i1,i2),i,:] - wf_mean, axis=1)
@@ -252,12 +250,15 @@ class TACAWData(PySliceSerial, Signal):
                     if not self.keep_complex:
                         wf_fft = xp.abs(wf_fft)**2
 
-                    if self._array is None:
-                        self._array[:,:,i,:] = wf_fft
-                    else:
-                        self._array[:,:,i,:] += wf_fft
+                    self._array[:,:,i,:] += wf_fft
 
-            else:
+        else:
+            self._array = None
+
+            for i in range(self.n_chunks):
+                i1 = indices[i]
+                i2 = indices[i+1]
+
                 wf_mean = mean(wf_layer[:,slice(i1,i2),:,:], axis=1, keepdims=True)
                 wf_fft = fft(wf_layer[:,slice(i1,i2),:,:] - wf_mean, axis=1)
                 wf_fft = fftshift(wf_fft, axes=1)
