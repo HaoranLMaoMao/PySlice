@@ -63,7 +63,12 @@ class TACAWData(PySliceSerial, Signal):
         'force_datasets': ['_array', 'probe_positions', '_kxs', '_kys', '_xs', '_ys', '_time', '_layer', '_frequencies'],
     }
 
-    def __init__(self, wf_data: WFData, layer_index: int = None, keep_complex: bool = False, chunkFFT: bool = False) -> None:
+    def __init__(self, 
+                 wf_data: WFData, 
+                 layer_index: int = None, 
+                 keep_complex: bool = False, 
+                 chunkFFT: bool = False,
+                 chunk_size_time: int = None) -> None:
         """
         Initialize TACAWData from WFData by performing FFT.
 
@@ -84,6 +89,7 @@ class TACAWData(PySliceSerial, Signal):
         self.cache_dir = wf_data.cache_dir
         self.keep_complex = keep_complex
         self.chunkFFT = chunkFFT
+        self.chunk_size_time = chunk_size_time
 
         # Store reference to source WFData array for FFT computation
         self._wf_array = wf_data._array
@@ -209,70 +215,66 @@ class TACAWData(PySliceSerial, Signal):
         if layer_index < 0 or layer_index >= len(self._layer):
             raise ValueError(f"layer_index {layer_index} out of range [0, {len(self._layer)-1}]")
 
-        # Compute frequencies from time sampling
-        n_freq = len(self._time)
-        dt = self._time[1] - self._time[0]
-        self._frequencies = np.fft.fftfreq(n_freq, d=dt)
-        self._frequencies = np.fft.fftshift(self._frequencies)
-
         # Extract wavefunction data for the specified layer
         # Shape: (probe_positions, time, kx, ky, layer)
         wf_layer = self._wf_array[:, :, :, :, layer_index]
 
-        # Perform FFT along time axis (axis=1) for each probe position and k-point
-        # Following abeels.py approach: subtract mean to avoid high zero-frequency peak
-        # then Compute intensity |Ψ(ω,q)|² from the frequency-domain wavefunction
+        if self.chunk_size_time is None:
+            self.n_chunks = 1
+        else:
+            self.n_chunks = len(self._time) // self.chunk_size_time
+        
+        indices = np.linspace(0, len(self._time),  self.n_chunks + 1, dtype=int)
+        dt = self._time[1] - self._time[0]
+        # Compute frequencies from time sampling
+        n_freq = self.n_chunks
+        self._frequencies = np.fft.fftfreq(n_freq, d=dt)
+        self._frequencies = np.fft.fftshift(self._frequencies)
 
-        #if TORCH_AVAILABLE and hasattr(wf_layer, 'dim'):  # Check if it's a torch tensor
-        #    wf_mean = torch.mean(wf_layer, dim=1, keepdim=True)
-        #    #if self.chunkFFT:
-        #    #for i in tqdm(range(len(self._kxs))):
-        #    #   wf_fft = torch.fft.fft(wf_layer[:,:,i,:,:]
-        #    wf_fft = torch.fft.fft(wf_layer - wf_mean, dim=1)
-        #    wf_fft = torch.fft.fftshift(wf_fft, dim=1)
-        #else:
-        #    wf_mean = np.mean(wf_layer, axis=1, keepdims=True)
-        #    wf_fft = np.fft.fft(wf_layer - wf_mean, axis=1)
-        #    wf_fft = np.fft.fftshift(wf_fft, axes=1)
+        self._array = None
 
-        if self.chunkFFT: # looping through x (in case super giganormous FFTs blow your ram)
-            self._array = xp.zeros(wf_layer.shape, dtype = complex_dtype if self.keep_complex else float_dtype)
+        for i in range(self.n_chunks):
+            i1 = indices[i]
+            i2 = indices[i+1]
 
-            for i in tqdm(range(len(self._kxs))):
-                wf_mean = mean(wf_layer[:,:,i,:], axis=1, keepdims=True) # p,t,x,y,[l] indices
-                wf_fft = fft(wf_layer[:,:,i,:] - wf_mean, axis=1)
+            # Perform FFT along time axis (axis=1) for each probe position and k-point
+            # Following abeels.py approach: subtract mean to avoid high zero-frequency peak
+            # then Compute intensity |Ψ(ω,q)|² from the frequency-domain wavefunction
+
+            if self.chunkFFT: # looping through x (in case super giganormous FFTs blow your ram)
+                self._array = xp.zeros(wf_layer.shape, dtype = complex_dtype if self.keep_complex else float_dtype)
+                
+                for i in tqdm(range(len(self._kxs))):
+                    wf_mean = mean(wf_layer[:,slice(i1,i2),i,:], axis=1, keepdims=True) # p,t,x,y,[l] indices
+                    wf_fft = fft(wf_layer[:,slice(i1,i2),i,:] - wf_mean, axis=1)
+                    wf_fft = fftshift(wf_fft, axes=1)
+
+                    if not self.keep_complex:
+                        wf_fft = xp.abs(wf_fft)**2
+
+                    if self._array is None:
+                        self._array[:,:,i,:] = wf_fft
+                    else:
+                        self._array[:,:,i,:] += wf_fft
+
+            else:
+                wf_mean = mean(wf_layer[:,slice(i1,i2),:,:], axis=1, keepdims=True)
+                wf_fft = fft(wf_layer[:,slice(i1,i2),:,:] - wf_mean, axis=1)
                 wf_fft = fftshift(wf_fft, axes=1)
 
                 if not self.keep_complex:
                     wf_fft = xp.abs(wf_fft)**2
-
-                self._array[:,:,i,:] = wf_fft
-
-        else:
-            wf_mean = mean(wf_layer, axis=1, keepdims=True)
-            wf_fft = fft(wf_layer - wf_mean, axis=1)
-            wf_fft = fftshift(wf_fft, axes=1)
-
-            if not self.keep_complex:
-                wf_fft = xp.abs(wf_fft)**2
-
-            self._array = wf_fft
-
-        #if TORCH_AVAILABLE and hasattr(wf_fft, 'dim'):  # Check if it's a torch tensor
-        #    if self.keep_complex:
-        #        self._array = wf_fft
-        #    else:
-        #        self._array = torch.abs(wf_fft)**2
-        #else:
-        #    if self.keep_complex:
-        #        self._array = wf_fft
-        #    else:
-        #        self._array = np.abs(wf_fft)**2
+                
+                if self._array is None:
+                    self._array = wf_fft
+                else:
+                    self._array += wf_fft
 
         # Ensure cache directory exists (may have been cleaned up by calculator)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         np.save(self.cache_dir / "tacaw_freq.npy", self._frequencies)
         np.save(self.cache_dir / "tacaw.npy", self._array.detach().cpu().numpy() if TORCH_AVAILABLE and hasattr(self._array, 'cpu') else self._array)
+
 
     # Keep fft_from_wf_data as public alias for backward compatibility
     def fft_from_wf_data(self, layer_index: int = None):
