@@ -1,11 +1,13 @@
 """
 Molecular dynamics module using ORB models for PySlice package.
 """
+from __future__ import annotations
+
 import numpy as np
 from pathlib import Path
 import logging,traceback
 import time
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, TYPE_CHECKING
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from ase.md.langevin import Langevin
 from ase.md.nvtberendsen import NVTBerendsen
@@ -13,10 +15,12 @@ from ase.md.npt import NPT
 from ase import units
 from ase.io import write, Trajectory as ASETrajectory
 from ase import Atoms
-from fairchem.core.units.mlip_unit import InferenceSettings
 
 from ..multislice.trajectory import Trajectory
 from ..io.loader import Loader
+
+if TYPE_CHECKING:
+    from fairchem.core.units.mlip_unit import InferenceSettings
 
 logger = logging.getLogger(__name__)
 
@@ -737,7 +741,7 @@ class FAIRChemMDCalculator(MDCalculator):
                  task_name: str = 'omat', 
                  device: str = 'cpu', 
                  workers: int = 1, 
-                 inference_settings: InferenceSettings | str = 'default'):
+                 inference_settings: 'InferenceSettings | str' = 'default'):
         """
         Initialize MD calculator.
 
@@ -748,6 +752,15 @@ class FAIRChemMDCalculator(MDCalculator):
             workers: Number of workers for FAIRChem calculations
             cache_dir: Optional local cache directory for FAIRChem models
         """
+        # Lazy import of InferenceSettings - only when FAIRChemMDCalculator is instantiated
+        try:
+            from fairchem.core.units.mlip_unit import InferenceSettings
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                "FAIRChem is required to use FAIRChemMDCalculator. "
+                "Install it with: pip install fairchem-core"
+            )
+        
         self.model_name = model_name
         self.task_name = task_name
         self.device = device
