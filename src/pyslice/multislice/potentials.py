@@ -13,8 +13,6 @@ try:
         device = torch.device('mps')
     else:
         device = torch.device('cpu')
-    torch.set_default_device(device)
-
     if device.type == 'mps': # Use float32 for MPS (doesn't support float64), float64 for CPU/CUDA
         complex_dtype = torch.complex64
         float_dtype = torch.float32
@@ -72,6 +70,10 @@ def kirkland(qsq, Z):
             loadKirkland(qsq.device)
         else:
             loadKirkland()
+    else:
+        if hasattr(qsq, 'device') and hasattr(kirklandABCDs, 'device'):
+            if qsq.device != kirklandABCDs.device:
+                kirklandABCDs = kirklandABCDs.to(qsq.device)
 
     if isinstance(Z, str):
         Z = getZfromElementName(Z)
@@ -346,7 +348,7 @@ class Potential:
                 
                 # TODO i'm hard-coding the chunk size is 2000 atoms per layer which is HUGE, so this shouldn't affect anyone but me, but we really ought to do a "smarter" job of picking the chunk size
                 chunk_indices = list(np.arange(len(atomsx)))[::2000]+[len(atomsx)]
-                shape_factor = xp.zeros( (self.nx,self.ny) , dtype=complex_dtype )
+                shape_factor = xp.zeros( (self.nx,self.ny) , dtype=self.complex_dtype, **device_kwargs )
                 for i1,i2 in zip(chunk_indices[:-1],chunk_indices[1:]):
                     atx = atomsx[i1:i2]
                     aty = atomsy[i1:i2]
@@ -364,10 +366,13 @@ class Potential:
 
             real = xp.fft.ifft2(reciprocal)
             real = xp.real(real)
-            # Apply proper normalization factor (dx²×dy²) to match reference implementation
+            # Convert from electron scattering factor f_e to projected potential V_proj.
+            # Kirkland Eq C.1: f_e(q) = (m_e/2πℏ²) FT[V], so FT[V] = (2πℏ²/m_e) f_e.
+            # On discrete grid: V(r) = (2πℏ²/m_e) / (dx·dy) × ifft2(S · f_e)
             dx = self.xs[1] - self.xs[0]
-            dy = self.ys[1] - self.ys[0] 
-            Z = real / (dx**2 * dy**2)
+            dy = self.ys[1] - self.ys[0]
+            fe_to_V = 47.87764737  # 2πℏ²/m_e in V·Å² (Kirkland, Eq C.1 prefactor)
+            Z = real * fe_to_V / (dx * dy)
             if cache_file is not None:
                 if TORCH_AVAILABLE and hasattr(Z, 'cpu'):
                     Z_cpu = Z.cpu().numpy()
@@ -384,7 +389,7 @@ class Potential:
             return
         # Initialize potential array using xp with conditional device
         device_kwargs = {'device': self.device } if self.use_torch else {}
-        potential_real = xp.zeros((self.nx, self.ny, self.n_slices), dtype=float_dtype, **device_kwargs)
+        potential_real = xp.zeros((self.nx, self.ny, self.n_slices), dtype=self.dtype, **device_kwargs)
 
         if progress:
             localtqdm = tqdm

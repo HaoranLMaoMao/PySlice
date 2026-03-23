@@ -202,9 +202,8 @@ class WFData(PySliceSerial, Signal):
             whichProbe = [whichProbe]
         if isinstance(whichTimestep,str) and whichTimestep=="mean":
             whichTimestep = np.arange(nt)
-        elif isinstance(whichtimestep,int):
+        elif isinstance(whichTimestep,int):
             whichTimestep = [whichTimestep]
-        import time ; start = time.time()
         for p in whichProbe:
             for t in whichTimestep:
                 layer = absolute(raw[p,t,:,:])
@@ -212,7 +211,6 @@ class WFData(PySliceSerial, Signal):
                     layer = asarray(layer)
                 array+=layer
         array/=(len(whichTimestep)*len(whichProbe))
-        print("summation took",time.time()-start,"s")
         #array=abs(raw) # don't do this, it pulls memmaps into ram! 
         #if isinstance(whichProbe,str) and whichProbe=="mean":
         #    array = mean(abs(array),axis=0) # p,t,kx,ky --> t,kx,ky

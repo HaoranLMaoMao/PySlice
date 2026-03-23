@@ -220,8 +220,8 @@ class HAADFData(PySliceSerial, Signal):
         #        self._array[i,j] = mean(sum(absolute(collected)**2,axis=(2,3)),axis=(0,1,2)) # sum |ψ|² over kx,ky, mean over c,t,l
         # TODO this should be einsum, but i'm not trying to test it right now...
         nc,_,_,nt,_,_,nl = self._wf_array.shape
-        self._wf_array = absolute(self._wf_array)**2 ; mask = absolute(mask)
-        self._array = einsum('cxytkql,kq->xy',self._wf_array,mask)/(nc*nt*nl)
+        wf_intensity = absolute(self._wf_array)**2 ; mask = absolute(mask)
+        self._array = einsum('cxytkql,kq->xy',wf_intensity,mask)/(nc*nt*nl)
 
         # Update dimensions with computed xs, ys
         def to_numpy(x):
