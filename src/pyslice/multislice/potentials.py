@@ -349,7 +349,7 @@ class Potential:
                 
                 # TODO i'm hard-coding the chunk size is 2000 atoms per layer which is HUGE, so this shouldn't affect anyone but me, but we really ought to do a "smarter" job of picking the chunk size
                 chunk_indices = list(np.arange(len(atomsx)))[::2000]+[len(atomsx)]
-                shape_factor = xp.zeros( (self.nx,self.ny) , dtype=complex_dtype, **device_kwargs )
+                shape_factor = xp.zeros( (self.nx,self.ny) , dtype=self.complex_dtype, **device_kwargs )
                 for i1,i2 in zip(chunk_indices[:-1],chunk_indices[1:]):
                     atx = atomsx[i1:i2]
                     aty = atomsy[i1:i2]
@@ -392,7 +392,7 @@ class Potential:
             return
         # Initialize potential array using xp with conditional device
         device_kwargs = {'device': self.device } if self.use_torch else {}
-        potential_real = xp.zeros((self.nx, self.ny, self.n_slices), dtype=float_dtype, **device_kwargs)
+        potential_real = xp.zeros((self.nx, self.ny, self.n_slices), dtype=self.dtype, **device_kwargs)
 
         if progress:
             localtqdm = tqdm
