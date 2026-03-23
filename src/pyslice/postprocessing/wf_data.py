@@ -3,32 +3,10 @@ Wave function data structure.
 """
 import numpy as np
 from typing import List, Tuple, Optional
-from ..multislice.multislice import Probe,aberrationFunction
+from ..multislice.multislice import Probe, aberrationFunction
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 from pathlib import Path
-from ..backend import mean,ones,zeros,reshape,absolute,sum
-
-try:
-    import torch ; xp = torch
-    TORCH_AVAILABLE = True
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    elif torch.backends.mps.is_available():
-        device = torch.device('mps')
-    else:
-        device = torch.device('cpu')
-    if device.type == 'mps':
-        complex_dtype = torch.complex64
-        float_dtype = torch.float32
-    else:
-        complex_dtype = torch.complex128
-        float_dtype = torch.float64
-except ImportError:
-    TORCH_AVAILABLE = False
-    xp = np
-    print("PyTorch not available, falling back to NumPy")
-    complex_dtype = np.complex128
-    float_dtype = np.float64
+import pyslice.backend as backend
 
 
 class WFData(PySliceSerial, Signal):
@@ -155,9 +133,9 @@ class WFData(PySliceSerial, Signal):
         nc,nptp,nx,ny = self.probe._array.shape # recall: decoherence creates duplicate probes: num_copies,num_positions,x,y indices
         nptp = len(self.probe.probe_positions)
         npta,nt,nkx,nky,nl = self._array.shape # recall, Propagate flattens the first two, and adds time,layers: nc*npt,num_frames,x,y,nl indice
-        intermediate = reshape(self._array,(nc,nptp,nt,nkx,nky,nl))
+        intermediate = backend.reshape(self._array,(nc,nptp,nt,nkx,nky,nl))
         nx,ny = len(self.probe.probe_xs),len(self.probe.probe_ys)
-        return reshape(intermediate,(nc,ny,nx,nt,nkx,nky,nl)).swapaxes(1,2)
+        return backend.reshape(intermediate,(nc,ny,nx,nt,nkx,nky,nl)).swapaxes(1,2)
 
     @array.setter
     def array(self, value):
@@ -180,15 +158,15 @@ class WFData(PySliceSerial, Signal):
         fig, ax = plt.subplots()
 
         raw = self._array[:,:,:,:,-1] # probe, time, kx, ky, layer --> p,t,kx,ky
-        array = absolute(raw)
+        array = backend.absolute(raw)
 
         if isinstance(whichProbe,str) and whichProbe=="mean":
-            array = mean(abs(array),axis=0) # p,t,kx,ky --> t,kx,ky
+            array = backend.mean(backend.absolute(array),axis=0) # p,t,kx,ky --> t,kx,ky
         else:
             array = array[whichProbe] 
 
         if isinstance(whichTimestep,str) and whichTimestep=="mean":
-            array = mean(array,axis=0) # t,kx,ky --> kx,ky
+            array = backend.mean(array,axis=0) # t,kx,ky --> kx,ky
         else:
             array = array[whichTimestep] 
 
@@ -229,7 +207,7 @@ class WFData(PySliceSerial, Signal):
 
         # Convert to numpy array if it's a tensor
         # Apply powerscaling to intensity (|Ψ|²)
-        img_data = (absolute(array)**2)**powerscaling
+        img_data = (backend.absolute(array)**2)**powerscaling
         if hasattr(img_data, 'cpu'):
             img_data = img_data.cpu().numpy()
         elif hasattr(img_data, '__array__'):
@@ -261,15 +239,12 @@ class WFData(PySliceSerial, Signal):
         # Get array (with or without averaging)
         if avg:
             array = self._array[whichProbe,:,:,:,-1] # Shape: (time, kx, ky)
-            if hasattr(array, 'mean'):  # torch tensor
-                array = array.mean(dim=0)  # Average over time dimension
-            else:  # numpy array
-                array = np.mean(array, axis=0)
+            array = backend.mean(array, axis=0)  # Average over time dimension
         else:
             array = self._array[whichProbe,whichTimestep,:,:,-1]
 
         # Transform to real space
-        array = xp.fft.ifft2(array)
+        array = backend.ifft2(array)
         xs_np = np.asarray(self.xs)
         ys_np = np.asarray(self.ys)
 
@@ -294,7 +269,7 @@ class WFData(PySliceSerial, Signal):
         array = array.T  # imshow convention: y,x. our convention: x,y
 
         # Get phase
-        phase_data = xp.angle(array)
+        phase_data = backend.angle(array)
         if hasattr(phase_data, 'cpu'):
             phase_data = phase_data.cpu().numpy()
         elif hasattr(phase_data, '__array__'):
@@ -317,17 +292,17 @@ class WFData(PySliceSerial, Signal):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
 
-        array = xp.fft.ifft2(self._array[:,:,:,:,-1])
+        array = backend.ifft2(self._array[:,:,:,:,-1])
 
-        array = xp.absolute(array) # probe, time, kx, ky, layer --> p,t,kx,ky
+        array = backend.absolute(array) # probe, time, kx, ky, layer --> p,t,kx,ky
 
         if isinstance(whichProbe,str) and whichProbe=="mean":
-            array = mean(abs(array),axis=0) # p,t,kx,ky --> t,kx,ky
+            array = backend.mean(backend.absolute(array),axis=0) # p,t,kx,ky --> t,kx,ky
         else:
             array = array[whichProbe]
 
         if isinstance(whichTimestep,str) and whichTimestep=="mean":
-            array = mean(array,axis=0) # t,kx,ky --> kx,ky
+            array = backend.mean(array,axis=0) # t,kx,ky --> kx,ky
         else:
             array = array[whichTimestep]
 
@@ -338,7 +313,7 @@ class WFData(PySliceSerial, Signal):
             extent = ( np.amin(self.xs) , np.amax(self.xs) , np.amin(self.ys) , np.amax(self.ys) )
 
         # Convert to numpy array if it's a tensor
-        img_data = xp.absolute(array)**.25
+        img_data = backend.absolute(array)**.25
         if hasattr(img_data, 'cpu'):
             img_data = img_data.cpu().numpy()
         elif hasattr(img_data, '__array__'):
@@ -352,11 +327,11 @@ class WFData(PySliceSerial, Signal):
             plt.show()
 
     def propagate_free_space(self,dz): # UNITS OF ANGSTROM
-        kx_grid, ky_grid = xp.meshgrid(self._kxs, self._kys, indexing='ij')
+        kx_grid, ky_grid = backend.meshgrid(self._kxs, self._kys, indexing='ij')
         k_squared = kx_grid**2 + ky_grid**2
-        inner = xp.pi * self.probe.wavelength * dz * k_squared
-        P = xp.exp( -1j * inner ) # not sure why, but combining this and previous line triggers a "ComplexWarning: Casting complex values to real discards the imaginary part" in python 2.9.1 but not 2.2.2
-        if TORCH_AVAILABLE and isinstance(self._array, torch.Tensor):
+        inner = backend.pi * self.probe.wavelength * dz * k_squared
+        P = backend.exp( -1j * inner ) # not sure why, but combining this and previous line triggers a "ComplexWarning: Casting complex values to real discards the imaginary part" in python 2.9.1 but not 2.2.2
+        if hasattr(self._array, 'device'):
             P = P.to(self._array.device)
         #if dz>0:
         self._array = P[None,None,:,:,None] * self._array
@@ -364,13 +339,13 @@ class WFData(PySliceSerial, Signal):
     def addSpatialDecoherence(self,sigma_dz,N):
         dzs = np.linspace(-2*sigma_dz,2*sigma_dz,N) # suppose N=25
         amplitudes = np.exp(-dzs**2/sigma_dz**2)
-        self._array = self._array[:,None,:,:,:,:] * ones(N)[None,:,None,None,None,None] # n_probes,nt,nx,ny,nl -->
+        self._array = self._array[:,None,:,:,:,:] * backend.ones(N)[None,:,None,None,None,None] # n_probes,nt,nx,ny,nl -->
         nc,npt,nt,nx,ny,nl = self._array.shape            # suppose nc=10 (addTemporalDecoherence created 10 wavelengths)
-        kx_grid, ky_grid = xp.meshgrid(self._kxs, self._kys, indexing='ij')
+        kx_grid, ky_grid = backend.meshgrid(self._kxs, self._kys, indexing='ij')
         k_squared = kx_grid**2 + ky_grid**2
         for i in range(N):
-            inner = xp.pi * self.probe.wavelength * dzs[i] * k_squared
-            P = xp.exp( -1j * inner ) # not sure why, but combining this and previous line triggers a "ComplexWarning: Casting complex values to real discards the imaginary part" in python 2.9.1 but not 2.2.2
+            inner = backend.pi * self.probe.wavelength * dzs[i] * k_squared
+            P = backend.exp( -1j * inner ) # not sure why, but combining this and previous line triggers a "ComplexWarning: Casting complex values to real discards the imaginary part" in python 2.9.1 but not 2.2.2
             self._array[:,i,:,:,:,:] *= amplitudes[i]*P[None,None,:,:,None]
         self._array = self._array.reshape(nc*npt,nt,nx,ny,nl)
         #self.defocus(dzs)                           # defocus starts with 25,10,npt,nx,ny --reshapes--> 250,npt,nx,ny
@@ -384,34 +359,34 @@ class WFData(PySliceSerial, Signal):
 
     def applyMask(self, radius, realOrReciprocal="reciprocal"):
         if realOrReciprocal == "reciprocal":
-            radii = xp.sqrt( self._kxs[:,None]**2 + self._kys[None,:]**2 )
-            mask = zeros(radii.shape, device=self._array.device if TORCH_AVAILABLE else None)
+            radii = backend.sqrt( self._kxs[:,None]**2 + self._kys[None,:]**2 )
+            mask = backend.zeros(radii.shape, device=self._array.device if backend.TORCH_BACKEND else None)
             mask[radii<radius]=1
             self._array*=mask[None,None,:,:,None]
         else:
             # Use numpy for _xs/_ys since they're numpy arrays, then convert result
-            radii_np = np.sqrt( ( self._xs[:,None] - np.mean(self._xs) )**2 +\
-                ( self._ys[None,:] - np.mean(self._ys) )**2 )
-            if TORCH_AVAILABLE:
-                radii = xp.tensor(radii_np, dtype=self._array.real.dtype, device=self._array.device)
+            radii_np = backend.sqrt( ( self._xs[:,None] - backend.mean(self._xs) )**2 +\
+                ( self._ys[None,:] - backend.mean(self._ys) )**2 )
+            if backend.TORCH_BACKEND:
+                radii = backend.asarray(radii_np, dtype=self._array.real.dtype, device=self._array.device)
             else:
                 radii = radii_np
-            mask = zeros(radii.shape, device=self._array.device if TORCH_AVAILABLE else None)
+            mask = backend.zeros(radii.shape, device=self._array.device if backend.TORCH_BACKEND else None)
             mask[radii<radius]=1
-            kwarg = {"dim":(2,3)} if TORCH_AVAILABLE else {"axes":(2,3)}
-            real = xp.fft.ifft2(xp.fft.ifftshift(self._array,**kwarg),**kwarg)
+            kwarg = {"dim":(2,3)} if backend.TORCH_BACKEND else {"axes":(2,3)}
+            real = backend.ifft2(backend.ifftshift(self._array,**kwarg),**kwarg)
             real *= mask[None,None,:,:,None]
-            self._array = xp.fft.fftshift(xp.fft.fft2(real,**kwarg),**kwarg)
+            self._array = backend.fftshift(backend.fft2(real,**kwarg),**kwarg)
 
     def crop(self,kx_range=None,ky_range=None):
         npt,nt,nx,ny,nl = self._array.shape
         i1=0 ; i2=nx ; j1=0 ; j2=ny
         if kx_range is not None:
-            i1=xp.argwhere(self._kxs >= kx_range[0])[0]    # first element >=
-            i2=xp.argwhere(self._kxs <= kx_range[1])[-1]+1 # last element <=, +1, so i1:i2 includes i2
+            i1=np.argwhere(self._kxs >= kx_range[0])[0]    # first element >=
+            i2=np.argwhere(self._kxs <= kx_range[1])[-1]+1 # last element <=, +1, so i1:i2 includes i2
         if ky_range is not None:
-            j1=xp.argwhere(self._kys >= ky_range[0])[0]
-            j2=xp.argwhere(self._kys <= ky_range[1])[-1]+1
+            j1=np.argwhere(self._kys >= ky_range[0])[0]
+            j2=np.argwhere(self._kys <= ky_range[1])[-1]+1
         nx=i2-i1 ; ny=j2-j1
         self._array = self._array[:,:,i1:i2,j1:j2,:] # p,t,x,y,l indices: TODO this uses the same amount of RAM
         #self._array = xp.zeros((npt,nt,nx,ny,nl), device=self._array.device if TORCH_AVAILABLE else None) +\

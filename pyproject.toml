@@ -21,6 +21,7 @@ dependencies = [
 fast = ["torch","torchvision"]
 test = ["abtem>=1.0.6"]
 md = ["orb-models"]
+fairchem = ["fairchem-core"]
 
 [project.urls]
 Homepage = "https://github.com/h-walk/PySlice"
