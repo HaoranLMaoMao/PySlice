@@ -15,5 +15,5 @@ module load gcc
 source /home/qwe/torchenv/bin/activate # switching to uv venvs
 
 bash runAllTests.sh torchcpu
-
+#bash rerunOneTest.sh torchcpu
 

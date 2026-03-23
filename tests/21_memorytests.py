@@ -4,7 +4,7 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, '../src')
 
-from pyslice import Loader,MultisliceCalculator,HAADFData,differ,gridFromTrajectory,Potential
+from pyslice import Loader,MultisliceCalculator,HAADFData,TACAWData,differ,gridFromTrajectory,Potential
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,7 +29,8 @@ run = "all"
 #run = "bigref"
 #run = "bigmemmap"
 #run = "bigmemloop"
-run = "mongo"
+#run = "mongo"
+run = "memtacaw"
 
 def clean():
 	#if os.path.exists("psi_data"):
@@ -155,7 +156,8 @@ if run in [ "mindkloop", "all" ]: # same as 04_haadf.py, but with chunked looped
 	haadf.plot("outputs/figs/21_memorytests_mindkloop.png")
 
 
-if run in [ "bigref", "all" ]: # same as 04_haadf.py, but bigger FOV. immediate OOM-kill on multislice (250x216 kpts, 50x50 probe positions, probecube is 250*216*50*50*128/8/1024^3=2GB, frame_data is the same, wavefunction_data is 3x, calculator's intermediate variable exit_waves_k is 2GB too, and Propagate has intermediate variables too)
+# exclude bigref from "all" since it will likely OOM (that's kinda the point)
+if run in [ "bigref" ]: # same as 04_haadf.py, but bigger FOV. immediate OOM-kill on multislice (250x216 kpts, 50x50 probe positions, probecube is 250*216*50*50*128/8/1024^3=2GB, frame_data is the same, wavefunction_data is 3x, calculator's intermediate variable exit_waves_k is 2GB too, and Propagate has intermediate variables too)
 	clean() ; print("running bigref")
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
@@ -233,7 +235,8 @@ if run in [ "bigmemloop", "all" ]:
 
 # STRESS TEST: 1000x1000 probe positions (would be a 160 GB probe cube alone!) on uncropped trajectory (huge potential!). chunking is required to avoid the probe loop, memmaping is a good idea, and we're introducing autocropping to propagate a cropped proba through a cropped potential, which also means we limit our number of k-points. min_dk = 0.1 iA for a 0.1 A sampling means nkx,nky are 100x100 even for the full uncropped system.
 # OPE: frame_data is 41 GB (100 kx 100 ky 512 x 512 y)
-if run in [ "mongo", "all" ]:
+# do not include mongo in all
+if run in [ "mongo" ]:
 	clean() ; print("running mongo")
 	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
 	#trajectory=trajectory.slice_positions([0,10*a],[0,10*b])					# TRIM TO 10x10 UC
@@ -255,4 +258,14 @@ if run in [ "mongo", "all" ]:
 	haadf=HAADFData(exitwaves)													# CALCULATE HAADF
 	haadf.calculateADF(preview=False)
 	haadf.plot("outputs/figs/21_memorytests_mongo.png")
+
+if run in [ "memtacaw", "all" ]:
+	clean() ; print("running memtacaw")
+	trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()				# LOAD TRAJECTORY
+	calculator=MultisliceCalculator()											# TACAW CALCULATION: ALL TIMESTEPS, PARALLEL BEAM
+	calculator.setup(trajectory,aperture=0,voltage_eV=100e3,sampling=.1,slice_thickness=.5,use_memmap=True)
+	exitwaves = calculator.run()
+	tacaw = TACAWData(exitwaves)												# CALCULATE TACAW, TEMPORAL FFT
+	Z = tacaw.spectral_diffraction(30) ; print(Z.shape)
+	tacaw.plot(Z**.1,"kx","ky",filename="outputs/figs/21_memtacaw.png")			# OR PLOT USING BUILT IN TOOLS: AN ENERGY SLICE:
 

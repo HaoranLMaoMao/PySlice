@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from ..multislice.multislice import Probe,aberrationFunction
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 from pathlib import Path
-from ..backend import mean,ones,zeros,reshape,absolute,sum
+from ..backend import mean,ones,zeros,reshape,absolute,sum,asarray,cumsum,randfloats,histogram
 
 try:
     import torch ; xp = torch
@@ -85,6 +85,7 @@ class WFData(PySliceSerial, Signal):
         self._layer = layer
         self.probe = probe
         self.cache_dir = cache_dir
+        self.probability = None
 
         # Helper to convert tensors to numpy for Dimensions
         def to_numpy(x):
@@ -151,12 +152,13 @@ class WFData(PySliceSerial, Signal):
         """Backward compatible alias for internal array (may be tensor or numpy)."""
         return self._array
 
+    #@property
     def reshaped(self): # where self._array is indices probe,time,kx,ky,layer, we reshape to probe_x,probe_y,time,kx,ky,layer
         nc,nptp,nx,ny = self.probe._array.shape # recall: decoherence creates duplicate probes: num_copies,num_positions,x,y indices
-        nptp = len(self.probe.probe_positions)
+        nptp = len(self.probe_positions)
         npta,nt,nkx,nky,nl = self._array.shape # recall, Propagate flattens the first two, and adds time,layers: nc*npt,num_frames,x,y,nl indice
         intermediate = reshape(self._array,(nc,nptp,nt,nkx,nky,nl))
-        nx,ny = len(self.probe.probe_xs),len(self.probe.probe_ys)
+        nx,ny = len(self.probe_xs),len(self.probe_ys)
         return reshape(intermediate,(nc,ny,nx,nt,nkx,nky,nl)).swapaxes(1,2)
 
     @array.setter
@@ -175,22 +177,50 @@ class WFData(PySliceSerial, Signal):
             return np.asarray(raw)
         raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
 
-    def plot_reciprocal(self,filename=None,whichProbe="mean",whichTimestep="mean",powerscaling=0.25,extent=None,nuke_zerobeam=False):
+    def counts(self,N):
+        if self.probability is None:
+            self.probability = self._array
+            npt,nt,nx,ny,nl = self._array.shape
+            ary = self._array/xp.sum(xp.absolute(self._array))                  # normalized: ensure values arerelative probabilities of each voxel
+            ary = xp.absolute(ary.reshape(npt*nt*nx*ny*nl))
+            self.buckets = zeros(len(ary)+1,type_match=ary)
+            self.buckets[1:] = cumsum(ary)                                      # cumsum means we can "select" a voxel with a random float 0-1
+        detector_hits = asarray(randfloats(N))                                  # randomly "select" histogram bins based on each bin's relative size
+        hist = histogram(detector_hits,bins=self.buckets)
+        self._array = asarray(hist.reshape((npt,nt,nx,ny,nl)))
+
+    def plot_reciprocal(self,filename=None,whichProbe="mean",whichTimestep="mean",powerscaling=0.25,extent=None,nuke_zerobeam=False,title=None):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
 
         raw = self._array[:,:,:,:,-1] # probe, time, kx, ky, layer --> p,t,kx,ky
-        array = absolute(raw)
-
+        npt,nt,nkx,nky = raw.shape
+        array = zeros((nkx,nky))
         if isinstance(whichProbe,str) and whichProbe=="mean":
-            array = mean(abs(array),axis=0) # p,t,kx,ky --> t,kx,ky
-        else:
-            array = array[whichProbe] 
-
+            whichProbe = np.arange(npt)
+        elif isinstance(whichProbe,int):
+            whichProbe = [whichProbe]
         if isinstance(whichTimestep,str) and whichTimestep=="mean":
-            array = mean(array,axis=0) # t,kx,ky --> kx,ky
-        else:
-            array = array[whichTimestep] 
+            whichTimestep = np.arange(nt)
+        elif isinstance(whichTimestep,int):
+            whichTimestep = [whichTimestep]
+        for p in whichProbe:
+            for t in whichTimestep:
+                layer = absolute(raw[p,t,:,:])
+                if isinstance(raw,np.memmap):
+                    layer = asarray(layer)
+                array+=layer
+        array/=(len(whichTimestep)*len(whichProbe))
+        #array=abs(raw) # don't do this, it pulls memmaps into ram! 
+        #if isinstance(whichProbe,str) and whichProbe=="mean":
+        #    array = mean(abs(array),axis=0) # p,t,kx,ky --> t,kx,ky
+        #else:
+        #    array = array[whichProbe] 
+        #
+        #if isinstance(whichTimestep,str) and whichTimestep=="mean":
+        #    array = mean(array,axis=0) # t,kx,ky --> kx,ky
+        #else:
+        #    array = array[whichTimestep] 
 
         # Convert kxs and kys to numpy for indexing
         if hasattr(self.kxs, 'cpu'):
@@ -234,9 +264,12 @@ class WFData(PySliceSerial, Signal):
             img_data = img_data.cpu().numpy()
         elif hasattr(img_data, '__array__'):
             img_data = np.asarray(img_data)
-        ax.imshow(img_data, cmap="inferno", extent=actual_extent, origin='lower')
+        ax.imshow(img_data, cmap="inferno", extent=actual_extent, origin='lower',aspect=1)
         ax.set_xlabel("kx ($\\AA^{-1}$)")
         ax.set_ylabel("ky ($\\AA^{-1}$)")
+
+        if title is not None:
+            ax.set_title(title)
 
         if filename is not None:
             plt.savefig(filename)

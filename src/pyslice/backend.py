@@ -1,5 +1,6 @@
 # backend.py
 import numpy as np
+import os
 #import torch
 
 
@@ -105,6 +106,11 @@ def asarray(arraylike, dtype=None, device=None):
         array = xp.asarray(arraylike, dtype=dtype)
     return array
 
+def astype(arraylike,dtype):
+    if hasattr(arraylike,"to"): # torch
+        return arraylike.to(dtype)
+    return arraylike.astype(dtype) # numpy
+
 def zeros(dims, dtype=None, device=None, type_match=None):
     if type_match is not None: # pass an array, and we either infer dtype from the first element, or you also specified a dtype
         if dtype is None:
@@ -120,7 +126,7 @@ def zeros(dims, dtype=None, device=None, type_match=None):
         device=DEFAULT_DEVICE
     # string handling for dtype, "float" --> float
     if isinstance(dtype,str):
-        dtype=DEFAULT_FLOAT_DTYPE if dtype=="float" else DEFAULT_COMPLEX_DTYPE
+        dtype={"float":DEFAULT_FLOAT_DTYPE,"complex":DEFAULT_COMPLEX_DTYPE,"int":int}[dtype]
     # infer if we're using torch or numpy (numpy does not take device arg)
     if xp != np:
         array = xp.zeros(dims, dtype=dtype, device=device)
@@ -129,6 +135,7 @@ def zeros(dims, dtype=None, device=None, type_match=None):
     return array
 
 def memmap(dims,dtype=DEFAULT_FLOAT_DTYPE,filename=None):
+    from numpy.lib.format import open_memmap
     if filename is None:
         print("WARNING: memmap attempted without filename, falling back to zeros")
         return zeros(dims,dtype)
@@ -136,7 +143,9 @@ def memmap(dims,dtype=DEFAULT_FLOAT_DTYPE,filename=None):
     if xp != np and dtype in [ xp.complex128, xp.complex64, xp.float64, xp.float32 ]:
         dtype = { xp.complex128:np.complex128, xp.complex64:np.complex64,
                  xp.float64:np.float64, xp.float32:np.float32 }[ dtype ]
-    return np.memmap(filename, dtype=dtype, mode='w+', shape=dims)
+    mode = 'w+' #'r+' if os.path.exists(filename) else 'w+'
+    #print("creating memmap",mode,dtype,dims,"->",filename)
+    return open_memmap(filename, dtype=dtype, mode=mode, shape=dims)
 
 def absolute(array):
     if xp != np and type(array) in [ np.memmap, np.ndarray ]:
@@ -170,18 +179,28 @@ def exp(x):
     return xp.exp(x)
 
 def fft(k,**kwargs):
-    if TORCH_AVAILABLE and "axis" in kwargs.keys():
+    use_torch = TORCH_AVAILABLE
+    if type(k) in [ np.memmap, np.ndarray ]:
+        use_torch = False
+    if use_torch and "axis" in kwargs.keys():
         kwargs["dim"]=kwargs["axis"] ; del kwargs["axis"]
-    if not TORCH_AVAILABLE and "dim" in kwargs.keys():
+    if not use_torch and "dim" in kwargs.keys():
         kwargs["axis"]=kwargs["dim"] ; del kwargs["dim"]
-    return xp.fft.fft(k,**kwargs)
+    if use_torch:
+        return xp.fft.fft(k,**kwargs)
+    return np.fft.fft(k,**kwargs)
 
 def fftshift(k,**kwargs):
-    if TORCH_AVAILABLE and "axes" in kwargs.keys():
+    use_torch = TORCH_AVAILABLE
+    if type(k) in [ np.memmap, np.ndarray ]:
+        use_torch = False
+    if use_torch and "axes" in kwargs.keys():
         kwargs["dim"]=kwargs["axes"] ; del kwargs["axes"]
-    if not TORCH_AVAILABLE and "dim" in kwargs.keys():
+    if not use_torch and "dim" in kwargs.keys():
         kwargs["axes"]=kwargs["dim"] ; del kwargs["dim"]
-    return xp.fft.fftshift(k,**kwargs)
+    if use_torch:
+        return xp.fft.fftshift(k,**kwargs)
+    return np.fft.fftshift(k,**kwargs)
 
 def mean(k,**kwargs):
     use_torch = TORCH_AVAILABLE
@@ -221,16 +240,83 @@ def any(x):
     return xp.any(x)
 
 def einsum(subscripts, *operands, **kwargs):
-    if xp != np:
+    #print([ (type(o),o.dtype) for o in operands])
+    numpytypes = [ type(o) in [np.ndarray, np.memmap] for o in operands ]
+    if xp != np and True not in numpytypes:
         return xp.einsum(subscripts, *operands, **kwargs)
     else:
-        return xp.einsum(subscripts, *operands, optimize=True, **kwargs)
+        operands = [ to_cpu(o) for o in operands ]
+        return np.einsum(subscripts, *operands, optimize=True, **kwargs)
 
 def to_cpu(array):
-    if type(array) == np.ndarray:
+    if type(array) in [ np.ndarray, np.memmap ]:
         return array
     else:
         return array.cpu().numpy()
 
 def isnan(x):
     return xp.isnan(x)
+
+def midcrop(a,n): # e.g. unshifted ks: 0,1,2,3,4.....-4,-3,-,2-1, crop out 3 through -3, the inverse of a[n:-n]
+    return xp.roll(xp.roll(a,len(a)//2)[n:-n],len(a)//2-n)
+
+def ceil(v):
+    if xp != np and type(v)==torch.Tensor:
+        return int(xp.ceil(v))
+    return int(np.ceil(v))
+
+def cumsum(a):
+    if xp != np and type(a)==torch.Tensor:
+        return xp.cumsum(a,dim=0)
+    return xp.cumsum(a)
+
+def histogram(a,bins):
+    #print(bins)
+    #print(bins[1:]-bins[:-1])
+    #return np.histogram(to_cpu(a),bins=to_cpu(bins))
+    #if xp!=np and type(a)==torch.Tensor: # WHY ARE WE DOING THIS OURSELVES? not-implemented error for torch cuda
+    #    #hist = zeros(len(bins)-1,type_match=bins)
+    #    #mask = zeros(len(a),type_match=bins)
+    #    #for i,(b1,b2) in enumerate(zip(bins[:-1],bins[1:])):
+    #    #    mask *= 0
+    #    #    mask[a>=b1] = 1 ; mask[a>=b2] = 0
+    #    #    hist[i] = xp.sum(mask)
+    #    #return hist
+    hist = zeros(len(bins)-1,type_match=a)
+    for chunk in chunkIDs(len(bins)-1,1000):
+        db = bins[chunk+1]-bins[chunk]
+        diff = a[None,:]-bins[chunk,None]
+        diff[diff>db[:,None]]=-1
+        diff[diff<0]=-1
+        diff[diff!=-1]=1
+        diff[diff==-1]=0
+        hist[chunk]=xp.sum(diff,axis=1)
+    return hist
+    #return np.histogram(to_cpu(a),bins=to_cpu(bins))[0]
+    #return np.histogram(a,bins=bins)[0]
+
+def randfloats(N):
+    N=int(N)
+    if xp != np:
+        return xp.rand(N)
+    return np.random.random(N)
+
+def clone(a):
+    if hasattr(a,"clone"):
+        return a.clone()
+    try:
+        if hasattr(a,"copy"):
+            return a.copy()
+    except:
+        pass
+    return a
+
+def chunkIDs(N,chunksize=1000):
+    chunks = [] ; i=0
+    while True:
+        chunk = xp.arange(i*chunksize,min((i+1)*chunksize,N))
+        chunks.append( chunk )
+        i += 1
+        if i*chunksize >= N:
+            break
+    return chunks

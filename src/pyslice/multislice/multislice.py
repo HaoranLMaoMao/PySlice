@@ -1,7 +1,8 @@
 import numpy as np
 from tqdm import tqdm
-import logging
-from ..backend import zeros,mean,ones,to_cpu,asarray
+import logging,time
+from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop,einsum,ceil,clone
+#from line_profiler import profile
 
 try:
     import torch ; xp = torch
@@ -95,7 +96,7 @@ class Probe:
     Significant speedup for large grid sizes through GPU-accelerated FFT operations.
     """
     
-    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, probe_xs=None, probe_ys=None, probe_positions=None, cropping=False, defer_shifts=False):
+    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, probe_xs=None, probe_ys=None, probe_positions=None, cropping=False, defer_shifts=False, stay_reciprocal = False, crop_reciprocal=False):
         """
         Initialize GPU-accelerated probe wavefunction.
         
@@ -152,7 +153,7 @@ class Probe:
         self.probe_ys = probe_ys
         self.probe_positions = probe_positions
 
-        # Preferred to pass probe_xs and probe_ys from which we will define a grid. copied from probe_grid (no defunct)
+        # Preferred to pass probe_xs and probe_ys from which we will define a grid. copied from probe_grid (now defunct)
         if self.probe_xs is not None and self.probe_ys is not None:
             x,y = np.meshgrid(self.probe_xs,self.probe_ys)
             self.probe_positions = np.reshape([x,y],(2,len(x.flat))).T
@@ -179,6 +180,12 @@ class Probe:
         # Set up device kwargs for unified xp interface (same as Potential class)
         device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
         
+        self.stay_reciprocal = stay_reciprocal
+        self.crop_reciprocal = crop_reciprocal
+        #if self.crop_reciprocal: # user asked for kspace to be, say, 100 pixels, but right now it's 350...
+        #    self.crop_reciprocal = (min(nx,ny)-self.crop_reciprocal)//2 # so we need to chop 125 off each side
+
+
         self.kxs = xp.fft.fftfreq(nx, d=dx, **device_kwargs)
         self.kys = xp.fft.fftfreq(ny, d=dy, **device_kwargs)
 
@@ -191,11 +198,12 @@ class Probe:
             #self._array = zeros((len(self.eV),1,nx,ny))
             #for i,w in enumerate(self.wavelength):
             #   self._array[i,0,:,:] = self.generate_single_probe(mrad,w,gaussianVOA,preview=preview)
-            self._array = zeros((1,1,nx,ny),dtype=self.complex_dtype, device=self.device)
-            self._array[0,0,:,:] = self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)
+            #self._array = zeros((1,1,nx,ny),dtype=complex_dtype)
+            self._array= self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)[None,None,:,:]*ones((1,1), device=self.device)[:,:,None,None]
 
         self.cropping = cropping
-        self.offsets = np.zeros((len(self.probe_positions),2),dtype=int) # these are used when we have cropped the probe
+        #self.offsets = [[0,0] for i in range(len(self.probe_positions)) ]
+        self.offsets = np.zeros((len(self.probe_positions),2),dtype="int") # these are used when we have cropped the probe
 
         # NEW PHILOSOPHY: we used to build out the probe cube (npt,nx,ny) no matter what, but if you have
         # a bajillion probes, then this cube might be huge! instead, callers (e.g. calculator) pass
@@ -205,18 +213,24 @@ class Probe:
             self.applyShifts()
 
     def generate_single_probe(self,mrad,wavelength,gaussianVOA,preview=False):
-        nx,ny = len(self.kxs) , len(self.kys)
+        kxs,kys = self.kxs,self.kys
+        if self.crop_reciprocal:           # unshifted kx ky: 0,1,2,3,....-3,-2,-1, midcrop gets rid of high-k: 0,1,2,-2,-1
+            kxs = midcrop(self.kxs,self.crop_reciprocal[0])
+            kys = midcrop(self.kys,self.crop_reciprocal[1])
+
+        nx,ny = len(kxs) , len(kys)
         if mrad == 0:
             return zeros((nx, ny), device=self.device)+1
 
-        reciprocal = zeros((nx, ny), device=self.device)
         radius = (mrad * 1e-3) / wavelength  # Convert mrad to reciprocal space units
-        kx_grid, ky_grid = xp.meshgrid(self.kxs, self.kys, indexing='ij')
+
+        reciprocal = zeros((nx, ny), device=self.device)
+        kx_grid, ky_grid = xp.meshgrid(kxs, kys, indexing='ij') # unshifted kx ky: 0,1,2,3,....-3,-2,-1
         radii = xp.sqrt(kx_grid**2 + ky_grid**2)
 
         if gaussianVOA == 0:
             mask = radii < radius
-            reciprocal[mask] = 1.0
+            reciprocal[mask] = 1.0          # mask covers the corners (unshifted in reciprocal space)
         else:
             from scipy.special import erf
             reciprocal = 1-erf((radii-radius)/(gaussianVOA*radius))
@@ -225,12 +239,15 @@ class Probe:
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots() ; print(radius)
             extent = (xp.min(self.kxs), xp.max(self.kxs), xp.min(self.kys), xp.max(self.kys))
-            ax.imshow(xp.fft.fftshift(reciprocal.T), cmap="inferno",extent=extent)
+            ax.imshow(xp.fft.fftshift(reciprocal.T), cmap="inferno",extent=extent) # shift to visualize with k=0 in the center
             ax.set_xlabel("kx ($\\AA^{-1}$)")
             ax.set_ylabel("ky ($\\AA^{-1}$)")
             plt.show()
 
-        return xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
+        if self.stay_reciprocal: # if we would've done a real-space shift, we should apply a phase ramp in reciprocal space
+            return reciprocal * xp.exp(-2j * xp.pi * kxs[:, None] * self.lx/2 ) * xp.exp(-2j * xp.pi * kys[None, :] * self.ly/2 )
+
+        return xp.fft.ifftshift(xp.fft.ifft2(reciprocal)) # iFFT --> realspace --> shift --> zero in the center
         #self.array_numpy = self.array.cpu().numpy()
     
     def copy(self,selected_probes=None):
@@ -240,20 +257,20 @@ class Probe:
             if attr[0]=="_" or "array" in attr:
                 continue
             val = getattr(self,attr)
-            if hasattr(val,"clone"):
-                val = val.clone()
+            val = clone(val)
             setattr(new_probe,attr,val)
         if selected_probes is not None:
+            selected_probes = to_cpu(selected_probes)
             nc,npt,nx,ny = self._array.shape
             if npt == 1:
-                new_probe._array = self._array[:,:,:,:].clone()
+                new_probe._array = clone(self._array[:,:,:,:])
             else:
-                new_probe._array = self._array[:,selected_probes,:,:].clone()
+                new_probe._array = clone(self._array[:,selected_probes,:,:])
             new_probe.offsets = self.offsets[selected_probes,:]
-            new_probe.probe_positions = self.probe_positions[selected_probes,:]
+            new_probe.probe_positions = self.probe_positions[to_cpu(selected_probes),:]
             #print("new",new_probe.offsets.shape,new_probe.probe_positions.shape)
         else:
-            new_probe._array = self._array.clone()
+            new_probe._array = clone(self._array)
             #print("no selected used")
         #new_probe.device = self.device
         #new_probe.array_numpy = self.array_numpy.copy()
@@ -398,7 +415,8 @@ class Probe:
             if px-self.lx/2 == 0 and py-self.ly/2 == 0:
                     continue
 
-            self._array[:,i,:,:],self.offsets[i,:] = self.placeProbe(self._array[:,i,:,:], px, py )
+            self._array[:,i,:,:],(dpx,dpy) = self.placeProbe(self._array[:,i,:,:], px, py )
+            self.offsets[i,0] = int(dpx) ; self.offsets[i,1] = int(dpy)
 
         nc,npt,nx,ny = self._array.shape #; print("applyShifts expands to",nc,npt,nx,ny)
 
@@ -413,14 +431,25 @@ class Probe:
             dpx = dx//self.dx ; dpy = dy//self.dy               # pixel shifts
             offset_x = i1+dpx ; offset_y = j1+dpy
             dx-=dpx*self.dx ; dy-=dpy*self.dy                   # update subpixel shifts
+        elif self.crop_reciprocal:           # unshifted kx ky: 0,1,2,3,....-3,-2,-1, midcrop gets rid of high-k: 0,1,2,-2,-1
+            kxs = midcrop(self.kxs,self.crop_reciprocal[0])
+            kys = midcrop(self.kys,self.crop_reciprocal[1])
+            offset_x = 0 ; offset_y=0
         else:
             kxs,kys=self.kxs,self.kys
             offset_x = 0 ; offset_y=0
-        probe_k = xp.fft.fft2(array) # positional,summable,x,y
+        if not self.stay_reciprocal:
+            probe_k = xp.fft.fft2(array) # positional,summable,x,y
+        else:
+            probe_k = array
         kx_shift = xp.exp(-2j * xp.pi * kxs[None,:, None] * dx )
         ky_shift = xp.exp(-2j * xp.pi * kys[None,None, :] * dy )
         probe_k_shifted = probe_k * kx_shift * ky_shift
+
+        if self.stay_reciprocal:
+             return probe_k_shifted,(offset_x,offset_y)
         return xp.fft.ifft2(probe_k_shifted),(offset_x,offset_y)
+
 
     def aberrate(self,aberrations):
         dP = aberrationFunction(self.kxs,self.kys,self.wavelength,aberrations)
@@ -428,7 +457,7 @@ class Probe:
         # self.array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
         # Aberrations are defined at the aperture plane, so we must apply them in reciprocal space. 
 	    # (or do a convolution in real-space)
-        reciprocal = xp.fft.fft2(xp.fft.fftshift(self._array))
+        reciprocal = xp.fft.fft2(xp.fft.fftshift(self._array)) # centered-real --> zero at corner --> FFT --> kx,ky zero at corner
         reciprocal *= dP
         self._array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
 
@@ -464,7 +493,7 @@ class Probe:
 # this is done by multiplying the complex wave (be it a probe or an exit wave) by xp.exp(-1j * dPhi)
 def aberrationFunction(kxs,kys,wavelength,aberrations): # aberrations should be a dict of Cnm following https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
     dPhi = xp.zeros_like(kxs[:,None] * kys[None,:])
-    ks = xp.sqrt( kxs[:,None]**2 + kys[None,:]**2 )
+    ks = xp.sqrt( kxs[:,None]**2 + kys[None,:]**2 ) # unshifted: 0,1,2,3,...-3,-2,-1, reciprocal origin at corner
     theta = xp.arctan2( kys[None,:] , kxs[:,None] )
     for k in aberrations.keys():
         n,m = int(k[1]),int(k[2]) # C03 --> 0,3
@@ -536,6 +565,202 @@ def create_batched_probes(base_probe, probe_positions, device=None):
 
     return Probe(base_probe.xs, base_probe.ys, base_probe.mrad, base_probe.eV, array=array, device=base_probe.device)
 
+
+class PrismProbe:
+    """
+    Where Probe object creates a series of real-space probes (n,nx,ny cube, for n probe positions), the Prism algorithm propagates a series of sinusoids (fourier components shared by all real-space probes), then reconstructs each probe's exit wave.
+
+    PrismProbe object should serve as a stand-in for Probe, meaning it can be propagated through a potential (via the Propagate function), the probe cube (n,nx,ny) generated via self.applyShifts, and a subset of probes selected via self.copy, which enables chunked processing. where Probe.probe_positions stores real-space x,y pairs for positions, PrismProbe stores reciprocal-space kx,ky pairs to denote the sinusoid.
+
+    """
+    def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, nkx = 25, nky=None, kth=1):
+
+        # TORCH DEVICES AND DTYPES
+        if TORCH_AVAILABLE:
+            # Auto-detect device if not specified (same logic as Potential class)
+            if device is None:
+                if torch.cuda.is_available():
+                    device = torch.device('cuda')
+                elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+                    device = torch.device('mps')
+                else:
+                    device = torch.device('cpu')
+            elif isinstance(device, str):
+                device = torch.device(device)
+            self.device = device
+            self.use_torch = True
+            # Use float32 for MPS compatibility (same as Potential class)
+            self.dtype = torch.float32 if device.type == 'mps' else torch.float64
+            self.complex_dtype = torch.complex64 if device.type == 'mps' else torch.complex128
+        else:
+            if device is not None:
+                raise ImportError("PyTorch not available. Please install PyTorch.")
+            self.device = None
+            self.use_torch = False
+            self.dtype = np.float64
+            self.complex_dtype = np.complex128
+
+        # FULL-SIZED STUFF: USED FOR INTERACTING WITH THE POTENTIAL AND ALL THAT, real-space and reciprocal-space
+        self.dx = xs[1]-xs[0] ; self.dy = ys[1]-ys[0]
+        self.nx = len(xs) ; self.ny = len(ys)
+        # Convert coordinate arrays to tensors if using torch (same as Potential class)
+        if self.use_torch:
+            # Use as_tensor to avoid copy warning when input is already a tensor
+            self.xs = torch.as_tensor(xs, dtype=self.dtype, device=self.device)
+            self.ys = torch.as_tensor(ys, dtype=self.dtype, device=self.device)
+        else:
+            self.xs = xs
+            self.ys = ys
+        device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
+        self.kxs = xp.fft.fftshift(xp.fft.fftfreq(self.nx, d=self.dx, **device_kwargs)) # # 0,1,2,3...-3,-2.-1 -shift-> ...-3,-2,-1,0,1,2,3...
+        self.kys = xp.fft.fftshift(xp.fft.fftfreq(self.ny, d=self.dy, **device_kwargs))
+        self._array = zeros((1,1,self.nx,self.ny),dtype=self.complex_dtype)
+        # SPARSIFIED STUFF, USED FOR CONSTRUCTING SPARSE SINUSOIDS IN REAL SPACE
+        if nky is None:
+            nky = nkx
+        self.nx_cropped = nkx ; self.ny_cropped = nky # indices for cropping i1,i2,j1,j2
+
+        self.i1 = self.nx//2-self.nx_cropped//2 #; self.i2 = self.i1+self.nx_cropped
+        self.j1 = self.ny//2-self.ny_cropped//2 #; self.j2 = self.j1+self.ny_cropped
+        self.nx_cropped  = self.nx - 2*self.i1 ; self.ny_cropped  = self.ny - 2*self.j1
+        self.probe_positions=zeros((self.nx_cropped,self.ny_cropped,2))
+        for i,kx in enumerate(self.kxs[self.i1:self.nx-self.i1]):           # looping across a sparsified k-grid
+            for j,ky in enumerate(self.kys[self.j1:self.ny-self.j1]):
+                self.probe_positions[i,j,0]=kx
+                self.probe_positions[i,j,1]=ky
+        self.probe_positions = reshape(self.probe_positions,(self.nx_cropped*self.ny_cropped,2))
+
+        # HANDLE BEAM PARAMS (copied from Probe just in case anyone asks for them)
+        self.mrad = mrad
+        self.eV = eV ; self.wavelength=wavelength(eV)
+        self.eVs = np.asarray([eV])
+        if self.use_torch:
+            self.eVs = torch.as_tensor(self.eVs, dtype=self.dtype, device=self.device)
+        self.wavelengths = wavelength(self.eVs)
+        self.temporal_decoherence = None
+        self.spatial_decoherence = None
+        self.gaussianVOA = gaussianVOA
+        self.cropping = False
+        self.kth = kth
+
+    # where Probe.applyShifts looks at real-space x,y pairs in probe_positions and applies a phase ramp to shift a template probe, PrismProbe.applyShifts looks at reciprocal-space kx,ky pairs in probe_positions to construct sinusoids
+    def applyShifts(self):
+        # inflate self._array to store probe cube (npt,nx,ny)
+        self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions), device=self.device)[None,:,None,None]
+        # loop through probe positions
+        for n,(kx,ky) in enumerate(self.probe_positions):
+            self._array[:,n,:,:] = xp.exp(2j * xp.pi * self.xs[:, None] * kx ) * xp.exp(2j * xp.pi * self.ys[None,:] * ky )
+            # numpy appears to use exp(i2pixk) convention for FFT: xs = np.linspace(0,100,10000) ; ys = np.sin(xs) ; fft = np.fft.fft(ys) ; freq=np.fft.fftfreq(len(xs),d=xs[1]-xs[0]) ; fft2 = np.sum(ys[:,None]*np.exp(2j*np.pi*xs[:,None]*freq[None,:]),axis=0)
+
+    # if a PrismProbe object (a whole bunch of sinusoidal entrance waves) is propagated through a potential, then the potential exit waves for a whole bunch of realistic probes can be calculated from the exit waves for each entrance wave
+    # SHIFTING: array is shifted, factors is NOT shifted,
+    #@profile
+    def calculateProbesFromS(self,array,positions,chunksize=100,load_into=None,ADF=False): # array comes in p,x,y,l,1 where p is our 50*50 grid of sinusoids
+        if load_into is None and not ADF:
+            result = zeros((len(positions),ceil(self.nx/self.kth),ceil(self.ny/self.kth)),dtype="complex") # full-res kx,ky for each probe position
+        elif not ADF:
+            result = load_into
+        else:
+            ADF,ADFmask,ADFindex = ADF ; result = None
+        npt,nkx,nky,_,_ = array.shape
+        array = reshape(array,(self.nx_cropped,self.ny_cropped,nkx,nky)) # eikx,eiky,kx,ky
+        # preview an arbitrary exit wave? (note: calculator will have done shift(fft(realspace)), so we should invert those steps)
+        #import matplotlib.pyplot as plt
+        #fig, ax = plt.subplots()
+        #i,j=self.nx_cropped//2+1,self.ny_cropped//2-1
+        #ax.imshow(np.real(np.fft.ifft2(np.fft.ifftshift(to_cpu(array[i,j,:,:])))).T, cmap="inferno")
+        #plt.show()
+        # strategy: we need each probe's array (generated, shifted to position), FFT'd, cropped, so we can select fourier components
+        # you can 1) create a dummy probe, call generate_single_probe and placeProbe, and reuse it every time, and this can be done in real or reciprocal space. or 2) you can just create a new probe each time (for a chunk of positions). i'm choosing 2 because it makes chunking easier
+        #probe = Probe(self.xs, self.ys, self.mrad, self.eV, defer_shifts=True) # dummy probe so we can directly access Probe class functions
+        chunksize=max(1,chunksize) # handle 0 as chunksize
+        for n,(x,y) in enumerate(tqdm(positions)):
+            if n%chunksize!=0:
+                continue
+            # strategy 1, real-space
+            #ary = probe.generate_single_probe(self.mrad,self.wavelength,self.gaussianVOA,preview=False)
+            #probe_k = xp.fft.fftshift(xp.fft.fft2(probe.placeProbe(ary,x,y)[0][0,:,:])) # shiff(fft()) to match what calculators did to array
+            # strategy 2, keep things in reciprocal space, saves two ffts?
+            # realspace single probe was xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
+            # placed was xp.fft.fft2(array), then phase ramp, then xp.fft.ifft2(array)
+            #ary = probe.generate_single_probe(self.mrad,self.wavelength,self.gaussianVOA,preview=False,keep_reciprocal=True)
+            #probe_k = xp.fft.fftshift(probe.placeProbe(ary,x,y,realspace=False)[0][0,:,:])
+            # strategy 3, stack of probes
+            #probes = Probe(self.xs, self.ys, self.mrad, self.eV, probe_positions = positions[n:n+chunksize])
+            #kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
+            #probe_ks = xp.fft.fftshift(xp.fft.fft2(probes._array[0,:,:,:],**kwarg),**kwarg)
+
+            # note you CAN generate the probe pre-cropped (use arg crop_reciprocal, then skip the self.i1:-self.i1 indexing), but this doesn't seem to save a whole lot of time...
+            probes = Probe(self.xs, self.ys, self.mrad, self.eV, probe_positions = positions[n:n+chunksize],stay_reciprocal=True)#,crop_reciprocal=(self.i1,self.j1))
+            kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
+            probe_ks = xp.fft.fftshift(probes._array[0,:,:,:],**kwarg)
+
+            # fourier components of FFT'd and cropped probe are the contribution of each exit wave
+            factors = probe_ks[:,self.i1:self.nx-self.i1,self.j1:self.ny-self.j1] # this is unshifted since ij_lookup used unshifted kxs,kys
+            #factors = probe_ks#[:,self.i1:-self.i1,self.j1:-self.j1] # this is unshifted since ij_lookup used unshifted kxs,kys
+            chunked = einsum('pkq,kqxy->pxy',factors,array) # sum over all sinusoids
+            if isinstance(result,np.memmap):
+                chunked = to_cpu(chunked)
+            if ADF:
+                intensities = einsum('pxy,xy->p',absolute(chunked)**2,ADFmask)
+                for i,pp in zip(intensities,range(n,n+chunksize)):
+                    ADF._array[ADFindex==pp] += i
+            else:
+                result[n:n+chunksize,:,:] = chunked
+
+            #dx = (x-probe.lx/2) ; dy = (y-probe.ly/2)
+            #if abs(dx)<.1 and abs(dy)<.1:
+            #    print("\nposition",x,y)
+            #    print("dx",dx,dy)
+            #    import matplotlib.pyplot as plt
+            #    fig, ax = plt.subplots()
+            #    ax.imshow(np.real(probe_ks[0]).T, cmap="inferno")
+            #    plt.show()
+            # preview our sparse-k reconstructed probe? fft --> downsample --> ifft
+            #if n<=len(positions)//3<n+chunksize:
+            #    print("plotting reconstructed probe for",x,y)
+            #    probe_r = xp.fft.ifft2(xp.fft.ifftshift(factors[0,:,:]))
+            #    import matplotlib.pyplot as plt
+            #    fig, ax = plt.subplots()
+            #    extent = (xp.min(self.xs), xp.max(self.xs), xp.min(self.ys), xp.max(self.ys))
+            #    ax.imshow(to_cpu(xp.real(probe_r)).T[::-1,:], cmap="inferno",extent=extent)
+            #    plt.show()
+            # result from this probe is it's downsampled fourier component scaling/phase term, multiplied by each fourier component's raw exit
+            #factors = xp.fft.fftshift(factors) # array will have been shift(fft())'d in MultisliceCalculator
+
+        return result
+
+    def copy(self,selected_probes=None):
+        #print("creating copy",selected_probes)
+        """Create a deep copy of the probe."""
+        new_probe = PrismProbe.__new__(PrismProbe)
+        for attr in self.__dict__.keys():
+            if attr[0]=="_" or "array" in attr:
+                continue
+            val = getattr(self,attr)
+            val = clone(val)
+            setattr(new_probe,attr,val)
+        if selected_probes is not None:
+            nc,npt,nx,ny = self._array.shape
+            if npt == 1:
+                new_probe._array = clone(self._array[:,:,:,:])
+            else:
+                new_probe._array = clone(self._array[:,selected_probes,:,:])
+            #new_probe.offsets = self.offsets[selected_probes,:]
+            new_probe.probe_positions = self.probe_positions[selected_probes,:]
+            #print("new",new_probe.offsets.shape,new_probe.probe_positions.shape)
+        else:
+            new_probe._array = clone(self._array)
+            #print("no selected used")
+        #new_probe.device = self.device
+        #new_probe.array_numpy = self.array_numpy.copy()
+        return new_probe
+
+    @property
+    def array(self):
+        return to_cpu(self._array)
+
+
 # Given a real-space entrance wave, and a potential (or object), calculate the exit wave: ψ₁ -> O -> ψ₂
 # From Kirkland2010:
 # propagator P = exp(-i π λ dz q²), Eq 6.65
@@ -562,7 +787,9 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     """
     if device is not None and not TORCH_AVAILABLE:
         raise ImportError("PyTorch not available. Please install PyTorch.")
-    
+    if device is None and hasattr(probe, 'device'):
+        device = probe.device
+
     # Initialize wavefunction with probe(s) - shape: (n_probes, nx, ny)
     nc,npt,nx,ny = probe._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
     array = probe._array.reshape((nc*npt,nx,ny)) # "flatten" first two indices
@@ -599,6 +826,9 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     # Fold anti-aliasing aperture into propagator to bandwidth-limit wavefunction at every slice
     P = xp.exp(-1j * xp.pi * probe_wavelengths[:,None,None] * dz * k_squared[None,:,:]) * aa_aperture[None,:,:] # Kirkland2010 Eq 6.65
 
+    #print("(done)",time.time()-start)
+
+
     if progress:
         localtqdm = tqdm
         print("propagating through slices")
@@ -617,17 +847,41 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         # Transmission function: t = exp(iσV(x,y,z))
         # All tensors should already be on the correct device from creation
         if onthefly:
+            #print("calculateSlice") ; start = time.time()
             potential_slice = potential.calculateSlice(z)
+            #print("(done)",time.time()-start)
         else:
             potential_slice = potential._array[:, :, z]
 
         if probe.cropping:
-            t = zeros( (len(sigma), probe.cropping, probe.cropping ), type_match=P)
-            for p,o in enumerate(probe.offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
-                pot = xp.roll(potential_slice,-o[0],0)[:probe.cropping,:]
-                pot = xp.roll(pot,-o[1],1)[:,:probe.cropping]
-                #pot = xp.roll(potential_slice,list(-o),(0,1))[:probe.cropping,:probe.cropping]
-                t[p,:,:]=xp.exp(1j*sigma[p]*pot)
+            #t = zeros( (len(sigma), probe.cropping, probe.cropping ), type_match=P)
+            #print("probe rolling") ; start = time.time() 
+            # Usually you want vectorized, but this inflates to full npt,nx,ny before cropping: bad on RAM
+            #rollx = list(probe.offsets[:,0]) ; z = [1]*len(rollx)
+            #pot = xp.roll(potential_slice[None,:,:],rollx,z)[:,:probe.cropping,:]
+            #rolly = list(probe.offsets[:,1]) ; z = [2]*len(rolly)
+            #pot = xp.roll(pot[:,:,:],rolly,z)[:,:,:probe.cropping]
+            nx,ny = potential_slice.shape
+            #xr = xp.arange(nx) ; yr = xp.arange(ny)
+            #pot_stack = zeros( (len(sigma),probe.cropping,probe.cropping) )
+            #for p,o in enumerate(probe.offsets): # We want to go from i1,j2 to i1+cropping,j1+cropping, but sometimes i1 or j1 is negatuve
+            #    # rolling the whole thing: slow (5s per on Nick's particles)
+            #    #pot = xp.roll(potential_slice,int(-o[0]),0)[:probe.cropping,:]
+            #    #pot = xp.roll(pot,int(-o[1]),1)[:,:probe.cropping]
+            #    # rolling indices: faster (0.7s per on Nick's particles)
+            #    xi = xp.roll(xr,-o[0])[:probe.cropping]
+            #    yi = xp.roll(yr,-o[1])[:probe.cropping]
+            #    pot_stack[p] = potential_slice[xi,:][:,yi]
+            # full indexing is even faster
+            xi = xp.zeros((len(sigma),probe.cropping),dtype=int) ; yi = xp.zeros((len(sigma),probe.cropping),dtype=int)
+            xr = xp.arange(nx) ; yr = xp.arange(ny)
+            for p,(x,y) in enumerate(probe.offsets):
+                xi[p,:] = xp.roll(xr,-x)[:probe.cropping]
+                yi[p,:] = xp.roll(yr,-y)[:probe.cropping]
+            pot_stack=potential_slice[xi[:,:,None],yi[:,None,:]]
+            #print("(done)",time.time()-start)
+            t=xp.exp(1j*sigma[:,None,None]*pot_stack)
+
         else:
             t = xp.exp(1j * sigma[:,None,None] * potential_slice[None,:,:]) # Kirkland2010 Eq 6.59. n,x,y indices
 
@@ -638,18 +892,18 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         # Store wavefunction at this slice if requested (after transmission)
         if store_all_slices:
             # Clone/copy to avoid reference issues
-            if TORCH_AVAILABLE:
-                slice_wavefunctions.append(array.clone())
-            else:
-                slice_wavefunctions.append(array.copy())
+            slice_wavefunctions.append(clone(array))
 
         # Fresnel propagation to next slice (except for last slice)
         if z < len(potential.zs) - 1:
             # Vectorized FFT over spatial dimensions for all probes
             kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
+            #print(kwarg,array.dtype,array.shape)
+            #print("FFT / multiply / iFFT") ; start = time.time()
             fft_array = xp.fft.fft2(array, **kwarg)
             propagated_fft = P * fft_array
             array = xp.fft.ifft2(propagated_fft, **kwarg)
+            #print("(done)",time.time()-start)
 
     # Return results based on what was requested
     if store_all_slices:
