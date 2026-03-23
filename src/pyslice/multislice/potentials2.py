@@ -261,10 +261,13 @@ class Potential:
 
             real = backend.ifft2(reciprocal)
             real = backend.real(real)
-            # Apply proper normalization factor (dx²×dy²) to match reference implementation
+            # Convert from electron scattering factor f_e to projected potential V_proj.
+            # Kirkland Eq C.1: f_e(q) = (m_e/2πℏ²) FT[V], so FT[V] = (2πℏ²/m_e) f_e.
+            # On discrete grid: V(r) = (2πℏ²/m_e) / (dx·dy) × ifft2(S · f_e)
             dx = self.xs[1] - self.xs[0]
-            dy = self.ys[1] - self.ys[0] 
-            Z = real / (dx**2 * dy**2)
+            dy = self.ys[1] - self.ys[0]
+            fe_to_V = 47.87764737  # 2πℏ²/m_e in V·Å² (Kirkland, Eq C.1 prefactor)
+            Z = real * fe_to_V / (dx * dy)
             if cache_file is not None:
                 np.save(cache_file,Z)
             return Z

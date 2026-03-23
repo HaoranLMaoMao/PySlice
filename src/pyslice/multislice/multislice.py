@@ -191,7 +191,7 @@ class Probe:
             #self._array = zeros((len(self.eV),1,nx,ny))
             #for i,w in enumerate(self.wavelength):
             #   self._array[i,0,:,:] = self.generate_single_probe(mrad,w,gaussianVOA,preview=preview)
-            self._array = zeros((1,1,nx,ny),dtype=complex_dtype)
+            self._array = zeros((1,1,nx,ny),dtype=self.complex_dtype, device=self.device)
             self._array[0,0,:,:] = self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)
 
         self.cropping = cropping
@@ -207,9 +207,9 @@ class Probe:
     def generate_single_probe(self,mrad,wavelength,gaussianVOA,preview=False):
         nx,ny = len(self.kxs) , len(self.kys)
         if mrad == 0:
-            return zeros((nx, ny))+1
+            return zeros((nx, ny), device=self.device)+1
 
-        reciprocal = zeros((nx, ny))
+        reciprocal = zeros((nx, ny), device=self.device)
         radius = (mrad * 1e-3) / wavelength  # Convert mrad to reciprocal space units
         kx_grid, ky_grid = xp.meshgrid(self.kxs, self.kys, indexing='ij')
         radii = xp.sqrt(kx_grid**2 + ky_grid**2)
@@ -325,7 +325,7 @@ class Probe:
 
     def defocus(self,dz): # POSITIVE DEFOCUS PUTS BEAM WAIST ABOVE SAMPLE, UNITS OF ANGSTROM
         if isinstance(dz,(int,float)):
-            dz = zeros(len(self._array))+dz
+            dz = zeros(len(self._array), device=self.device)+dz
         kx_grid, ky_grid = xp.meshgrid(self.kxs, self.kys, indexing='ij')
         k_squared = kx_grid**2 + ky_grid**2
         P = xp.exp(-1j * xp.pi * self.wavelength * dz[:,None,None] * k_squared[None,:,:])
@@ -349,7 +349,7 @@ class Probe:
             self.eVs = torch.as_tensor(self.eVs, dtype=self.dtype, device=self.device)
         self.wavelengths = wavelength(self.eVs)
         amplitudes = np.exp(-(eV-self.eVs)**2/sigma_eV**2)
-        self._array = zeros((N,1,nx,ny))
+        self._array = zeros((N,1,nx,ny), device=self.device)
         for n,eV in enumerate(self.eVs):
             self._array[n,0,:,:] = amplitudes[n] * self.generate_single_probe(self.mrad,wavelength(eV),self.gaussianVOA)
         nc,npt,nx,ny = self._array.shape #; print("addTemporalDecoherence expands to",nc,npt,nx,ny)
@@ -374,9 +374,9 @@ class Probe:
             for j in range(nc):
                 self._array[i*nc+j] *= amplitudes[i]
         nc,npt,nx,ny = self._array.shape #; print("addSpatialDecoherence expands to",nc,npt,nx,ny)
-        self.eVs = ones(N)[:,None]*self.eVs[None,:] # defocus expands into nz,nc then flattens to nz*nc
+        self.eVs = ones(N, device=self.device)[:,None]*self.eVs[None,:] # defocus expands into nz,nc then flattens to nz*nc
         self.eVs = self.eVs.reshape(nc)
-        self.wavelengths = ones(N)[:,None]*self.wavelengths[None,:]
+        self.wavelengths = ones(N, device=self.device)[:,None]*self.wavelengths[None,:]
         self.wavelengths = self.wavelengths.reshape(nc)
         if npt==1:
             self.applyShifts()
@@ -390,9 +390,9 @@ class Probe:
         if self.cropping:
             i1=nx//2-self.cropping//2 ; i2=i1+self.cropping     # |_______i1___.___i2_______| for initial centered probe at lx/2,ly/2
             j1=ny//2-self.cropping//2 ; j2=j1+self.cropping
-            self._array = self._array[:,0,None,i1:i2,j1:j2] * ones(len(self.probe_positions))[None,:,None,None]
+            self._array = self._array[:,0,None,i1:i2,j1:j2] * ones(len(self.probe_positions), device=self.device)[None,:,None,None]
         else:
-            self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions))[None,:,None,None]
+            self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions), device=self.device)[None,:,None,None]
         # loop through probe positions
         for i, (px,py) in enumerate(self.probe_positions):
             if px-self.lx/2 == 0 and py-self.ly/2 == 0:
@@ -566,9 +566,9 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     # Initialize wavefunction with probe(s) - shape: (n_probes, nx, ny)
     nc,npt,nx,ny = probe._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
     array = probe._array.reshape((nc*npt,nx,ny)) # "flatten" first two indices
-    probe_wavelengths = probe.wavelengths[:,None]*ones(npt)[None,:] # also expand wavelengths and eVs arrays to cover all probe positions npt
+    probe_wavelengths = probe.wavelengths[:,None]*ones(npt, device=device)[None,:] # also expand wavelengths and eVs arrays to cover all probe positions npt
     probe_wavelengths = probe_wavelengths.reshape(nc*npt)
-    probe_eVs = probe.eVs[:,None]*ones(npt)[None,:]
+    probe_eVs = probe.eVs[:,None]*ones(npt, device=device)[None,:]
     probe_eVs = probe_eVs.reshape(nc*npt)
 
     # Calculate interaction parameter (Kirkland Eq 5.6)
