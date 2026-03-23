@@ -1,3 +1,4 @@
+import pyslice.backend as backend
 import numpy as np
 from pathlib import Path
 import logging
@@ -5,38 +6,14 @@ from typing import Optional, Tuple, List
 from tqdm import tqdm
 import time,os
 import hashlib
-#from line_profiler import profile
-
-try:
-    import torch ; xp = torch
-    TORCH_AVAILABLE = True
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    elif torch.backends.mps.is_available():
-        device = torch.device('mps')
-    else:
-        device = torch.device('cpu')
-    if device.type == 'mps':
-        complex_dtype = torch.complex64
-        float_dtype = torch.float32
-    else:
-        complex_dtype = torch.complex128
-        float_dtype = torch.float64
-
-except ImportError:
-    xp = np
-    TORCH_AVAILABLE = False
-    complex_dtype = np.complex128
-    float_dtype = np.float64
-
 
 from .potentials import gridFromTrajectory,Potential
 from .multislice import Probe,PrismProbe,Propagate,create_batched_probes
 from .trajectory import Trajectory
 from ..postprocessing.wf_data import WFData
 from .sed import SED
-from ..backend import zeros,expand_dims,to_cpu,memmap,ones,sum,absolute,ceil,einsum,asarray,astype
 
+TORCH_BACKEND = backend.TORCH_BACKEND
 logger = logging.getLogger(__name__)
 
 class MultisliceCalculator:
@@ -49,27 +26,16 @@ class MultisliceCalculator:
             device: PyTorch device ('cpu', 'cuda', 'mps', or None for auto-detection)
             force_cpu: Force CPU usage even if GPU is available
         """
-        if not TORCH_AVAILABLE:
-            if device is not None:
-                logger.warning("PyTorch not available, falling back to NumPy implementation")
-            self.device = None
-            self.force_cpu = False
+        self.force_cpu = force_cpu
+        if force_cpu:
+            self.device = backend.device_and_precision('cpu')[0]
+        elif device is not None:
+            self.device = backend.device_and_precision(device)[0]
         else:
-            self.force_cpu = force_cpu
-            if force_cpu:
-                self.device = torch.device('cpu')
-            elif device is not None:
-                self.device = torch.device(device)
-            else:
-                # Auto-detect best available device: CUDA > MPS > CPU
-                if torch.cuda.is_available():
-                    self.device = torch.device('cuda')
-                elif torch.backends.mps.is_available():
-                    self.device = torch.device('mps')
-                else:
-                    self.device = torch.device('cpu')
+            # Auto-detect best available device
+            self.device = backend.device_and_precision()[0]
 
-            logger.info(f"PyTorch calculator initialized on device: {self.device}")
+        logger.info(f"Calculator initialized on device: {self.device}")
         
         # Element mapping for display purposes
         self.element_map = {
@@ -97,14 +63,14 @@ class MultisliceCalculator:
             'slice_thickness': slice_thickness,
             'sampling': sampling,
             'probe_positions': probe_positions,
-            'backend': 'pytorch' if TORCH_AVAILABLE else 'numpy',
+            'backend': 'torch' if backend.xp != np else 'numpy',
         }
         if spatial_decoherence is not None:
             params['spatial_decoherence'] = spatial_decoherence
         if temporal_decoherence is not None:
             params['temporal_decoherence'] = temporal_decoherence
         if probe_array is not None:
-            probe_np = np.ascontiguousarray(to_cpu(probe_array).ravel()[:1000])
+            probe_np = np.ascontiguousarray(backend.to_cpu(probe_array).ravel()[:1000])
             params['probe_hash'] = hashlib.md5(probe_np.tobytes()).hexdigest()
         param_str = str(sorted(params.items()))
         return hashlib.md5(param_str.encode()).hexdigest()[:12]
@@ -185,19 +151,20 @@ class MultisliceCalculator:
         self.nx = nx ; self.ny = ny ; self.nz = nz
         self.dx = xs[1]-xs[0] ; self.dy = ys[1]-ys[0] ; self.dy = ys[1]-ys[0]
 
+
         self.probe_cropping = 0
         if self.min_dk > 0: # dk = 1/L = 1/(nx*sampling)
             nx = int(np.round(1/(self.min_dk*self.sampling)))
-            self.nx = nx ; self.ny = nx
+            self.nx = nx ; self.ny = nx      # Q: check this for non square super cells
             self.probe_cropping = nx
 
-        self.kxs = xp.fft.fftshift(xp.fft.fftfreq(self.nx, self.sampling))  # k-space in 1/Å
-        self.kys = xp.fft.fftshift(xp.fft.fftfreq(self.ny, self.sampling))  # k-space in 1/Å
-        kx_mask = xp.zeros(self.nx)+1 ; ky_mask = xp.zeros(self.ny)+1
+        self.kxs = backend.fftshift(backend.fftfreq(self.nx, self.sampling))  # k-space in 1/Å
+        self.kys = backend.fftshift(backend.fftfreq(self.ny, self.sampling))  # k-space in 1/Å
+        kx_mask = backend.zeros(self.nx)+1 ; ky_mask = backend.zeros(self.ny)+1
         kx_mask[ self.kxs < -max_kx ] = 0 ; kx_mask[ self.kxs > max_kx ] = 0
         ky_mask[ self.kys < -max_ky ] = 0 ; ky_mask[ self.kys > max_ky ] = 0
-        self.keep_kxs_indices = xp.arange(self.nx)[kx_mask==1][::self.kth]
-        self.keep_kys_indices = xp.arange(self.ny)[ky_mask==1][::self.kth]
+        self.keep_kxs_indices = backend.arange(self.nx)[kx_mask==1][::self.kth]
+        self.keep_kys_indices = backend.arange(self.ny)[ky_mask==1][::self.kth]
         self.nx = len(self.keep_kxs_indices) ; self.ny = len(self.keep_kys_indices)
         #print("kxs",len(self.kxs),"kys",len(self.kys),"nx",self.nx,"ny",self.ny,"keepkx",len(self.keep_kxs_indices),"keepky",len(self.keep_kys_indices))
 
@@ -233,16 +200,17 @@ class MultisliceCalculator:
         #self.n_probes = len(self.base_probe.probe_positions)
 
         # Set dtype based on the actual device we're using
-        if TORCH_AVAILABLE and self.device is not None:
-            if self.device.type == 'mps':
-                self.complex_dtype = torch.complex64
-                self.float_dtype = torch.float32
-            else:
-                self.complex_dtype = torch.complex128
-                self.float_dtype = torch.float64
-        else:
-            self.complex_dtype = np.complex128
-            self.float_dtype = np.float64
+        _, self.float_dtype, self.complex_dtype = backend.device_and_precision(self.device)
+
+        # cache key is calculated TWICE: once during setup (so the user only needs to setup to infer where their cache folder will go), and again during run (just in case the user does something funky)
+        # Generate cache key and setup output directory
+        self.cache_key = self._generate_cache_key(self.trajectory, self.aperture, self.voltage_eV,
+                                           self.slice_thickness, self.sampling, self.probe_positions,
+                                           self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence,
+                                           self.base_probe._array)
+        #print(cache_key)
+        self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+self.cache_key)
+        #self.output_dir.mkdir(parents=True, exist_ok=True)
 
         # cache key is calculated TWICE: once during setup (so the user only needs to setup to infer where their cache folder will go), and again during run (just in case the user does something funky)
         # Generate cache key and setup output directory
@@ -268,8 +236,8 @@ class MultisliceCalculator:
         potential.flatten()
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
-        array = np.absolute(to_cpu(potential.array))[:,::-1,0].T # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
-        xs = to_cpu(potential.xs) ; ys = to_cpu(potential.ys)
+        array = np.absolute(backend.to_cpu(potential.array))[:,::-1,0].T # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
+        xs = backend.to_cpu(potential.xs) ; ys = backend.to_cpu(potential.ys)
         extent = (np.amin(xs),np.amax(xs),np.amin(ys),np.amax(ys))
         #print(extent)
         ax.imshow(array, cmap="inferno", extent=extent)
@@ -290,7 +258,7 @@ class MultisliceCalculator:
         if self.cache_key != cache_key:
             self.cache_key = cache_key
         #print(cache_key)
-        self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+cache_key)
+        self.output_dir = Path("psi_data/" + ("torch" if backend.xp != np else "numpy") + "_"+cache_key)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
 
@@ -321,11 +289,11 @@ class MultisliceCalculator:
             #if self.base_probe.cropping:
             #    fd_nx = self.base_probe.cropping ; fd_ny = fd_nx
             if self.use_memmap:
-                self.wavefunction_data = memmap((fd_npt, self.n_frames, fd_nx, fd_ny, self.n_layers),
-                                                   dtype=self.complex_dtype, filename = self.output_dir / "wdf_memmap.npy" )
+                self.wavefunction_data = backend.memmap((fd_npt, self.n_frames, fd_nx, fd_ny, self.n_layers),
+                                                         dtype=self.complex_dtype, filename = self.output_dir / "wdf_memmap.npy" )
             else:
-                self.wavefunction_data = zeros((fd_npt, self.n_frames, fd_nx, fd_ny, self.n_layers),
-                                                   dtype=self.complex_dtype, device=self.device)
+                self.wavefunction_data = backend.zeros((fd_npt, self.n_frames, fd_nx, fd_ny, self.n_layers),
+                                                        dtype=self.complex_dtype, device=self.device)
             #print("wavefunction_data",self.wavefunction_data.shape)
 
         # Process frames with caching and multiprocessing
@@ -334,8 +302,23 @@ class MultisliceCalculator:
         frames_cached = 0
 
         # quality of life sanity checks: user may have set things (e.g. probe array) with the wrong data type (e.g. numpy instead of tensor). let's try to catch and correct those here
-        if isinstance(self.base_probe._array,np.ndarray) and TORCH_AVAILABLE:
-            self.base_probe._array = xp.tensor(self.base_probe._array)
+        if isinstance(self.base_probe._array,np.ndarray) and TORCH_BACKEND:
+            self.base_probe._array = backend.tensor(self.base_probe._array)
+
+        if self.ADF: # create a dummy HAADFData object, first so we can hijack its getMask function, and later we'll load it up
+            kwargs = {}
+            if not isinstance(self.ADF,bool):
+                kwargs["inner_mrad"],kwargs["outer_mrad"] = self.ADF
+            from ..postprocessing.haadf_data import HAADFData
+            array = zeros((self.n_probes,1,1,1,1),dtype=self.complex_dtype)
+            array += xp.arange(self.n_probes)[:,None,None,None,None] # we'll use this as an index to map nth probe to the ADF grid coordinates i,j
+            wf = WFData(probe_positions=self.probe_positions,probe_xs=self.probe_xs,probe_ys=self.probe_ys,
+                time=None,kxs=self.kxs[self.keep_kxs_indices],kys=self.kys[self.keep_kys_indices],xs=self.xs,ys=self.ys,
+                layer=None,array=array,probe=self.base_probe,cache_dir=self.output_dir)
+            self.ADF = HAADFData(wf)
+            self.ADFmask = absolute(self.ADF.getMask(**kwargs)) # HAADFData infers mask dtype from _wf_array dtype, but we'll absolute^2 later
+            self.ADFindex = astype(absolute(self.ADF._wf_array[0,:,:,0,0,0,0]),int)
+            self.ADF._array = zeros(self.ADFindex.shape,dtype=self.complex_dtype)
 
         if self.ADF: # create a dummy HAADFData object, first so we can hijack its getMask function, and later we'll load it up
             kwargs = {}
@@ -383,12 +366,12 @@ class MultisliceCalculator:
                     self.ADF._array += intensities[self.ADFindex]
 
                 if not os.path.exists(self.output_dir / f"kx.npy"):
-                    np.save(self.output_dir / f"kx.npy",to_cpu(self.kxs[self.keep_kxs_indices]))
-                    np.save(self.output_dir / f"ky.npy",to_cpu(self.kys[self.keep_kys_indices]))
+                    np.save(self.output_dir / f"kx.npy",backend.to_cpu(self.kxs[self.keep_kxs_indices]))
+                    np.save(self.output_dir / f"ky.npy",backend.to_cpu(self.kys[self.keep_kys_indices]))
                 if len(self.kxs)!=self.nx and not os.path.exists(self.output_dir / f"kx_uncrop.npy"):
-                    np.save(self.output_dir / f"kx_uncrop.npy",to_cpu(self.kxs))
+                    np.save(self.output_dir / f"kx_uncrop.npy",backend.to_cpu(self.kxs))
                 if len(self.kys)!=self.ny and not os.path.exists(self.output_dir / f"ky_uncrop.npy"):
-                    np.save(self.output_dir / f"ky_uncrop.npy",to_cpu(self.kys))
+                    np.save(self.output_dir / f"ky_uncrop.npy",backend.to_cpu(self.kys))
 
                 if cache_exists:
                     frames_cached += 1
@@ -411,9 +394,9 @@ class MultisliceCalculator:
                         #if self.base_probe.cropping:
                         #    fd_nx = self.base_probe.cropping ; fd_ny = fd_nx # ceil(/self.kth) ;
                         if self.use_memmap:
-                            frame_data = memmap((n_waves, fd_nx, fd_ny, self.n_layers,1), dtype=self.complex_dtype, filename = cache_file )
+                            frame_data = backend.memmap((n_waves, fd_nx, fd_ny, self.n_layers,1), dtype=self.complex_dtype, filename = cache_file )
                         else:
-                            frame_data = zeros((n_waves, fd_nx, fd_ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
+                            frame_data = backend.zeros((n_waves, fd_nx, fd_ny, self.n_layers,1), dtype=self.complex_dtype, device=self.device)
                         #print("frame_data",frame_data.shape)
                     #print("(done)",time.time()-start)
 
@@ -424,10 +407,10 @@ class MultisliceCalculator:
                     if self.loop_probes:
                         chunksize = self.loop_probes if isinstance(self.loop_probes,int) else 1
                         for i in range(10000000):
-                            chunk = xp.arange(i*chunksize,(i+1)*chunksize)
+                            chunk = backend.arange(i*chunksize,(i+1)*chunksize)
                             #chunk = chunk[chunk<npt]
                             # only keep chunk indices if they're also in probe_indices
-                            chunk = chunk[xp.any(self.probe_indices[None,:]==chunk[:,None],axis=1)]
+                            chunk = chunk[backend.any(self.probe_indices[None,:]==chunk[:,None],axis=1)]
                             if (i+1)*chunksize>npt:
                                 break
                             if len(chunk)==0:
@@ -435,7 +418,7 @@ class MultisliceCalculator:
                             chunks.append(chunk)
                         pbar2 = tqdm(total = npt, desc = "looping probes", unit="probe")
                     else:
-                        chunks.append( xp.arange(npt) )
+                        chunks.append( backend.arange(npt) )
                         pbar2 = None
                     #print("(done)",time.time()-start)
 
@@ -451,22 +434,22 @@ class MultisliceCalculator:
                         #print("(done)",time.time()-start)
 
                         # expand out to fixed l,p,x,y indices
-                        exit_waves_single = expand_dims(exit_waves_single,0) if len(exit_waves_single.shape)==3 else exit_waves_single
+                        exit_waves_single = backend.expand_dims(exit_waves_single,0) if len(exit_waves_single.shape)==3 else exit_waves_single
                         # FFT and load into frame_data
                         kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
                         for layer_idx in range(self.n_layers):
-                            exit_waves_k = xp.fft.fft2(exit_waves_single[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
-                            diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
+                            exit_waves_k = backend.fft2(exit_waves_single[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
+                            diffraction_patterns = backend.fftshift(exit_waves_k, **kwarg)
                             #if not self.prism:
                             diffraction_patterns = diffraction_patterns[:,self.keep_kxs_indices,:][:,:,self.keep_kys_indices]*self.kth**2
                             if self.use_memmap:
-                                diffraction_patterns = to_cpu(diffraction_patterns)
-                                selected = to_cpu(selected)
+                                diffraction_patterns = backend.to_cpu(diffraction_patterns)
+                                selected = backend.to_cpu(selected)
                             if self.store_full or self.prism:
                                 frame_data[selected,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
                             if self.ADF and not self.prism:
                                 #print(self.ADF._wf_array[0,:,:,0,0,0,0])
-                                intensities = einsum('pxy,xy->p',absolute(diffraction_patterns[:,:,:])**2,self.ADFmask)
+                                intensities = backend.einsum('pxy,xy->p', backend.absolute(diffraction_patterns[:,:,:])**2,self.ADFmask)
                                 for i,pp in zip(intensities,selected):
                                     self.ADF._array[self.ADFindex==pp] += i
                         if pbar2 is not None:
@@ -499,7 +482,7 @@ class MultisliceCalculator:
 
                     if not self.use_memmap and ( "exitwaves" in self.cache_levels or "slices" in self.cache_levels ) and (self.store_full or self.prism):
                         # Convert to CPU numpy array for saving
-                        frame_data_cpu = to_cpu(frame_data)
+                        frame_data_cpu = backend.to_cpu(frame_data)
                         np.save(cache_file, frame_data_cpu)
                     frames_computed += 1
 
@@ -508,7 +491,7 @@ class MultisliceCalculator:
                     cropped = frame_data[:,:,:,:,0]
                 #print(cropped.shape)
                 #if self.use_memmap:
-                #    cropped = to_cpu(cropped)
+                #    cropped = backend.to_cpu(cropped)
 
                 if self.prism:
                     # Recall: Prism algorithm passes a series of sinusoids through the sample (fourier components shared by all real-space probes), so now for each real-space probe, we need to calculate the exitwaves from components
@@ -602,7 +585,7 @@ def checkCache(cache_file,cache_levels):
         if "cache_exists-"+parent not in logging_tracker:
             logging_tracker.append("cache_exists-"+parent)
             logging.warning("One or more frames reloaded from cache: "+str(cache_file.parent))
-        return True,xp.asarray(np.load(cache_file)) # if always saving as numpy, then must cast to torch array if re-reading cache file back in
+        return True, backend.asarray(np.load(cache_file)) # if always saving as numpy, then must cast to torch array if re-reading cache file back in
     return False,0
 
 

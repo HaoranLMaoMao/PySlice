@@ -13,28 +13,6 @@ from pyslice.backend import zeros,to_cpu,mean,sum,absolute,einsum
 
 logger = logging.getLogger(__name__)
 
-try:
-    import torch ; xp = torch
-    TORCH_AVAILABLE = True
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    elif torch.backends.mps.is_available():
-        device = torch.device('mps')
-    else:
-        device = torch.device('cpu')
-    if device.type == 'mps':
-        complex_dtype = torch.complex64
-        float_dtype = torch.float32
-    else:
-        complex_dtype = torch.complex128
-        float_dtype = torch.float64
-except ImportError:
-    TORCH_AVAILABLE = False
-    xp = np
-    print("PyTorch not available, falling back to NumPy")
-    complex_dtype = np.complex128
-    float_dtype = np.float64
-
 
 class HAADFData(PySliceSerial, Signal):
     """

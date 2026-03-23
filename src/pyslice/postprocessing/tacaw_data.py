@@ -9,32 +9,9 @@ from .wf_data import WFData
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 #from ..data.pyslice_serial import PySliceSerial
-from pyslice.backend import to_cpu,fft,fftshift,mean,absolute,memmap,sum
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
-
-try:
-    import torch ; xp = torch
-    TORCH_AVAILABLE = True
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    elif torch.backends.mps.is_available():
-        device = torch.device('mps')
-    else:
-        device = torch.device('cpu')
-    if device.type == 'mps':
-        complex_dtype = torch.complex64
-        float_dtype = torch.float32
-    else:
-        complex_dtype = torch.complex128
-        float_dtype = torch.float64
-except ImportError:
-    TORCH_AVAILABLE = False
-    xp = np
-    print("PyTorch not available, falling back to NumPy")
-    complex_dtype = np.complex128
-    float_dtype = np.float64
 
 
 class TACAWData(PySliceSerial, Signal):
@@ -203,9 +180,10 @@ class TACAWData(PySliceSerial, Signal):
             _,nw,nx2,ny2 = self._array.shape
             if nt==nw and nx==nx2 and ny==ny2:
                 self._frequencies = np.load(self.cache_dir / "tacaw_freq.npy")
-                if TORCH_AVAILABLE:
-                    self._frequencies = xp.Tensor(self._frequencies)
-                    self._array = xp.Tensor(self._array)
+                if hasattr(self._array, 'device'):
+                    import pyslice.backend as backend
+                    self._frequencies = backend.asarray(self._frequencies)
+                    self._array = backend.asarray(self._array)
                 return
 
         # Default to last layer if not specified
@@ -234,10 +212,10 @@ class TACAWData(PySliceSerial, Signal):
         # Perform FFT along time axis (axis=1) for each probe position and k-point
         # Following abeels.py approach: subtract mean to avoid high zero-frequency peak
         # then Compute intensity |Ψ(ω,q)|² from the frequency-domain wavefunction
-
+        
         if self.chunkFFT: # looping through x (in case super giganormous FFTs blow your ram)
             dtype = complex_dtype if self.keep_complex else float_dtype
-            shape = (wf_layer.shape[0], self.n_chunks, wf_layer.shape[2], wf_layer.shape[3])
+            shape = (wf_layer.shape[0], self.chunk_size_time, wf_layer.shape[2], wf_layer.shape[3])
             if self.use_memmap:
                 self._array = memmap(shape, dtype=dtype, filename = self.cache_dir / "tacaw.npy")
             else:
@@ -280,7 +258,7 @@ class TACAWData(PySliceSerial, Signal):
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         np.save(self.cache_dir / "tacaw_freq.npy", self._frequencies)
         if not self.use_memmap:
-            np.save(self.cache_dir / "tacaw.npy", to_cpu(self._array) )
+            np.save(self.cache_dir / "tacaw.npy", backend.to_cpu(self._array) )
 
 
     # Keep fft_from_wf_data as public alias for backward compatibility
@@ -308,8 +286,8 @@ class TACAWData(PySliceSerial, Signal):
                 all_spectra.append(spectrum)
 
             # Average all spectra
-            if TORCH_AVAILABLE and hasattr(all_spectra[0], 'cpu'):
-                all_spectra = [s.cpu().numpy() for s in all_spectra]
+            if hasattr(all_spectra[0], 'device'):
+                all_spectra = [to_cpu(s) for s in all_spectra]
             spectrum = np.mean(all_spectra, axis=0)
         else:
             if probe_index >= len(self.probe_positions):
@@ -320,8 +298,8 @@ class TACAWData(PySliceSerial, Signal):
             spectrum = sum(probe_intensity, axis=(1, 2))  # Sum over kx, ky
 
             # Convert to numpy if PyTorch tensor
-            if TORCH_AVAILABLE and hasattr(spectrum, 'cpu'):
-                spectrum = spectrum.cpu().numpy()
+            if hasattr(spectrum, 'device'):
+                spectrum = to_cpu(spectrum)
 
         return spectrum
 
@@ -380,8 +358,8 @@ class TACAWData(PySliceSerial, Signal):
                 all_diffractions.append(diffraction_pattern)
 
             # Average all diffraction patterns
-            if TORCH_AVAILABLE and hasattr(all_diffractions[0], 'cpu'):
-                all_diffractions = [d.cpu().numpy() for d in all_diffractions]
+            if hasattr(all_diffractions[0], 'device'):
+                all_diffractions = [to_cpu(d) for d in all_diffractions]
             diffraction_pattern = np.mean(all_diffractions, axis=0)
         else:
             if probe_index >= len(self.probe_positions):
@@ -392,8 +370,8 @@ class TACAWData(PySliceSerial, Signal):
             diffraction_pattern = sum(probe_intensity, axis=0)  # Sum over frequencies
 
             # Convert to numpy if PyTorch tensor
-            if TORCH_AVAILABLE and hasattr(diffraction_pattern, 'cpu'):
-                diffraction_pattern = diffraction_pattern.cpu().numpy()
+            if hasattr(diffraction_pattern, 'device'):
+                diffraction_pattern = to_cpu(diffraction_pattern)
 
         if space == "real":
             diffraction_pattern = np.absolute(np.fft.ifft2(diffraction_pattern))
@@ -422,8 +400,8 @@ class TACAWData(PySliceSerial, Signal):
                 all_spectral_diffractions.append(spectral_diffraction)
 
             # Average all spectral diffraction patterns
-            if TORCH_AVAILABLE and hasattr(all_spectral_diffractions[0], 'cpu'):
-                all_spectral_diffractions = [sd.cpu().numpy() for sd in all_spectral_diffractions]
+            if hasattr(all_spectral_diffractions[0], 'device'):
+                all_spectral_diffractions = [to_cpu(sd) for sd in all_spectral_diffractions]
             spectral_diffraction = np.mean(all_spectral_diffractions, axis=0)
         else:
             if probe_index >= len(self.probe_positions):
@@ -433,8 +411,8 @@ class TACAWData(PySliceSerial, Signal):
             spectral_diffraction = self._array[probe_index, freq_idx, :, :]
 
             # Convert to numpy if PyTorch tensor
-            if TORCH_AVAILABLE and hasattr(spectral_diffraction, 'cpu'):
-                spectral_diffraction = spectral_diffraction.cpu().numpy()
+            if hasattr(spectral_diffraction, 'device'):
+                spectral_diffraction = to_cpu(spectral_diffraction)
 
         if space == "real":
             spectral_diffraction = np.absolute(np.fft.ifft2(spectral_diffraction))
@@ -537,11 +515,10 @@ class TACAWData(PySliceSerial, Signal):
             w_slice = self._array[probe_index, w, :, :]
             # optionally iFFT across kx,ky
             if space == "real":
-                kwarg = {"dim":(1,2)} if TORCH_AVAILABLE else {"axes":(1,2)}
-                w_slice = xp.fft.ifft2(w_slice,**kwarg)
+                w_slice = np.fft.ifft2(w_slice, axes=(1,2))
             # bring to CPU
-            if TORCH_AVAILABLE and hasattr(w_slice, 'cpu'):
-                w_slice = w_slice.cpu().numpy()
+            if hasattr(w_slice, 'device'):
+                w_slice = to_cpu(w_slice)
             # sum across probe positions
             w_slice = np.mean(w_slice,axis=0)
             # select values at positions

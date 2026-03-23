@@ -1,70 +1,33 @@
+import pyslice.backend as backend
 import numpy as np
 from pathlib import Path
 import logging,os
 from tqdm import tqdm
-from ..backend import to_cpu,mean
+import importlib.resources as resources
+import pyslice.data
 
-try:
-    import torch  ; xp = torch
-    TORCH_AVAILABLE = True
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    elif torch.backends.mps.is_available():
-        device = torch.device('mps')
-    else:
-        device = torch.device('cpu')
-    if device.type == 'mps': # Use float32 for MPS (doesn't support float64), float64 for CPU/CUDA
-        complex_dtype = torch.complex64
-        float_dtype = torch.float32
-    else:
-        complex_dtype = xp.complex128
-        float_dtype = xp.float64
-
-
-except ImportError:
-    TORCH_AVAILABLE = False
-    import numpy as np ; xp = np
-    print("PyTorch not available, falling back to NumPy")
-    device=None
-    complex_dtype = xp.complex128
-    float_dtype = xp.float64
-    #np.fft._fft=np.fft.fft # ALIASING IS TERRIBLE. THIS BLOCK, FOR EXAMPLE, THROWS A PSYCHO "postprocessing/tacaw_data.py", line 96, in fft_from_wf_data \n wf_fft = xp.fft.fft(wf_layer - wf_mean[:,None,:,:], axis=1) \n TypeError: fft() got an unexpected keyword argument 'axis'" BECAUSE WHEN WE ALIASED THE FUNCTION WE FAILED TO PREDICT ALL THE KWARGS WE MIGHT USE ELSEWHERE IN THE CODE
-    #def fft(ary,device):
-    #    return np.fft._fft(ary)
-    #xp.fft.fft=fft
-    #np._zeros=np.zeros
-    #def zeros(tup,dtype=float_dtype,device=None):
-    #    return np._zeros(tup,dtype=dtype)
-    #xp.zeros=zeros
-    #np._sum=np.sum
-    #def sum(ary,dim=None,axis=None): # WATCH OUT: imports apply throughout: if we alias a kwarg, then the calling function might still expect to find the unaliased kwarg
-    #    if axis is not None:
-    #        return np._sum(ary,axis=axis)
-    #    return np._sum(ary,axis=dim)
-    #np.sum=sum
+kirkland_file = resources.files('pyslice.data').joinpath('kirkland.txt')
 
 logger = logging.getLogger(__name__)
 
 # Global storage for Kirkland parameters on GPU - store per device
-kirklandABCDs = []
+kirklandABCDs = None
+
 def kirkland(qsq, Z):
     """
     GPU-accelerated Kirkland structure factor calculation using PyTorch.
     
     Args:
-                if device is not None and not TORCH_AVAILABLE:
-            raise ImportError("PyTorch not available. Please install PyTorch.")
-        
-: |q|² tensor in units of (1/Angstrom)²
-        Z: Atomic number (or element name string)
-        device: PyTorch device ('cpu' or 'cuda')
+        qsq:      |q|² tensor in units of (1/Angstrom)²
+        Z:        Atomic number (or element name string)
+        device:   PyTorch device ('cpu' or 'cuda')
         
     Returns:
         Form factor tensor with same shape as qsq
     """
     global kirklandABCDs
 
-    if len(kirklandABCDs)==0:
+    if kirklandABCDs is None:
         # Get device from qsq tensor if it's a PyTorch tensor
         if hasattr(qsq, 'device'):
             loadKirkland(qsq.device)
@@ -73,7 +36,7 @@ def kirkland(qsq, Z):
     else:
         # Move kirklandABCDs to match qsq device if needed
         if hasattr(qsq, 'device') and hasattr(kirklandABCDs, 'device'):
-            if qsq.device != kirklandABCDs.device:
+            if not qsq.device == kirklandABCDs.device:
                 kirklandABCDs = kirklandABCDs.to(qsq.device)
 
     if isinstance(Z, str):
@@ -93,11 +56,10 @@ def kirkland(qsq, Z):
     c_expanded = c[:, None, None]
     d_expanded = d[:, None, None]
     qsq_expanded = qsq[None, :, :]
-    
-    kwarg = {"dim":0} if TORCH_AVAILABLE else {"axis":0}
-    term1 = xp.sum(a_expanded / (qsq_expanded + b_expanded), **kwarg)
-    term2 = xp.sum(c_expanded * xp.exp(-d_expanded * qsq_expanded), **kwarg)
-    
+
+    term1 = backend.sum(a_expanded / (qsq_expanded + b_expanded), axis=0)
+    term2 = backend.sum(c_expanded * backend.exp(-d_expanded * qsq_expanded), axis=0)
+
     return term1 + term2
 
 def getZfromElementName(element):
@@ -140,30 +102,9 @@ def loadKirkland(device='cpu'):
     """Load Kirkland parameters from kirkland.txt file and move to GPU."""
     global kirklandABCDs
     
-    # Convert device to string for dictionary key
-    device_key = str(device)
-    
-    # Try to find kirkland.txt in the project directory
-    kirkland_file = None
-    search_paths = [
-        'kirkland.txt',
-        '../kirkland.txt', 
-        '../../kirkland.txt',
-        Path(__file__).parent.parent.parent / 'kirkland.txt',
-        Path(__file__).parent.parent / 'data/kirkland.txt' # relative path from potentials.py to data folder? i think this is the *right* place for kirkland.txt, not at the root of PySlice...
-    ]
-    
-    for path in search_paths:
-        if Path(path).exists():
-            kirkland_file = str(path)
-            break
-            
-    if kirkland_file is None:
-        raise FileNotFoundError("Could not find kirkland.txt file")
-    
     # Parse Kirkland parameters
     kirkland_params = []
-    
+
     for i in range(103):  # Elements 1-103
         rows = (i * 4 + 1, i * 4 + 5)  # Skip header, read 3 lines
         try:
@@ -181,58 +122,24 @@ def loadKirkland(device='cpu'):
             kirkland_params.append([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
     
     # Convert to appropriate tensor format with device handling
-    if TORCH_AVAILABLE:
-        # Use float32 for MPS compatibility (Apple Silicon doesn't support float64)
-        if isinstance(device, str):
-            device = torch.device(device)
-        dtype = torch.float32 if device.type == 'mps' else torch.float64
-        kirklandABCDs = torch.tensor(kirkland_params, dtype=dtype, device=device)
-    else:
-        kirklandABCDs = np.asarray(kirkland_params)
+    device, float_dtype, _ = backend.device_and_precision(device)
+    kirklandABCDs = backend.asarray(kirkland_params, dtype=float_dtype, device=device)
 
-class Potential:
-    def __init__(self, xs, ys, zs, positions=None, atomTypes=None, array=None, kind="kirkland", device=None, slice_axis=2, progress=False, cache_dir=None, frame_idx=None):
+
+class Potential:    
+    def __init__(self, xs, ys, zs, positions, atomTypes, kind="kirkland", device=None, slice_axis=2, progress=False, cache_dir=None, frame_idx=None):
         # Set up device and backend first
-        if TORCH_AVAILABLE:
-            # Auto-detect device if not specified
-            if device is None:
-                if torch.cuda.is_available():
-                    device = torch.device('cuda')
-                elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-                    device = torch.device('mps')
-                else:
-                    device = torch.device('cpu')
-            elif isinstance(device, str):
-                device = torch.device(device)
-            
-            self.device = device
-            self.use_torch = True
+        device, float_dtype, complex_dtype = backend.device_and_precision(device)
 
-            # Use float32 for MPS compatibility (Apple Silicon doesn't support float64)
-            self.dtype = torch.float32 if device.type == 'mps' else torch.float64
-            self.complex_dtype = torch.complex64 if device.type == 'mps' else torch.complex128
-            
-            # Convert inputs to PyTorch tensors on device
-            self.xs = torch.tensor(xs, dtype=self.dtype, device=device)
-            self.ys = torch.tensor(ys, dtype=self.dtype, device=device)
-            self.zs = torch.tensor(zs, dtype=self.dtype, device=device)
-            if positions is not None:
-                positions = torch.tensor(positions, dtype=self.dtype, device=device)
-            if array is not None:
-                self._array = torch.tensor(array, device=device)
-            else:
-                self._array = None
-        else:
-            if device is not None:
-                raise ImportError("PyTorch not available. Please install PyTorch.")
-            self.device = None
-            self.use_torch = False
-            self.dtype = np.float64
-            self.complex_dtype = np.complex128
-            self.xs = xs
-            self.ys = ys 
-            self.zs = zs
-            self._array = array
+        self.device = device
+        self.float_dtype = float_dtype
+        self.complex_dtype = complex_dtype
+
+        positions = backend.asarray(positions, dtype=self.float_dtype, device=self.device)
+
+        self.xs = backend.asarray(xs, dtype=self.float_dtype, device=self.device)
+        self.ys = backend.asarray(ys, dtype=self.float_dtype, device=self.device)
+        self.zs = backend.asarray(zs, dtype=self.float_dtype, device=self.device)
 
         self.nx = len(xs)
         self.ny = len(ys)
@@ -256,57 +163,46 @@ class Potential:
         self.slice_spacing = spacings[slice_axis]
         self.n_slices = len(self.slice_coords)
         
-        # Set up device kwargs for unified xp interface
-        device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
-        
-        # Set up k-space frequencies using xp with conditional device
-        self.kxs = xp.fft.fftfreq(self.nx, d=self.dx, **device_kwargs)
-        self.kys = xp.fft.fftfreq(self.ny, d=self.dy, **device_kwargs)
+        # Set up k-space frequencies
+        self.kxs = backend.fftfreq(self.nx, d=self.dx, dtype=float_dtype, device=device)
+        self.kys = backend.fftfreq(self.ny, d=self.dy, dtype=float_dtype, device=device)
         qsq = self.kxs[:, None]**2 + self.kys[None, :]**2
-     
+        
         # Convert atom types to atomic numbers if needed
-        if atomTypes is not None:
-            unique_atom_types = set(atomTypes)
-            atomic_numbers = []
-            for at in atomTypes:
-                if isinstance(at, str):
-                    atomic_numbers.append(getZfromElementName(at))
-                else:
-                    atomic_numbers.append(at)
-            if TORCH_AVAILABLE:
-                atomic_numbers = torch.tensor(atomic_numbers, device=device)
+        unique_atom_types = set(atomTypes)
+        atomic_numbers = []
+        for at in atomTypes:
+            if isinstance(at, str):
+                atomic_numbers.append(getZfromElementName(at))
+            else:
+                atomic_numbers.append(at)
+        atomic_numbers = backend.asarray(atomic_numbers, dtype=int, device=device)
 
-            # OPTIMIZATION 1: Compute form factors once per atom type on GPU
-            form_factors = {}
-            for at in unique_atom_types:
-                if kind == "kirkland":
-                    if isinstance(at, str):
-                        Z = getZfromElementName(at)
-                    else:
-                        Z = at
-                    form_factors[at] = kirkland(qsq, Z)
-                elif kind == "gauss":
-                    form_factors[at] = torch.exp(-1**2 * qsq / 2)
+        # OPTIMIZATION 1: Compute form factors once per atom type on GPU
+        form_factors = {}
+        for at in unique_atom_types:
+            if kind == "kirkland":
+                if isinstance(at, str):
+                    Z = getZfromElementName(at) 
+                else:
+                    Z = at
+                form_factors[at] = kirkland(qsq, Z)
+            elif kind == "gauss":
+                form_factors[at] = backend.exp(-1**2 * qsq / 2)
         
         self.cache_dir = cache_dir
         self.frame_idx = frame_idx
 
         def calculateSlice(slice_idx):
-            if self._array is not None:
-                return self._array[:,:,slice_idx]
             # check for caching
             cache_file = None
             if self.cache_dir is not None:
                 cache_file = self.cache_dir / ("potential_"+str(frame_idx)+"_"+str(slice_idx)+".npy")
             if cache_file is not None and os.path.exists(cache_file):
-                Z = np.load(cache_file)
-                if TORCH_AVAILABLE:
-                    return xp.from_numpy(Z).to(device)
-                return Z
+                return np.load(cache_file)
 
-            # Initialize slice of potential array using xp with conditional device
-            device_kwargs = {'device': self.device } if self.use_torch else {}
-            reciprocal = xp.zeros((self.nx, self.ny), dtype=self.complex_dtype, **device_kwargs)
+            # Initialize slice of potential array
+            reciprocal = backend.zeros((self.nx, self.ny), dtype=complex_dtype, device=device)
 
             # Process each atom type separately (reuse form factors)
             for at in unique_atom_types:
@@ -314,13 +210,11 @@ class Potential:
             
                 # OPTIMIZATION 2: Vectorized atom type masking on GPU
                 if isinstance(at, str):
-                    type_mask=[atom_type == at for atom_type in atomTypes]
-                    if TORCH_AVAILABLE:
-                        type_mask = torch.tensor(type_mask, 
-                                       dtype=torch.bool, device=device)
+                    type_mask = [atom_type == at for atom_type in atomTypes]
+                    type_mask = backend.asarray(type_mask, dtype=bool, device=device)
                 else:
                     type_mask = (atomic_numbers == at)
-            
+
                 # OPTIMIZATION 3: Batch process all slices for this atom type along the specified axis
                 # Create slice masks for all slices at once
                 slice_coords = positions[type_mask, slice_axis]  # Get coordinates along slice axis for this atom type
@@ -334,39 +228,40 @@ class Potential:
                 
                 spatial_mask = (slice_coords >= slice_min) & (slice_coords < slice_max)
                 
-                if not xp.any(spatial_mask):
-                    continue #return xp.zeros((len(self.kxs),len(self.kys)))
+                if not backend.any(spatial_mask):
+                    continue
                 
                 # Get positions for atoms in this slice and type
                 type_positions = positions[type_mask]
                 slice_positions = type_positions[spatial_mask]
                 
                 if len(slice_positions) == 0:
-                    continue #return xp.zeros((len(self.kxs),len(self.kys)))
+                    continue
                 
                 atomsx = slice_positions[:, self.inplane_axis1]
                 atomsy = slice_positions[:, self.inplane_axis2]
                 
                 # TODO i'm hard-coding the chunk size is 2000 atoms per layer which is HUGE, so this shouldn't affect anyone but me, but we really ought to do a "smarter" job of picking the chunk size
                 chunk_indices = list(np.arange(len(atomsx)))[::2000]+[len(atomsx)]
-                shape_factor = xp.zeros( (self.nx,self.ny) , dtype=self.complex_dtype, **device_kwargs )
+                shape_factor = backend.zeros((self.nx,self.ny), dtype=self.self.complex_dtype, **device_kwargs)
+                
                 for i1,i2 in zip(chunk_indices[:-1],chunk_indices[1:]):
                     atx = atomsx[i1:i2]
                     aty = atomsy[i1:i2]
 
                     # Compute structure factors - match NumPy pattern exactly
                     # exp(2 i pi (kx * x + ky * y) ) = exp(2 i pi kx x) * exp(2 i pi ky y), summed over all atoms (hence einsum below)
-                    expx = xp.exp(-1j * 2 * np.pi * self.kxs[None, :] * atx[:, None])
-                    expy = xp.exp(-1j * 2 * np.pi * self.kys[None, :] * aty[:, None])
-                
+
+                    expx = backend.exp(-1.j * 2 * np.pi * self.kxs[None, :] * atx[:, None])
+                    expy = backend.exp(-1.j * 2 * np.pi * self.kys[None, :] * aty[:, None])
+
                     # Einstein summation - match NumPy
-                    kwarg={True:{},False:{"optimize":True}}[TORCH_AVAILABLE]
-                    shape_factor += xp.einsum('ax,ay->xy', expx, expy, **kwarg)
+                    shape_factor += backend.einsum('ax,ay->xy', expx, expy)
                 
                 reciprocal += shape_factor * form_factor
 
-            real = xp.fft.ifft2(reciprocal)
-            real = xp.real(real)
+            real = backend.ifft2(reciprocal)
+            real = backend.real(real)
             # Convert from electron scattering factor f_e to projected potential V_proj.
             # Kirkland Eq C.1: f_e(q) = (m_e/2πℏ²) FT[V], so FT[V] = (2πℏ²/m_e) f_e.
             # On discrete grid: V(r) = (1/A) Σ_k FT[V](k) exp(2πi k·r)
@@ -377,22 +272,22 @@ class Potential:
             fe_to_V = 47.87764737  # 2πℏ²/m_e in V·Å² (Kirkland, Eq C.1 prefactor)
             Z = real * fe_to_V / (dx * dy)
             if cache_file is not None:
-                if TORCH_AVAILABLE and hasattr(Z, 'cpu'):
-                    Z_cpu = Z.cpu().numpy()
-                else:
-                    Z_cpu = Z
-                np.save(cache_file, Z_cpu)
+                np.save(cache_file,Z)
             return Z
         
         self.calculateSlice = calculateSlice
-        #self._array = None
+        self.array = None
        
     def build(self,progress=False):
         if self._array is not None:
             return
-        # Initialize potential array using xp with conditional device
-        device_kwargs = {'device': self.device } if self.use_torch else {}
-        potential_real = xp.zeros((self.nx, self.ny, self.n_slices), dtype=self.dtype, **device_kwargs)
+        
+        # Initialize potential array
+        potential_real = backend.zeros(
+            (self.nx, self.ny, self.n_slices), 
+            dtype=self.self.dtype,
+            device=self.device,
+        )
 
         if progress:
             localtqdm = tqdm
@@ -406,20 +301,12 @@ class Potential:
             potential_real[:, :, slice_idx] += self.calculateSlice(slice_idx)
          
         # Store tensor version for potential GPU operations
-        self._array = potential_real
-
-    def flatten(self):
-        self._array = mean(self._array,axis=2,keepdims=True)
-        self.nz = 1
-        self.zs=self.zs[:1]
-
-    @property
-    def array(self):
-        return to_cpu(self._array)
-
+        self.array = potential_real
+        
     def to_cpu(self):
-        return to_cpu(self._array)
-
+        """Convert tensors back to CPU NumPy arrays."""
+        return backend.to_cpu(self.array)
+    
     def to_device(self, device):
         """Move tensor data to specified device."""
         if hasattr(self, 'array_torch'):
@@ -427,22 +314,24 @@ class Potential:
         self.device = device
         return self
 
-    def plot(self,filename=None):
-        if self._array is None:
+    def plot(self,filename=""):
+        if self.array is None:
             self.build()
 
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
-        array = np.sum(np.absolute(self.array),axis=2).T[::-1,:] # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
+        array = backend.sum(
+            backend.absolute(self.array),
+            axis=2).T # imshow convention: y,x. our convention: x,y
         # Convert to CPU if on GPU/MPS device
-        #if hasattr(array, 'cpu'):
-        #    array = array.cpu()
+        if hasattr(array, 'cpu'):
+            array = array.cpu()
 
         # Convert extent values to CPU if needed
-        xs_min = xp.amin(self.xs)
-        xs_max = xp.amax(self.xs)
-        ys_min = xp.amin(self.ys)
-        ys_max = xp.amax(self.ys)
+        xs_min = backend.amin(self.xs)
+        xs_max = backend.amax(self.xs)
+        ys_min = backend.amin(self.ys)
+        ys_max = backend.amax(self.ys)
 
         if hasattr(xs_min, 'cpu'):
             xs_min = xs_min.cpu()

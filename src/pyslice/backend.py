@@ -70,6 +70,7 @@ DEFAULT_DEVICE, DEFAULT_FLOAT_DTYPE, DEFAULT_COMPLEX_DTYPE = device_and_precisio
 float_dtype = DEFAULT_FLOAT_DTYPE
 complex_dtype = DEFAULT_COMPLEX_DTYPE
 
+pi = xp.pi
 
 def asarray(arraylike, dtype=None, device=None):
     """Convert array-like object to backend array (NumPy or PyTorch tensor)."""
@@ -77,8 +78,18 @@ def asarray(arraylike, dtype=None, device=None):
         dtype = DEFAULT_FLOAT_DTYPE
     if device is None:
         device = DEFAULT_DEVICE
+    # Handle complex to real casting
+    if dtype is not None and 'float' in str(dtype).lower() and hasattr(arraylike, 'dtype') and 'complex' in str(arraylike.dtype).lower():
+        arraylike = arraylike.real
     if TORCH_BACKEND:
-        array = xp.tensor(arraylike, dtype=dtype, device=device)
+        if hasattr(arraylike, 'detach'):  # it's already a tensor
+            array = arraylike.detach().clone()
+            if dtype is not None:
+                array = array.to(dtype)
+            if device is not None:
+                array = array.to(device)
+        else:
+            array = xp.tensor(arraylike, dtype=dtype, device=device)
     else:
         array = xp.asarray(arraylike, dtype=dtype)
     return array
@@ -161,6 +172,7 @@ def fftfreq(n, d=1.0, dtype=None, device=None):
     if device is None:
         device = DEFAULT_DEVICE
     if TORCH_BACKEND:
+        print(device, dtype)
         return xp.fft.fftfreq(n, d, dtype=dtype, device=device)
     else:
         return xp.fft.fftfreq(n, d).astype(dtype)
@@ -389,7 +401,22 @@ def stack(arrays, axis=0, **kwargs):
         return np.stack(arrays, axis=axis, **kwargs)
 
 
+def roll(x, shift, axis):
+    """Roll array along axis."""
+    if TORCH_BACKEND:
+        return xp.roll(x, shifts=shift, dims=axis)
+    else:
+        return np.roll(x, shift, axis=axis)
 
+
+def log(x):
+    """Element-wise natural logarithm."""
+    return xp.log(x)
+
+
+def angle(x):
+    """Element-wise angle of complex number."""
+    return xp.angle(x)
 
 
 def isnan(x):

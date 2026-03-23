@@ -1,32 +1,9 @@
+import pyslice.backend as backend
 import numpy as np
 from tqdm import tqdm
-import logging,time
-from ..backend import zeros,mean,ones,to_cpu,asarray,absolute,sum,reshape,midcrop,einsum,ceil,clone
-#from line_profiler import profile
+import logging, time
 
-try:
-    import torch ; xp = torch
-    TORCH_AVAILABLE = True
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    elif torch.backends.mps.is_available():
-        device = torch.device('mps')
-    else:
-        device = torch.device('cpu')
-    if device.type == 'mps':
-        complex_dtype = torch.complex64
-        float_dtype = torch.float32
-    else:
-        complex_dtype = torch.complex128
-        float_dtype = torch.float64
-except ImportError:
-    TORCH_AVAILABLE = False
-    xp = np
-    print("PyTorch not available, falling back to NumPy")
-    complex_dtype = np.complex128
-    float_dtype = np.float64
-
-
+TORCH_BACKEND = backend.TORCH_BACKEND
 
 logger = logging.getLogger(__name__)
 
@@ -37,23 +14,20 @@ def antialias_aperture(kxs, kys, cutoff_fraction=2/3, taper_width=0.02):
     taper to avoid ringing from a hard cutoff.  Returns a 2D real-valued
     array (1 inside, tapers to 0 outside).
     """
-    kx_max = xp.amax(xp.abs(kxs))
-    ky_max = xp.amax(xp.abs(kys))
+    kx_max = backend.amax(backend.absolute(kxs))
+    ky_max = backend.amax(backend.absolute(kys))
     k_max = min(float(kx_max), float(ky_max))  # Nyquist = 1/(2*sampling)
     k_cutoff = cutoff_fraction * k_max
 
-    kx_grid, ky_grid = xp.meshgrid(kxs, kys, indexing='ij')
-    k_r = xp.sqrt(kx_grid**2 + ky_grid**2)
+    kx_grid, ky_grid = backend.meshgrid(kxs, kys, indexing='ij')
+    k_r = backend.sqrt(kx_grid**2 + ky_grid**2)
 
     # Smooth cosine taper from (k_cutoff - taper) to k_cutoff, strictly zero above k_cutoff
     taper = taper_width * k_max
-    aperture = xp.ones_like(k_r)
+    aperture = backend.ones_like(k_r)
     mask_taper = (k_r > k_cutoff - taper) & (k_r < k_cutoff)
     mask_outer = k_r >= k_cutoff
-    if TORCH_AVAILABLE and hasattr(k_r, 'device'):
-        aperture[mask_taper] = 0.5 * (1 + torch.cos(torch.pi * (k_r[mask_taper] - k_cutoff + taper) / taper))
-    else:
-        aperture[mask_taper] = 0.5 * (1 + np.cos(np.pi * (k_r[mask_taper] - k_cutoff + taper) / taper))
+    aperture[mask_taper] = 0.5 * (1 + backend.cos(backend.pi * (k_r[mask_taper] - k_cutoff + taper) / taper))
     aperture[mask_outer] = 0.0
     return aperture
 
@@ -76,17 +50,21 @@ def m_effective(eV):
 def wavelength(eV):
     """
     Compute relativistic electron wavelength in Angstroms.
-
-    Uses float64 for intermediate calculations to avoid underflow on MPS/float32.
-    The term m_electron * c_light^2 can underflow in float32 if computed in wrong order.
+    
+    Converts constants to backend arrays for device consistency.
+    Uses higher precision intermediates to avoid underflow.
     """
-    # Convert to numpy float64 for calculation, then convert back if needed
-    if TORCH_AVAILABLE and isinstance(eV, torch.Tensor):
-        eV_np = eV.detach().cpu().numpy().astype(np.float64)
-        lam_np = h_planck * c_light / ((eV_np * q_electron)**2 + 2 * eV_np * q_electron * m_electron * c_light**2)**0.5 * 1e10
-        return torch.tensor(lam_np, dtype=eV.dtype, device=eV.device)
-    else:
-        return h_planck * c_light / ((eV * q_electron)**2 + 2 * eV * q_electron * m_electron * c_light**2)**0.5 * 1e10
+    # Convert inputs and constants to backend arrays on the appropriate device
+    eV_joules = backend.asarray(eV, dtype=backend.float_dtype) * backend.asarray(q_electron, dtype=backend.float_dtype)
+    m_c2 = backend.asarray(m_electron * c_light**2, dtype=backend.float_dtype)
+    h_c = backend.asarray(h_planck * c_light, dtype=backend.float_dtype)
+    
+    # Correct relativistic formula: sqrt(E^2 + 2 E m c^2)
+    momentum = backend.sqrt(eV_joules**2 + 2 * eV_joules * m_c2)
+    lam = h_c / momentum * 1e10  # Convert to Angstroms
+    
+    return lam
+
 
 class Probe:
     """
@@ -107,40 +85,15 @@ class Probe:
             device: PyTorch device (None for auto-detection)
         """
         # TORCH DEVICES AND DTYPES
-        if TORCH_AVAILABLE:
-            # Auto-detect device if not specified (same logic as Potential class)
-            if device is None:
-                if torch.cuda.is_available():
-                    device = torch.device('cuda')
-                elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-                    device = torch.device('mps')
-                else:
-                    device = torch.device('cpu')
-            elif isinstance(device, str):
-                device = torch.device(device)
-            self.device = device
-            self.use_torch = True
-
-            # Use float32 for MPS compatibility (same as Potential class)
-            self.dtype = torch.float32 if device.type == 'mps' else torch.float64
-            self.complex_dtype = torch.complex64 if device.type == 'mps' else torch.complex128
-        else:
-            if device is not None:
-                raise ImportError("PyTorch not available. Please install PyTorch.")
-            self.device = None
-            self.use_torch = False
-            self.dtype = np.float64
-            self.complex_dtype = np.complex128
+        device, float_dtype, complex_dtype = backend.device_and_precision(device)
+        self.device = device
+        self.dtype = float_dtype
+        self.complex_dtype = complex_dtype
         
         # SET UP SPATIAL GRIDS
         # Convert coordinate arrays to tensors if using torch (same as Potential class)
-        if self.use_torch:
-            # Use as_tensor to avoid copy warning when input is already a tensor
-            self.xs = torch.as_tensor(xs, dtype=self.dtype, device=self.device)
-            self.ys = torch.as_tensor(ys, dtype=self.dtype, device=self.device)
-        else:
-            self.xs = xs
-            self.ys = ys
+        self.xs = backend.asarray(xs, dtype=self.dtype, device=self.device)
+        self.ys = backend.asarray(ys, dtype=self.dtype, device=self.device)
 
         nx = len(xs) ; ny = len(ys)
         dx = xs[1] - xs[0] ; dy = ys[1] - ys[0]
@@ -169,16 +122,14 @@ class Probe:
         #    n = 1 if array is None else len(array)
         #    eV = [ eV ]*n
         self.eV = eV ; self.wavelength=wavelength(eV)
-        self.eVs = np.asarray([eV])
-        if self.use_torch:
-            self.eVs = torch.as_tensor(self.eVs, dtype=self.dtype, device=self.device)
+        self.eVs = backend.asarray([eV], dtype=self.dtype, device=self.device)
         self.wavelengths = wavelength(self.eVs)
         self.temporal_decoherence = None
         self.spatial_decoherence = None
         self.gaussianVOA = gaussianVOA
         
         # Set up device kwargs for unified xp interface (same as Potential class)
-        device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
+        device_kwargs = {'device': self.device, 'dtype': self.dtype}
         
         self.stay_reciprocal = stay_reciprocal
         self.crop_reciprocal = crop_reciprocal
@@ -186,19 +137,19 @@ class Probe:
         #    self.crop_reciprocal = (min(nx,ny)-self.crop_reciprocal)//2 # so we need to chop 125 off each side
 
 
-        self.kxs = xp.fft.fftfreq(nx, d=dx, **device_kwargs)
-        self.kys = xp.fft.fftfreq(ny, d=dy, **device_kwargs)
+        self.kxs = backend.fftfreq(nx, d=dx, **device_kwargs)
+        self.kys = backend.fftfreq(ny, d=dy, **device_kwargs)
 
         if not array is None: # Allow construction of a Probe object with a passed array instead of building it below. used by create_batched_probes
-            if self.use_torch and hasattr(array, 'to'):
+            if backend.TORCH_BACKEND and hasattr(array, 'to'):
                 self._array = array.to(device=self.device, dtype=self.complex_dtype)
             else:
-                self._array = xp.asarray(array)
+                self._array = backend.asarray(array, dtype=self.complex_dtype, device=self.device)
         else:
             #self._array = zeros((len(self.eV),1,nx,ny))
             #for i,w in enumerate(self.wavelength):
             #   self._array[i,0,:,:] = self.generate_single_probe(mrad,w,gaussianVOA,preview=preview)
-            #self._array = zeros((1,1,nx,ny),dtype=complex_dtype)
+            #self._array = backend.zeros((1,1,nx,ny), dtype=self.complex_dtype, device=self.device)
             self._array= self.generate_single_probe(mrad,self.wavelength,self.gaussianVOA,preview=preview)[None,None,:,:]*ones((1,1), device=self.device)[:,:,None,None]
 
         self.cropping = cropping
@@ -220,13 +171,12 @@ class Probe:
 
         nx,ny = len(kxs) , len(kys)
         if mrad == 0:
-            return zeros((nx, ny), device=self.device)+1
+            return backend.zeros((nx, ny), device=self.device, dtype=self.complex_dtype, device=self.device)+1
 
+        reciprocal = backend.zeros((nx, ny), dtype=self.complex_dtype, device=self.device)
         radius = (mrad * 1e-3) / wavelength  # Convert mrad to reciprocal space units
-
-        reciprocal = zeros((nx, ny), device=self.device)
-        kx_grid, ky_grid = xp.meshgrid(kxs, kys, indexing='ij') # unshifted kx ky: 0,1,2,3,....-3,-2,-1
-        radii = xp.sqrt(kx_grid**2 + ky_grid**2)
+        kx_grid, ky_grid = backend.meshgrid(kxs, kys, indexing='ij') # unshifted kx ky: 0,1,2,3,....-3,-2,-1
+        radii = backend.sqrt(kx_grid**2 + ky_grid**2)
 
         if gaussianVOA == 0:
             mask = radii < radius
@@ -238,8 +188,8 @@ class Probe:
         if preview:
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots() ; print(radius)
-            extent = (xp.min(self.kxs), xp.max(self.kxs), xp.min(self.kys), xp.max(self.kys))
-            ax.imshow(xp.fft.fftshift(reciprocal.T), cmap="inferno",extent=extent) # shift to visualize with k=0 in the center
+            extent = (backend.amin(self.kxs), backend.amax(self.kxs), backend.amin(self.kys), backend.amax(self.kys))
+            ax.imshow(backend.fft.fftshift(reciprocal.T), cmap="inferno",extent=extent) # shift to visualize with k=0 in the center
             ax.set_xlabel("kx ($\\AA^{-1}$)")
             ax.set_ylabel("ky ($\\AA^{-1}$)")
             plt.show()
@@ -247,7 +197,7 @@ class Probe:
         if self.stay_reciprocal: # if we would've done a real-space shift, we should apply a phase ramp in reciprocal space
             return reciprocal * xp.exp(-2j * xp.pi * kxs[:, None] * self.lx/2 ) * xp.exp(-2j * xp.pi * kys[None, :] * self.ly/2 )
 
-        return xp.fft.ifftshift(xp.fft.ifft2(reciprocal)) # iFFT --> realspace --> shift --> zero in the center
+        return backend.ifftshift(backend.ifft2(reciprocal)) # iFFT --> realspace --> shift --> zero in the center
         #self.array_numpy = self.array.cpu().numpy()
     
     def copy(self,selected_probes=None):
@@ -288,23 +238,16 @@ class Probe:
     
     def to_device(self, device):
         """Move probe to specified device (similar to Potential.to_device)."""
-        if not self.use_torch:
-            raise RuntimeError("to_device() requires PyTorch")
-
-        # MPS doesn't support float64
-        if hasattr(device, 'type') and device.type == 'mps':
-            dtype, complex_dtype = torch.float32, torch.complex64
-        else:
-            dtype, complex_dtype = torch.float64, torch.complex128
+        device, float_dtype, complex_dtype = backend.device_and_precision(device)
 
         self._array = self._array.to(device=device, dtype=complex_dtype)
-        self.xs = self.xs.to(device=device, dtype=dtype)
-        self.ys = self.ys.to(device=device, dtype=dtype)
-        self.kxs = self.kxs.to(device=device, dtype=dtype)
-        self.kys = self.kys.to(device=device, dtype=dtype)
+        self.xs = self.xs.to(device=device, dtype=float_dtype)
+        self.ys = self.ys.to(device=device, dtype=float_dtype)
+        self.kxs = self.kxs.to(device=device, dtype=float_dtype)
+        self.kys = self.kys.to(device=device, dtype=float_dtype)
 
         self.device = device
-        self.dtype = dtype
+        self.dtype = float_dtype
         self.complex_dtype = complex_dtype
         return self
 
@@ -312,15 +255,15 @@ class Probe:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
         # calling self.array should convert to CPU/numpy
-        array = np.mean(np.absolute(self.array[:,:,::-1,:]),axis=1)[0,:,:] # positional,summable,x,y indices
+        array = backend.mean(backend.absolute(self.array[:,:,::-1,:]),axis=1)[0,:,:] # positional,summable,x,y indices
         array=array.T # imshow convention: y,x. our convention: x,y
-        plot_array = np.absolute(array)**.25
+        plot_array = backend.absolute(array)**.25
 
         # Convert extent values to CPU if needed (use xp for torch/numpy compatibility)
-        xs_min = xp.amin(self.xs)
-        xs_max = xp.amax(self.xs) # TODO technically this should be xs[-1]+dx??
-        ys_min = xp.amin(self.ys)
-        ys_max = xp.amax(self.ys)
+        xs_min = backend.amin(self.xs)
+        xs_max = backend.amax(self.xs) # TODO technically this should be xs[-1]+dx??
+        ys_min = backend.amin(self.ys)
+        ys_max = backend.amax(self.ys)
 
         if hasattr(xs_min, 'cpu'):
             xs_min = xs_min.cpu()
@@ -342,12 +285,12 @@ class Probe:
 
     def defocus(self,dz): # POSITIVE DEFOCUS PUTS BEAM WAIST ABOVE SAMPLE, UNITS OF ANGSTROM
         if isinstance(dz,(int,float)):
-            dz = zeros(len(self._array), device=self.device)+dz
-        kx_grid, ky_grid = xp.meshgrid(self.kxs, self.kys, indexing='ij')
+            dz = backend.zeros(len(self._array), device=self.device)+dz
+        kx_grid, ky_grid = backend.meshgrid(self.kxs, self.kys, indexing='ij')
         k_squared = kx_grid**2 + ky_grid**2
-        P = xp.exp(-1j * xp.pi * self.wavelength * dz[:,None,None] * k_squared[None,:,:])
+        P = backend.exp(-1j * backend.pi * self.wavelength * dz[:,None,None] * k_squared[None,:,:])
         nz = len(dz) ; nc,npt,nx,ny = self._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
-        self._array = xp.fft.ifft2( P[:,None,None,:,:] * xp.fft.fft2( self._array )[None,:,:,:,:] )
+        self._array = backend.ifft2( P[:,None,None,:,:] * backend.fft2( self._array )[None,:,:,:,:] )
         self._array = self._array.reshape((nz*nc,npt,nx,ny))
         #print("defocus",dz,"new shape",self._array.shape)
 
@@ -362,11 +305,10 @@ class Probe:
         self.temporal_decoherence = (sigma_eV,N)
         eV = self.eV
         self.eVs = np.linspace(eV-2*sigma_eV,eV+2*sigma_eV,N)
-        if self.use_torch:
-            self.eVs = torch.as_tensor(self.eVs, dtype=self.dtype, device=self.device)
+        self.eVs = backend.asarray(self.eVs, dtype=self.dtype, device=self.device)
         self.wavelengths = wavelength(self.eVs)
-        amplitudes = np.exp(-(eV-self.eVs)**2/sigma_eV**2)
-        self._array = zeros((N,1,nx,ny), device=self.device)
+        amplitudes = backend.exp(-(eV-self.eVs)**2/sigma_eV**2)
+        self._array = backend.zeros((N,1,nx,ny), device=self.device)
         for n,eV in enumerate(self.eVs):
             self._array[n,0,:,:] = amplitudes[n] * self.generate_single_probe(self.mrad,wavelength(eV),self.gaussianVOA)
         nc,npt,nx,ny = self._array.shape #; print("addTemporalDecoherence expands to",nc,npt,nx,ny)
@@ -382,18 +324,18 @@ class Probe:
             print("WARNING: calling addSpatialDecoherence twice will overwrite previous")
         self.spatial_decoherence = (sigma_dz,N)
         dzs = np.linspace(-2*sigma_dz,2*sigma_dz,N) # suppose N=25
-        amplitudes = np.exp(-dzs**2/sigma_dz**2)
+        amplitudes = backend.exp(-dzs**2/sigma_dz**2)
         nc,npt,nx,ny = self._array.shape            # suppose nc=10 (addTemporalDecoherence created 10 wavelengths)
         if self.use_torch:
-            dzs = torch.as_tensor(dzs, dtype=self.dtype, device=self.device)
+            dzs = backend.asarray(dzs, dtype=self.dtype, device=self.device)
         self.defocus(dzs)                           # defocus starts with 25,10,npt,nx,ny --reshapes--> 250,npt,nx,ny
         for i in range(N):                         # reshape to flatten loops first index last: [[0,1],[2,3]] --> [0,1,2,3]
             for j in range(nc):
                 self._array[i*nc+j] *= amplitudes[i]
         nc,npt,nx,ny = self._array.shape #; print("addSpatialDecoherence expands to",nc,npt,nx,ny)
-        self.eVs = ones(N, device=self.device)[:,None]*self.eVs[None,:] # defocus expands into nz,nc then flattens to nz*nc
+        self.eVs = backend.ones(N, device=self.device)[:,None]*self.eVs[None,:] # defocus expands into nz,nc then flattens to nz*nc
         self.eVs = self.eVs.reshape(nc)
-        self.wavelengths = ones(N, device=self.device)[:,None]*self.wavelengths[None,:]
+        self.wavelengths = backend.ones(N, device=self.device)[:,None]*self.wavelengths[None,:]
         self.wavelengths = self.wavelengths.reshape(nc)
         if npt==1:
             self.applyShifts()
@@ -407,9 +349,9 @@ class Probe:
         if self.cropping:
             i1=nx//2-self.cropping//2 ; i2=i1+self.cropping     # |_______i1___.___i2_______| for initial centered probe at lx/2,ly/2
             j1=ny//2-self.cropping//2 ; j2=j1+self.cropping
-            self._array = self._array[:,0,None,i1:i2,j1:j2] * ones(len(self.probe_positions), device=self.device)[None,:,None,None]
+            self._array = self._array[:,0,None,i1:i2,j1:j2] * backend.ones(len(self.probe_positions), device=self.device)[None,:,None,None]
         else:
-            self._array = self._array[:,0,None,:,:] * ones(len(self.probe_positions), device=self.device)[None,:,None,None]
+            self._array = self._array[:,0,None,:,:] * backend.ones(len(self.probe_positions), device=self.device)[None,:,None,None]
         # loop through probe positions
         for i, (px,py) in enumerate(self.probe_positions):
             if px-self.lx/2 == 0 and py-self.ly/2 == 0:
@@ -425,9 +367,9 @@ class Probe:
         if self.cropping:
             i1=self.nx//2-self.cropping//2 ; i2=i1+self.cropping  # |_______i1___.___i2_______| for initial centered probe at lx/2,ly/2
             j1=self.ny//2-self.cropping//2 ; j2=j1+self.cropping
-            device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
-            kxs = xp.fft.fftfreq(self.cropping, d=self.dx, **device_kwargs)
-            kys = xp.fft.fftfreq(self.cropping, d=self.dy, **device_kwargs)
+            device_kwargs = {'device': self.device, 'dtype': self.dtype}
+            kxs = backend.fftfreq(self.cropping, d=self.dx, **device_kwargs)
+            kys = backend.fftfreq(self.cropping, d=self.dy, **device_kwargs)
             dpx = dx//self.dx ; dpy = dy//self.dy               # pixel shifts
             offset_x = i1+dpx ; offset_y = j1+dpy
             dx-=dpx*self.dx ; dy-=dpy*self.dy                   # update subpixel shifts
@@ -439,16 +381,16 @@ class Probe:
             kxs,kys=self.kxs,self.kys
             offset_x = 0 ; offset_y=0
         if not self.stay_reciprocal:
-            probe_k = xp.fft.fft2(array) # positional,summable,x,y
+            probe_k = backend.fft2(array) # positional,summable,x,y
         else:
             probe_k = array
-        kx_shift = xp.exp(-2j * xp.pi * kxs[None,:, None] * dx )
-        ky_shift = xp.exp(-2j * xp.pi * kys[None,None, :] * dy )
+        kx_shift = backend.exp(-2j * backend.pi * kxs[None,:, None] * dx )
+        ky_shift = backend.exp(-2j * backend.pi * kys[None,None, :] * dy )
         probe_k_shifted = probe_k * kx_shift * ky_shift
 
         if self.stay_reciprocal:
              return probe_k_shifted,(offset_x,offset_y)
-        return xp.fft.ifft2(probe_k_shifted),(offset_x,offset_y)
+        return backend.ifft2(probe_k_shifted),(offset_x,offset_y)
 
 
     def aberrate(self,aberrations):
@@ -457,9 +399,9 @@ class Probe:
         # self.array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
         # Aberrations are defined at the aperture plane, so we must apply them in reciprocal space. 
 	    # (or do a convolution in real-space)
-        reciprocal = xp.fft.fft2(xp.fft.fftshift(self._array)) # centered-real --> zero at corner --> FFT --> kx,ky zero at corner
+        reciprocal = backend.fft2(backend.fftshift(self._array)) # centered-real --> zero at corner --> FFT --> kx,ky zero at corner
         reciprocal *= dP
-        self._array = xp.fft.ifftshift(xp.fft.ifft2(reciprocal))
+        self._array = backend.ifftshift(backend.ifft2(reciprocal))
 
 # See Kirkland Eq 2.10: 
 # χ(k,ϕ) = π/2 Cs λ³ k⁴ - π Δf λ k²
@@ -492,18 +434,18 @@ class Probe:
 # Aberrations are an adjustment to the phase of the wave ("dPhi"), to be applied in reciprocal space.
 # this is done by multiplying the complex wave (be it a probe or an exit wave) by xp.exp(-1j * dPhi)
 def aberrationFunction(kxs,kys,wavelength,aberrations): # aberrations should be a dict of Cnm following https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
-    dPhi = xp.zeros_like(kxs[:,None] * kys[None,:])
-    ks = xp.sqrt( kxs[:,None]**2 + kys[None,:]**2 ) # unshifted: 0,1,2,3,...-3,-2,-1, reciprocal origin at corner
-    theta = xp.arctan2( kys[None,:] , kxs[:,None] )
+    dPhi = backend.zeros_like(kxs[:,None] * kys[None,:])
+    ks = backend.sqrt( kxs[:,None]**2 + kys[None,:]**2 ) # unshifted: 0,1,2,3,...-3,-2,-1, reciprocal origin at corner
+    theta = backend.arctan2( kys[None,:] , kxs[:,None] )
     for k in aberrations.keys():
         n,m = int(k[1]),int(k[2]) # C03 --> 0,3
         C = aberrations[k] ; phi0 = 0
         if not isinstance(C,(int,float)):
             C,phi0 = C
-        dPhi += 2*xp.pi/wavelength * \
+        dPhi += 2*np.pi/wavelength * \
             (1/(n+1)) * C * ( ks * wavelength ) ** (n+1) * \
-            xp.cos( m * (theta-phi0) )
-    return xp.exp(-1j * dPhi)
+            backend.cos( m * (theta-phi0) )
+    return backend.exp(-1j * dPhi)
 
 #def probe_grid(xlims,ylims,n,m):
 #	x,y=np.meshgrid(np.linspace(*xlims,n),np.linspace(*ylims,m))
@@ -523,7 +465,8 @@ def create_batched_probes(base_probe, probe_positions, device=None):
         probe object with an array of shape (n_probes, nx, ny)
     """
     # Move probe to correct device if needed
-    if device is not None and TORCH_AVAILABLE:
+    if device is not None:
+        device, _, _ = backend.device_and_precision(device)
         # Always move to ensure array is actually on the device
         # (checking base_probe.device may not reflect actual array device)
         base_probe.to_device(device)
@@ -535,7 +478,7 @@ def create_batched_probes(base_probe, probe_positions, device=None):
     ny = len(base_probe.ys)
 
     # Compute dx, dy on same device as probe
-    if TORCH_AVAILABLE and hasattr(base_probe.xs, 'device'):
+    if hasattr(base_probe.xs, 'device'):
         dx = (base_probe.xs[1] - base_probe.xs[0]).item()
         dy = (base_probe.ys[1] - base_probe.ys[0]).item()
     else:
@@ -546,22 +489,19 @@ def create_batched_probes(base_probe, probe_positions, device=None):
 
     for px, py in probe_positions:
         # Create shifted probe using phase ramp in k-space
-        probe_k = xp.fft.fft2(base_probe._array)
+        probe_k = backend.fft2(base_probe._array)
 
         # Apply phase ramp for spatial shift (negative sign = shift right)
-        kx_shift = xp.exp(-2j * xp.pi * base_probe.kxs[:, None] * (px-lx/2) )
-        ky_shift = xp.exp(-2j * xp.pi * base_probe.kys[None, :] * (py-ly/2) )
+        kx_shift = backend.exp(-2j * backend.pi * base_probe.kxs[:, None] * (px-lx/2) )
+        ky_shift = backend.exp(-2j * backend.pi * base_probe.kys[None, :] * (py-ly/2) )
         probe_k_shifted = probe_k * kx_shift * ky_shift
         
         # Convert back to real space
-        shifted_probe_array = xp.fft.ifft2(probe_k_shifted)
+        shifted_probe_array = backend.ifft2(probe_k_shifted)
         probe_arrays.append(shifted_probe_array)
     
     # Stack into batch tensor
-    if TORCH_AVAILABLE:
-        array = torch.stack(probe_arrays, dim=0)
-    else:
-        array = xp.asarray(probe_arrays)
+    array = backend.stack(probe_arrays, axis=0)
 
     return Probe(base_probe.xs, base_probe.ys, base_probe.mrad, base_probe.eV, array=array, device=base_probe.device)
 
@@ -785,7 +725,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
                      If store_all_slices=True, shape is (n_slices, n_probes, nx, ny)
                      Otherwise, shape is (n_probes, nx, ny) or (nx, ny) for single probe
     """
-    if device is not None and not TORCH_AVAILABLE:
+    if device is not None and not backend.TORCH_BACKEND:
         raise ImportError("PyTorch not available. Please install PyTorch.")
     if device is None and hasattr(probe, 'device'):
         device = probe.device
@@ -793,14 +733,14 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     # Initialize wavefunction with probe(s) - shape: (n_probes, nx, ny)
     nc,npt,nx,ny = probe._array.shape #; print("nc,npt,nx,ny",nc,npt,nx,ny)
     array = probe._array.reshape((nc*npt,nx,ny)) # "flatten" first two indices
-    probe_wavelengths = probe.wavelengths[:,None]*ones(npt, device=device)[None,:] # also expand wavelengths and eVs arrays to cover all probe positions npt
+    probe_wavelengths = probe.wavelengths[:,None]*backend.ones(npt, device=device)[None,:] # also expand wavelengths and eVs arrays to cover all probe positions npt
     probe_wavelengths = probe_wavelengths.reshape(nc*npt)
-    probe_eVs = probe.eVs[:,None]*ones(npt, device=device)[None,:]
+    probe_eVs = probe.eVs[:,None]*backend.ones(npt, device=device)[None,:]
     probe_eVs = probe_eVs.reshape(nc*npt)
 
     # Calculate interaction parameter (Kirkland Eq 5.6)
     E0_eV = m_electron * c_light**2 / q_electron
-    sigma = (2 * np.pi) / (probe_wavelengths * probe_eVs) * \
+    sigma = (2 * backend.pi) / (probe_wavelengths * probe_eVs) * \
             (E0_eV + probe_eVs) / (2 * E0_eV + probe_eVs) # wavelength and eVs now have length of n_probes
     #print("propagate sigma",sigma)
     #if TORCH_AVAILABLE:
@@ -814,17 +754,17 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     # All tensors should already be on the correct device from creation
     kx,ky = potential.kxs, potential.kys
     if probe.cropping:
-        device_kwargs = {'device': probe.device, 'dtype': probe.dtype} if probe.use_torch else {}
-        kx = xp.fft.fftfreq(probe.cropping, d=probe.dx, **device_kwargs)
-        ky = xp.fft.fftfreq(probe.cropping, d=probe.dy, **device_kwargs)
-    kx_grid, ky_grid = xp.meshgrid(kx, ky, indexing='ij')
+        device_kwargs = {'device': probe.device, 'dtype': probe.dtype}
+        kx = backend.fftfreq(probe.cropping, d=probe.dx, **device_kwargs)
+        ky = backend.fftfreq(probe.cropping, d=probe.dy, **device_kwargs)
+    kx_grid, ky_grid = backend.meshgrid(kx, ky, indexing='ij')
     k_squared = kx_grid**2 + ky_grid**2
 
     # Precompute 2/3 Nyquist anti-aliasing aperture for bandwidth-limiting transmission functions
     aa_aperture = antialias_aperture(kx, ky)
 
     # Fold anti-aliasing aperture into propagator to bandwidth-limit wavefunction at every slice
-    P = xp.exp(-1j * xp.pi * probe_wavelengths[:,None,None] * dz * k_squared[None,:,:]) * aa_aperture[None,:,:] # Kirkland2010 Eq 6.65
+    P = backend.exp(-1j * backend.pi * probe_wavelengths[:,None,None] * dz * k_squared[None,:,:]) * aa_aperture[None,:,:] # Kirkland2010 Eq 6.65
 
     #print("(done)",time.time()-start)
 
@@ -873,17 +813,17 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
             #    yi = xp.roll(yr,-o[1])[:probe.cropping]
             #    pot_stack[p] = potential_slice[xi,:][:,yi]
             # full indexing is even faster
-            xi = xp.zeros((len(sigma),probe.cropping),dtype=int) ; yi = xp.zeros((len(sigma),probe.cropping),dtype=int)
-            xr = xp.arange(nx) ; yr = xp.arange(ny)
+            xi = xp.zeros((len(sigma),probe.cropping),dtype=int) ; yi = backend.zeros((len(sigma),probe.cropping),dtype=int)
+            xr = xp.arange(nx) ; yr = backend.arange(ny)
             for p,(x,y) in enumerate(probe.offsets):
-                xi[p,:] = xp.roll(xr,-x)[:probe.cropping]
-                yi[p,:] = xp.roll(yr,-y)[:probe.cropping]
+                xi[p,:] = backend.roll(xr,-x)[:probe.cropping]
+                yi[p,:] = backend.roll(yr,-y)[:probe.cropping]
             pot_stack=potential_slice[xi[:,:,None],yi[:,None,:]]
             #print("(done)",time.time()-start)
-            t=xp.exp(1j*sigma[:,None,None]*pot_stack)
+            t = backend.exp(1j*sigma[:,None,None]*pot_stack)
 
         else:
-            t = xp.exp(1j * sigma[:,None,None] * potential_slice[None,:,:]) # Kirkland2010 Eq 6.59. n,x,y indices
+            t = backend.exp(1j * sigma[:,None,None] * potential_slice[None,:,:]) # Kirkland2010 Eq 6.59. n,x,y indices
 
         # Apply transmission to all probes: ψ' = t × ψ
         # Broadcasting: t[n_probes,nx,ny] * array[n_probes,nx,ny] = array[n_probes,nx,ny]
@@ -892,27 +832,27 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
         # Store wavefunction at this slice if requested (after transmission)
         if store_all_slices:
             # Clone/copy to avoid reference issues
-            slice_wavefunctions.append(clone(array))
+            if hasattr(array, 'clone'):
+                slice_wavefunctions.append(array.clone())
+            else:
+                slice_wavefunctions.append(array.copy())
 
         # Fresnel propagation to next slice (except for last slice)
         if z < len(potential.zs) - 1:
             # Vectorized FFT over spatial dimensions for all probes
-            kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
+            kwarg = {"dim":(-2,-1)} if TORCH_BACKEND else {"axes":(-2,-1)}
             #print(kwarg,array.dtype,array.shape)
             #print("FFT / multiply / iFFT") ; start = time.time()
-            fft_array = xp.fft.fft2(array, **kwarg)
+            fft_array = backend.fft2(array, **kwarg)
             propagated_fft = P * fft_array
-            array = xp.fft.ifft2(propagated_fft, **kwarg)
+            array = backend.ifft2(propagated_fft, **kwarg)
             #print("(done)",time.time()-start)
 
     # Return results based on what was requested
     if store_all_slices:
         # Stack the list into a tensor with slices as a new dimension
         # Shape will be (n_slices, n_probes, nx, ny) - more conventional ordering
-        if TORCH_AVAILABLE:
-            return torch.stack(slice_wavefunctions, dim=0)
-        else:
-            return xp.stack(slice_wavefunctions, axis=0)
+        return backend.stack(slice_wavefunctions, axis=0)
 
     #array = array.reshape((nc,npt,nx,ny))
 
@@ -955,17 +895,17 @@ def calculateObject(probe,exitwave,guessedObject,weighting=.5,dz=0.5,damping=.01
 
     # Pre-compute propagation operator in k-space (Fresnel propagation)
     # All tensors should already be on the correct device from creation
-    kx_grid, ky_grid = xp.meshgrid(probe.kxs, probe.kys, indexing='ij') # TODO use probe.kxs instead, to free ourselves of the need to pass a potential
+    kx_grid, ky_grid = backend.meshgrid(probe.kxs, probe.kys, indexing='ij') # TODO use probe.kxs instead, to free ourselves of the need to pass a potential
     k_squared = kx_grid**2 + ky_grid**2
 
-    P = xp.exp(-1j * xp.pi * lamda * dz * k_squared[:,:]) # P in Kirkland2010 Eq 6.65 is exp(-i...), so to divide by P, we can use Pp, exp(+j...)
+    P = backend.exp(-1j * backend.pi * lamda * dz * k_squared[:,:]) # P in Kirkland2010 Eq 6.65 is exp(-i...), so to divide by P, we can use Pp, exp(+j...)
 
     # t = ℱ⁻¹[ ℱ[ ψ₂ ]/P ]/ψ₁
-    t = xp.fft.ifft2(xp.fft.fft2(exitwave)/P)/psi1
+    t = backend.ifft2(backend.fft2(exitwave)/P)/psi1
     # t = exp(i σ O) --> O = log(t)/i/σ
-    O = xp.log(t)/1j/sigma
+    O = backend.log(t)/1j/sigma
     # WHAT IS exp(i σ O) REALLY DOING? exp(iϕ) is a sinusoid. an only-real object is applying a phase shift? can we do calculate an angle instead?
-    O = xp.angle(t)/sigma
+    O = backend.angle(t)/sigma
     # consider:
     # instead of division, should i multiply by complex conjugate? (not technically the same, but it will deal with near-zeros)
     # instead of log, should i use: https://en.wikipedia.org/wiki/Complex_logarithm#Calculating_the_principal_value
@@ -980,7 +920,7 @@ def calculateObject(probe,exitwave,guessedObject,weighting=.5,dz=0.5,damping=.01
     delta=(O-asarray(guessedObject))
 
     # probe amplitude masking function: zeros-out points where probe intensity is zero, without giving probe features as features in your potential
-    delta*=xp.absolute(psi1)/(xp.absolute(psi1)+damping*xp.amax(xp.absolute(psi1)))
+    delta*=backend.absolute(psi1)/(backend.absolute(psi1)+damping*backend.amax(backend.absolute(psi1)))
 
     return delta*weighting
 
