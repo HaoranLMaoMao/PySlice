@@ -349,7 +349,7 @@ class Potential:
                 
                 # TODO i'm hard-coding the chunk size is 2000 atoms per layer which is HUGE, so this shouldn't affect anyone but me, but we really ought to do a "smarter" job of picking the chunk size
                 chunk_indices = list(np.arange(len(atomsx)))[::2000]+[len(atomsx)]
-                shape_factor = xp.zeros( (self.nx,self.ny) , dtype=complex_dtype )
+                shape_factor = xp.zeros( (self.nx,self.ny) , dtype=complex_dtype, **device_kwargs )
                 for i1,i2 in zip(chunk_indices[:-1],chunk_indices[1:]):
                     atx = atomsx[i1:i2]
                     aty = atomsy[i1:i2]

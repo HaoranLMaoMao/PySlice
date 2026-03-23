@@ -463,7 +463,7 @@ class Probe:
 # Aberrations are an adjustment to the phase of the wave ("dPhi"), to be applied in reciprocal space.
 # this is done by multiplying the complex wave (be it a probe or an exit wave) by xp.exp(-1j * dPhi)
 def aberrationFunction(kxs,kys,wavelength,aberrations): # aberrations should be a dict of Cnm following https://abtem.readthedocs.io/en/latest/user_guide/walkthrough/contrast_transfer_function.html
-    dPhi = xp.zeros((len(kxs),len(kys)))
+    dPhi = xp.zeros_like(kxs[:,None] * kys[None,:])
     ks = xp.sqrt( kxs[:,None]**2 + kys[None,:]**2 )
     theta = xp.arctan2( kys[None,:] , kxs[:,None] )
     for k in aberrations.keys():
