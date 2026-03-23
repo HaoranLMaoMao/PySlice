@@ -15,7 +15,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from ase.build import bulk
-from pyslice import MDCalculator, MultisliceCalculator, TACAWData
+from pyslice import ORBMDCalculator, MultisliceCalculator, TACAWData
 
 os.makedirs("outputs", exist_ok=True)
 
@@ -29,7 +29,7 @@ print(f"Created Si supercell: {len(atoms)} atoms")
 # ---------------------------------------------------------------------------
 # 2. Run molecular dynamics with an ORB machine-learning potential
 # ---------------------------------------------------------------------------
-md = MDCalculator(model_name="orb-v3-conservative-inf-omat")
+md = ORBMDCalculator(model_name="orb-v3-conservative-inf-omat")
 
 md.setup(
     atoms=atoms,

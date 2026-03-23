@@ -18,7 +18,7 @@ import numpy as np
 from ase import Atoms
 from ase.build import bulk, surface
 
-from pyslice import Loader, MDCalculator, MultisliceCalculator, TACAWData
+from pyslice import Loader, ORBMDCalculator, MultisliceCalculator, TACAWData
 
 # =============================================================================
 # CONFIGURATION
@@ -123,7 +123,7 @@ def run_md(atoms, output_dir: Path, save_interval: int):
     atoms.calc = ORBCalculator(orb)
     FIRE(atoms, logfile=str(output_dir / "relax.log")).run(fmax=0.05, steps=500)
 
-    md = MDCalculator(
+    md = ORBMDCalculator(
         model_name="orb-v3-conservative-inf-omat",
         weights_path=CACHED_WEIGHTS_PATH,
     )

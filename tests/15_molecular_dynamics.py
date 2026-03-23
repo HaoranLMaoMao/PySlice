@@ -28,7 +28,7 @@ import numpy as np
 from ase.build import bulk
 
 from pyslice.io.loader import Loader
-from pyslice.md import MDCalculator
+from pyslice.md import ORBMDCalculator
 from pyslice.multislice.calculators import MultisliceCalculator
 from pyslice.postprocessing.tacaw_data import TACAWData
 
@@ -76,9 +76,9 @@ else:
     else:
         device = "cpu"
 
-    print(f"\nInitializing MDCalculator on {device}...")
+    print(f"\nInitializing ORBMDCalculator on {device}...")
     # Use most accurate ORB model for better phonon frequencies
-    md_calc = MDCalculator(
+    md_calc = ORBMDCalculator(
         model_name="orb-v3-conservative-inf-omat",
         device=device,
         precision="float32-highest",

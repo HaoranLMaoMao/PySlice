@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ase.build import make_supercell, mx2
 
-from pyslice import Loader, MDCalculator, MultisliceCalculator, TACAWData
+from pyslice import Loader, ORBMDCalculator, MultisliceCalculator, TACAWData
 
 # =============================================================================
 # CONFIGURATION
@@ -68,7 +68,7 @@ def run_md(atoms, output_dir: Path):
     if SKIP_MD and traj_file.exists():
         return Loader(filename=str(traj_file), timestep=timestep_ps).load()
 
-    md = MDCalculator(
+    md = ORBMDCalculator(
         model_name="orb-v3-conservative-inf-omat",
         weights_path=CACHED_WEIGHTS_PATH,
     )
