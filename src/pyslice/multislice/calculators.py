@@ -204,10 +204,12 @@ class MultisliceCalculator:
 
         # cache key is calculated TWICE: once during setup (so the user only needs to setup to infer where their cache folder will go), and again during run (just in case the user does something funky)
         # Generate cache key and setup output directory
-        self.cache_key = self._generate_cache_key(self.trajectory, self.aperture, self.voltage_eV,
-                                           self.slice_thickness, self.sampling, self.probe_positions,
-                                           self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence,
-                                           self.base_probe._array)
+        self.cache_key = self._generate_cache_key(
+            self.trajectory, self.aperture, self.voltage_eV,
+            self.slice_thickness, self.sampling, self.probe_positions,
+            self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence,
+            self.base_probe._array,
+        )
         #print(cache_key)
         self.output_dir = Path("psi_data/" + ("torch" if hasattr(self.base_probe._array, 'device') else "numpy") + "_"+self.cache_key)
         #self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -353,7 +355,14 @@ class MultisliceCalculator:
                     frames_cached += 1
                 else:
                     #print("create potential") ; start = time.time()
-                    potential = Potential(self.xs, self.ys, self.zs, positions, atom_type_names, kind="kirkland", device=self.device, slice_axis=self.slice_axis, progress=show_progress, cache_dir=cache_file.parent if "potentials" in self.cache_levels else None, frame_idx = frame_idx)
+                    potential = Potential(
+                        self.xs, self.ys, self.zs, 
+                        positions, atom_type_names,
+                        kind="kirkland", device=self.device, 
+                        slice_axis=self.slice_axis, 
+                        progress=show_progress, 
+                        cache_dir=cache_file.parent if "potentials" in self.cache_levels else None,
+                        frame_idx = frame_idx)
                     #print("(done)",time.time()-start)
                     #n_probes = nc*npt
                     nc,npt,nx,ny = self.base_probe._array.shape ; npt = len(self.base_probe.probe_positions)

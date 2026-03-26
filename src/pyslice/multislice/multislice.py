@@ -3,7 +3,6 @@ import numpy as np
 from tqdm import tqdm
 import logging, time
 
-TORCH_BACKEND = backend.TORCH_BACKEND
 
 logger = logging.getLogger(__name__)
 
@@ -128,17 +127,14 @@ class Probe:
         self.spatial_decoherence = None
         self.gaussianVOA = gaussianVOA
         
-        # Set up device kwargs for unified xp interface (same as Potential class)
-        device_kwargs = {'device': self.device, 'dtype': self.dtype}
-        
         self.stay_reciprocal = stay_reciprocal
         self.crop_reciprocal = crop_reciprocal
         #if self.crop_reciprocal: # user asked for kspace to be, say, 100 pixels, but right now it's 350...
         #    self.crop_reciprocal = (min(nx,ny)-self.crop_reciprocal)//2 # so we need to chop 125 off each side
 
 
-        self.kxs = backend.fftfreq(nx, d=dx, **device_kwargs)
-        self.kys = backend.fftfreq(ny, d=dy, **device_kwargs)
+        self.kxs = backend.fftfreq(nx, d=dx, device=self.device, dtype=self.dtype)
+        self.kys = backend.fftfreq(ny, d=dy, device=self.device, dtype=self.dtype)
 
         if not array is None: # Allow construction of a Probe object with a passed array instead of building it below. used by create_batched_probes
             if backend.TORCH_BACKEND and hasattr(array, 'to'):
@@ -367,9 +363,8 @@ class Probe:
         if self.cropping:
             i1=self.nx//2-self.cropping//2 ; i2=i1+self.cropping  # |_______i1___.___i2_______| for initial centered probe at lx/2,ly/2
             j1=self.ny//2-self.cropping//2 ; j2=j1+self.cropping
-            device_kwargs = {'device': self.device, 'dtype': self.dtype}
-            kxs = backend.fftfreq(self.cropping, d=self.dx, **device_kwargs)
-            kys = backend.fftfreq(self.cropping, d=self.dy, **device_kwargs)
+            kxs = backend.fftfreq(self.cropping, d=self.dx, device=self.device, dtype=self.dtype)
+            kys = backend.fftfreq(self.cropping, d=self.dy, device=self.device, dtype=self.dtype)
             dpx = dx//self.dx ; dpy = dy//self.dy               # pixel shifts
             offset_x = i1+dpx ; offset_y = j1+dpy
             dx-=dpx*self.dx ; dy-=dpy*self.dy                   # update subpixel shifts
@@ -516,7 +511,7 @@ class PrismProbe:
     def __init__(self, xs, ys, mrad, eV, array=None, device=None, gaussianVOA=0, preview=False, nkx = 25, nky=None, kth=1):
 
         # DEVICE AND DTYPE SETUP
-        if TORCH_BACKEND:
+        if backend.TORCH_BACKEND:
             # Auto-detect device if not specified (same logic as Potential class)
             if device is None:
                 device, dtype, complex_dtype = backend.device_and_precision()
@@ -548,7 +543,6 @@ class PrismProbe:
         else:
             self.xs = xs
             self.ys = ys
-        device_kwargs = {'device': self.device, 'dtype': self.dtype} if self.use_torch else {}
         self.kxs = backend.fftshift(backend.fftfreq(self.nx, d=self.dx))
         self.kys = backend.fftshift(backend.fftfreq(self.ny, d=self.dy))
         self._array = backend.zeros((1,1,self.nx,self.ny),dtype=self.complex_dtype)
@@ -624,7 +618,7 @@ class PrismProbe:
             #probe_k = backend.fft.fftshift(probe.placeProbe(ary,x,y,realspace=False)[0][0,:,:])
             # strategy 3, stack of probes
             #probes = Probe(self.xs, self.ys, self.mrad, self.eV, probe_positions = positions[n:n+chunksize])
-            #kwarg = {"dim":(-2,-1)} if TORCH_BACKEND else {"axes":(-2,-1)}
+            #kwarg = {"dim":(-2,-1)} if backend.TORCH_BACKEND else {"axes":(-2,-1)}
             #probe_ks = backend.fft.fftshift(backend.fft.fft2(probes._array[0,:,:,:],**kwarg),**kwarg)
 
             # note you CAN generate the probe pre-cropped (use arg crop_reciprocal, then skip the self.i1:-self.i1 indexing), but this doesn't seem to save a whole lot of time...
@@ -740,7 +734,7 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     sigma = (2 * backend.pi) / (probe_wavelengths * probe_eVs) * \
             (E0_eV + probe_eVs) / (2 * E0_eV + probe_eVs) # wavelength and eVs now have length of n_probes
     #print("propagate sigma",sigma)
-    #if TORCH_BACKEND:
+    #if backend.TORCH_BACKEND:
     #    #sigma_dtype = torch.float32 if device.type == 'mps' else torch.float64
     #    sigma = torch.tensor(sigma, dtype=float_dtype, device=device)
     
@@ -751,9 +745,8 @@ def Propagate(probe, potential, device=None, progress=False, onthefly=True, stor
     # All tensors should already be on the correct device from creation
     kx,ky = potential.kxs, potential.kys
     if probe.cropping:
-        device_kwargs = {'device': probe.device, 'dtype': probe.dtype}
-        kx = backend.fftfreq(probe.cropping, d=probe.dx, **device_kwargs)
-        ky = backend.fftfreq(probe.cropping, d=probe.dy, **device_kwargs)
+        kx = backend.fftfreq(probe.cropping, d=probe.dx, device=probe.device, dtype=probe.dtype)
+        ky = backend.fftfreq(probe.cropping, d=probe.dy, device=probe.device, dtype=probe.dtype)
     kx_grid, ky_grid = backend.meshgrid(kx, ky, indexing='ij')
     k_squared = kx_grid**2 + ky_grid**2
 

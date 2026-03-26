@@ -245,8 +245,7 @@ class Potential:
                 
                 # TODO i'm hard-coding the chunk size is 2000 atoms per layer which is HUGE, so this shouldn't affect anyone but me, but we really ought to do a "smarter" job of picking the chunk size
                 chunk_indices = list(np.arange(len(atomsx)))[::2000]+[len(atomsx)]
-                device_kwargs = {'device': self.device} if self.device is not None else {}
-                shape_factor = backend.zeros((self.nx,self.ny), dtype=self.complex_dtype, **device_kwargs)
+                shape_factor = backend.zeros((self.nx,self.ny), dtype=self.complex_dtype, device=self.device)
                 
                 for i1,i2 in zip(chunk_indices[:-1],chunk_indices[1:]):
                     atx = atomsx[i1:i2]
@@ -273,7 +272,6 @@ class Potential:
             dx = self.xs[1] - self.xs[0]
             dy = self.ys[1] - self.ys[0]
             fe_to_V = 47.87764737  # 2πℏ²/m_e in V·Å² (Kirkland, Eq C.1 prefactor)
-            print(fe_to_V)
             Z = real * fe_to_V / (dx * dy)
 
             if cache_file is not None:
@@ -332,7 +330,8 @@ class Potential:
         fig, ax = plt.subplots()
         array = backend.sum(
             backend.absolute(self.array),
-            axis=2).T # imshow convention: y,x. our convention: x,y
+            axis=2,
+        ).T # imshow convention: y,x. our convention: x,y
         # Convert to CPU if on GPU/MPS device
         if hasattr(array, 'cpu'):
             array = array.cpu()
