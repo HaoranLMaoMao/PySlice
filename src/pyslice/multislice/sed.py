@@ -6,6 +6,8 @@
 # bs - optional: should be a list of atom indices to include. this allows the caller to sum over crystal cell coordinates (see discussion on Σb below)
 
 import numpy as np
+import pyslice.backend as backend
+from pyslice.backend import fftfreq, fft, absolute
 
 def SED(avg,displacements,kvec,v_xyz=0,bs=''):
 
@@ -60,11 +62,11 @@ def SED(avg,displacements,kvec,v_xyz=0,bs=''):
 	if isinstance(v_xyz,(int,float,np.integer)):
 		v_xyz=np.roll([1,0,0],v_xyz)					# 0,1,2 --> x,y,z
 	else:
-		v_xyz=np.asarray(v_xyz,dtype=float)
-		v_xyz/=np.sqrt(np.sum(v_xyz**2))	# normalize magnitude of passed vector
+		v_xyz=backend.asarray(v_xyz,dtype=float)
+		v_xyz/=backend.sqrt(backend.sum(v_xyz**2))	# normalize magnitude of passed vector
 
 	# time axis: infer frequencies, calculate length so we can trim off negative frequencies, set up empty 
-	nt2=int(nt/2) ; ws=np.fft.fftfreq(nt)[:nt2]
+	nt2=int(nt/2) ; ws=fftfreq(nt)[:nt2]
 
 	# project displacements onto vector
 	if isinstance(v_xyz,(int,float,np.integer)):
@@ -100,11 +102,11 @@ def SED(avg,displacements,kvec,v_xyz=0,bs=''):
 
 	# Φ(k,ω) = Σb | ∫ Σn u°(n,b,t) exp( i k r̄(n,0) ) exp( i ω t ) dt |² or | ℱ[ Σn u°(n,b,t) exp( i k r̄(n,0) ) |²
 	# exp( i k r̄(n,0) ) term:
-	expo=np.exp(1j*np.einsum('aj,xyj->axy',avg[bs,:],kvec[:,:,:])) # indices: (a)tom, (x)/y/z, (k) point
+	expo=backend.exp(1j*backend.einsum('aj,xyj->axy',avg[bs,:],kvec[:,:,:])) # indices: (a)tom, (x)/y/z, (k) point
 	# u°(n,b,t) exp( i k r̄(n,0) ) term:
-	integrands=np.einsum('ta,axy->txy',us,expo,optimize=True) # indices: (t)ime, (a)toms, (k) point
-	Zs=np.fft.fft(integrands,axis=0)[:nt2,:,:]
+	integrands=backend.einsum('ta,axy->txy',us,expo,optimize=True) # indices: (t)ime, (a)toms, (k) point
+	Zs=fft(integrands,axis=0)[:nt2,:,:]
 	#if not keepComplex:
-	Zs=np.absolute(Zs)**2
+	Zs=absolute(Zs)**2
 
 	return Zs,ws

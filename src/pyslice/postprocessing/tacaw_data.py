@@ -3,10 +3,10 @@ Core data structure for TACAW EELS calculations.
 """
 import numpy as np
 from typing import Optional, Tuple, Dict, Any, List, Union
-from pathlib import Path
 import logging, os
 from .wf_data import WFData
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
+import pyslice.backend as backend
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 #from ..data.pyslice_serial import PySliceSerial
 from tqdm import tqdm
@@ -82,7 +82,7 @@ class TACAWData(PySliceSerial, Signal):
 
         # Save computed values before super().__init__
         computed_array = self._array
-        computed_frequencies = self._frequencies
+        computed_frequencies = backend.to_cpu(self._frequencies) if hasattr(self._frequencies, 'cpu') else self._frequencies
 
         # Helper to convert tensors to numpy for Dimensions
         def to_numpy(x):
@@ -203,23 +203,24 @@ class TACAWData(PySliceSerial, Signal):
         else:
             self.n_chunks = len(self._time) // self.chunk_size_time
         
-        indices = np.linspace(0, len(self._time),  self.n_chunks + 1, dtype=int)
+        indices = backend.linspace(0, len(self._time), self.n_chunks + 1)
+        indices = backend.astype(indices, int)
         dt = self._time[1] - self._time[0]
         # Compute frequencies from time sampling
-        self._frequencies = np.fft.fftfreq(self.n_chunks, d=dt)
-        self._frequencies = np.fft.fftshift(self._frequencies)
+        self._frequencies = backend.fftfreq(self.n_chunks, d=dt)
+        self._frequencies = backend.fftshift(self._frequencies)
 
         # Perform FFT along time axis (axis=1) for each probe position and k-point
         # Following abeels.py approach: subtract mean to avoid high zero-frequency peak
         # then Compute intensity |Ψ(ω,q)|² from the frequency-domain wavefunction
         
         if self.chunkFFT: # looping through x (in case super giganormous FFTs blow your ram)
-            dtype = complex_dtype if self.keep_complex else float_dtype
+            dtype = backend.complex_dtype if self.keep_complex else backend.float_dtype
             shape = (wf_layer.shape[0], self.chunk_size_time, wf_layer.shape[2], wf_layer.shape[3])
             if self.use_memmap:
                 self._array = memmap(shape, dtype=dtype, filename = self.cache_dir / "tacaw.npy")
             else:
-                self._array = xp.zeros(shape, dtype = dtype)
+                self._array = backend.zeros(shape, dtype=dtype)
 
             for i in range(self.n_chunks):
                 i1 = indices[i]
@@ -288,7 +289,7 @@ class TACAWData(PySliceSerial, Signal):
             # Average all spectra
             if hasattr(all_spectra[0], 'device'):
                 all_spectra = [to_cpu(s) for s in all_spectra]
-            spectrum = np.mean(all_spectra, axis=0)
+            spectrum = backend.mean(backend.asarray(all_spectra), axis=0)
         else:
             if probe_index >= len(self.probe_positions):
                 raise ValueError(f"Probe index {probe_index} out of range")
@@ -333,7 +334,7 @@ class TACAWData(PySliceSerial, Signal):
                 if hasattr(probe_intensity_sum, 'cpu'):
                     probe_intensity_sum = probe_intensity_sum.cpu().numpy()
             else:
-                probe_intensity_sum = np.sum(probe_intensity)
+                probe_intensity_sum = backend.sum(probe_intensity)
 
             spectrum_intensities.append(probe_intensity_sum)
 
@@ -360,7 +361,7 @@ class TACAWData(PySliceSerial, Signal):
             # Average all diffraction patterns
             if hasattr(all_diffractions[0], 'device'):
                 all_diffractions = [to_cpu(d) for d in all_diffractions]
-            diffraction_pattern = np.mean(all_diffractions, axis=0)
+            diffraction_pattern = backend.mean(backend.asarray(all_diffractions), axis=0)
         else:
             if probe_index >= len(self.probe_positions):
                 raise ValueError(f"Probe index {probe_index} out of range")
@@ -374,7 +375,7 @@ class TACAWData(PySliceSerial, Signal):
                 diffraction_pattern = to_cpu(diffraction_pattern)
 
         if space == "real":
-            diffraction_pattern = np.absolute(np.fft.ifft2(diffraction_pattern))
+            diffraction_pattern = backend.absolute(backend.ifft2(diffraction_pattern))
 
         return diffraction_pattern
 
@@ -402,7 +403,7 @@ class TACAWData(PySliceSerial, Signal):
             # Average all spectral diffraction patterns
             if hasattr(all_spectral_diffractions[0], 'device'):
                 all_spectral_diffractions = [to_cpu(sd) for sd in all_spectral_diffractions]
-            spectral_diffraction = np.mean(all_spectral_diffractions, axis=0)
+            spectral_diffraction = backend.mean(backend.asarray(all_spectral_diffractions), axis=0)
         else:
             if probe_index >= len(self.probe_positions):
                 raise ValueError(f"Probe index {probe_index} out of range")
@@ -415,7 +416,7 @@ class TACAWData(PySliceSerial, Signal):
                 spectral_diffraction = to_cpu(spectral_diffraction)
 
         if space == "real":
-            spectral_diffraction = np.absolute(np.fft.ifft2(spectral_diffraction))
+            spectral_diffraction = backend.absolute(backend.ifft2(spectral_diffraction))
 
         return spectral_diffraction
 
@@ -457,14 +458,14 @@ class TACAWData(PySliceSerial, Signal):
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 extent = ( np.amin(kxs) , np.amax(kxs) , np.amin(kys) , np.amax(kys) )
-                ax.imshow(to_cpu(xp.sum(masked,axis=0).T)[::-1,:], cmap="inferno",extent=extent,aspect=1)
+                ax.imshow(to_cpu(backend.sum(masked, axis=0)).T[::-1,:], cmap="inferno",extent=extent,aspect=1)
                 ax.set_xlabel("kx")
                 ax.set_ylabel("ky")
                 ax.set_title("masked_spectrum - preview")
                 plt.show()
                 preview=False
-            spectra.append(to_cpu(xp.sum(masked,axis=(1,2))))
-        return np.mean(spectra,axis=0)
+            spectra.append(to_cpu(backend.sum(masked, axis=(1,2))))
+        return to_cpu(backend.mean(spectra,axis=0))
 
     def dispersion(self, kx_path: np.ndarray, ky_path: np.ndarray, probe_index: int = None, space: str = "reciprocal") -> np.ndarray:
         """
@@ -515,23 +516,23 @@ class TACAWData(PySliceSerial, Signal):
             w_slice = self._array[probe_index, w, :, :]
             # optionally iFFT across kx,ky
             if space == "real":
-                w_slice = np.fft.ifft2(w_slice, axes=(1,2))
+                w_slice = backend.ifft2(w_slice, axes=(1,2))
             # bring to CPU
             if hasattr(w_slice, 'device'):
                 w_slice = to_cpu(w_slice)
             # sum across probe positions
-            w_slice = np.mean(w_slice,axis=0)
+            w_slice = backend.mean(w_slice,axis=0)
             # select values at positions
             for i, (kx_idx, ky_idx) in enumerate(zip(kx_indices, ky_indices)):
                 dispersion[w,i] = w_slice[ kx_idx, ky_idx ]
 
-        return np.absolute(dispersion)
+        return to_cpu(backend.absolute(dispersion))
 
     # Since there are multiple things returnable by the above functions, i'm just offering up a generic heatmap plotter function here, where you pass Z,x,y
     def plot(self,intensities,xvals,yvals,xlabel="kx ($\\AA^{-1}$)",ylabel="ky ($\\AA^{-1}$)",filename=None,title=None,extent=None):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
-        array = np.absolute(to_cpu(intensities)) # imshow convention: y,x. our convention: x,y
+        array = backend.absolute(to_cpu(intensities)) # imshow convention: y,x. our convention: x,y
         aspect = None
 
         if isinstance(xvals,str):

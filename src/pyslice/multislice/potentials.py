@@ -1,10 +1,8 @@
 import pyslice.backend as backend
 import numpy as np
-from pathlib import Path
 import logging,os
 from tqdm import tqdm
 import importlib.resources as resources
-import pyslice.data
 
 kirkland_file = resources.files('pyslice.data').joinpath('kirkland.txt')
 
@@ -91,9 +89,9 @@ def gridFromTrajectory(trajectory,sampling=0.1,slice_thickness=0.5):
     ny = int(ly / sampling) + 1  
     nz = int(lz / slice_thickness) + 1
      
-    xs = np.linspace(0, lx, nx, endpoint=False)
-    ys = np.linspace(0, ly, ny, endpoint=False)
-    zs = np.linspace(0, lz, nz, endpoint=False)
+    xs = backend.linspace(0, lx, nx, endpoint=False)
+    ys = backend.linspace(0, ly, ny, endpoint=False)
+    zs = backend.linspace(0, lz, nz, endpoint=False)
 
     return xs,ys,zs,lx,ly,lz
 
@@ -126,14 +124,18 @@ def loadKirkland(device='cpu'):
     kirklandABCDs = backend.asarray(kirkland_params, dtype=float_dtype, device=device)
 
 
-class Potential:    
-    def __init__(self, xs, ys, zs, positions, atomTypes, kind="kirkland", device=None, slice_axis=2, progress=False, cache_dir=None, frame_idx=None):
+class Potential:
+    def __init__(
+            self, xs, ys, zs, positions, atomTypes,
+            kind="kirkland", device=None, slice_axis=2,
+            progress=False, cache_dir=None, frame_idx=None):
         # Set up device and backend first
         device, float_dtype, complex_dtype = backend.device_and_precision(device)
 
         self.device = device
         self.float_dtype = float_dtype
         self.complex_dtype = complex_dtype
+        self.dtype = self.float_dtype
 
         positions = backend.asarray(positions, dtype=self.float_dtype, device=self.device)
 
@@ -243,7 +245,8 @@ class Potential:
                 
                 # TODO i'm hard-coding the chunk size is 2000 atoms per layer which is HUGE, so this shouldn't affect anyone but me, but we really ought to do a "smarter" job of picking the chunk size
                 chunk_indices = list(np.arange(len(atomsx)))[::2000]+[len(atomsx)]
-                shape_factor = backend.zeros((self.nx,self.ny), dtype=self.self.complex_dtype, **device_kwargs)
+                device_kwargs = {'device': self.device} if self.device is not None else {}
+                shape_factor = backend.zeros((self.nx,self.ny), dtype=self.complex_dtype, **device_kwargs)
                 
                 for i1,i2 in zip(chunk_indices[:-1],chunk_indices[1:]):
                     atx = atomsx[i1:i2]
@@ -270,22 +273,29 @@ class Potential:
             dx = self.xs[1] - self.xs[0]
             dy = self.ys[1] - self.ys[0]
             fe_to_V = 47.87764737  # 2πℏ²/m_e in V·Å² (Kirkland, Eq C.1 prefactor)
+            print(fe_to_V)
             Z = real * fe_to_V / (dx * dy)
+
             if cache_file is not None:
-                np.save(cache_file,Z)
+                if backend.TORCH_BACKEND and hasattr(Z, 'cpu'):
+                    Z_cpu = Z.cpu().numpy()
+                else:
+                    Z_cpu = Z
+                np.save(cache_file, Z_cpu)
+            
             return Z
         
         self.calculateSlice = calculateSlice
         self.array = None
        
     def build(self,progress=False):
-        if self._array is not None:
+        if self.array is not None:
             return
         
         # Initialize potential array
         potential_real = backend.zeros(
             (self.nx, self.ny, self.n_slices), 
-            dtype=self.self.dtype,
+            dtype=self.dtype,
             device=self.device,
         )
 

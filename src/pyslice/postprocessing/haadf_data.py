@@ -8,7 +8,8 @@ import logging
 from .wf_data import WFData
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
-from pyslice.backend import zeros,to_cpu,mean,sum,absolute,einsum
+import pyslice.backend as backend
+from pyslice.backend import zeros, to_cpu, mean, sum, absolute, einsum, xp, float_dtype
 #from ..data.pyslice_serial import PySliceSerial
 
 logger = logging.getLogger(__name__)
@@ -122,7 +123,7 @@ class HAADFData(PySliceSerial, Signal):
         raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
 
     def getMask(self, inner_mrad: float = 45, outer_mrad: float = 150):
-        q = xp.sqrt(self._kxs[:,None]**2 + self._kys[None,:]**2)
+        q = backend.sqrt(self._kxs[:,None]**2 + self._kys[None,:]**2)
         radius_inner = (inner_mrad * 1e-3) / self.probe.wavelength
         radius_outer = (outer_mrad * 1e-3) / self.probe.wavelength
 
@@ -161,7 +162,7 @@ class HAADFData(PySliceSerial, Signal):
         #mask[q >= radius_inner] = 1
         #mask[q >= radius_outer] = 0
 
-        probe_positions = xp.asarray(self.probe_positions, dtype=float_dtype)
+        probe_positions = backend.asarray(self.probe_positions, dtype=float_dtype)
 
         #for i, x in enumerate(self._xs):
         #    for j, y in enumerate(self._ys):

@@ -1,15 +1,14 @@
 # backend.py - Backend abstraction layer for NumPy/PyTorch support
 import numpy as np
-import os
+from typing import Any, Optional, Union
 
-
-# First, try to import torch
 try:
     import torch
+    xp = torch  # type: ignore[assignment]
     TORCH_AVAILABLE = True
 except ImportError:
+    xp = np  # type: ignore[assignment]
     TORCH_AVAILABLE = False
-    torch = None
 
 # Check for backend override via environment variable
 import os
@@ -34,7 +33,7 @@ def device_and_precision(device_spec=None):
         Tuple of (device, float_dtype, complex_dtype)
     """
     if not TORCH_BACKEND:
-        return None, np.float64, np.complex128
+        return 'cpu', np.float64, np.complex128
     
     # Check for device override via environment variable
     device_override = os.environ.get('PYSLICE_DEVICE', '').lower()
@@ -65,6 +64,8 @@ def device_and_precision(device_spec=None):
 
 # Determine default device and dtypes at import time
 DEFAULT_DEVICE, DEFAULT_FLOAT_DTYPE, DEFAULT_COMPLEX_DTYPE = device_and_precision()
+
+print(DEFAULT_DEVICE, DEFAULT_FLOAT_DTYPE, DEFAULT_COMPLEX_DTYPE)
 
 # Convenience aliases
 float_dtype = DEFAULT_FLOAT_DTYPE
@@ -179,11 +180,10 @@ def fftfreq(n, d=1.0, dtype=None, device=None):
 
 
 def fft2(x, **kwargs):
-    """2D FFT with kwarg conversion (dim/axis)."""
+    """2D FFT with kwarg conversion (dim/axes)."""
     if TORCH_BACKEND and "axes" in kwargs:
         kwargs["dim"] = kwargs.pop("axes")
-    if not TORCH_BACKEND and "dim" in kwargs:
-        kwargs["axis"] = kwargs.pop("dim")
+    # For numpy, "axes" is already correct - don't convert to "axis"
     return xp.fft.fft2(x, **kwargs)
 
 
@@ -200,8 +200,7 @@ def ifft2(x, **kwargs):
     """2D inverse FFT with kwarg conversion."""
     if TORCH_BACKEND and "axes" in kwargs:
         kwargs["dim"] = kwargs.pop("axes")
-    if not TORCH_BACKEND and "dim" in kwargs:
-        kwargs["axis"] = kwargs.pop("dim")
+    # For numpy, "axes" is already correct, no conversion needed
     return xp.fft.ifft2(x, **kwargs)
 
 
@@ -237,48 +236,6 @@ def exp(x):
     """Element-wise exponential."""
     return xp.exp(x)
 
-def fft(k,**kwargs):
-    use_torch = TORCH_AVAILABLE
-    if type(k) in [ np.memmap, np.ndarray ]:
-        use_torch = False
-    if use_torch and "axis" in kwargs.keys():
-        kwargs["dim"]=kwargs["axis"] ; del kwargs["axis"]
-    if not use_torch and "dim" in kwargs.keys():
-        kwargs["axis"]=kwargs["dim"] ; del kwargs["dim"]
-    if use_torch:
-        return xp.fft.fft(k,**kwargs)
-    return np.fft.fft(k,**kwargs)
-
-def fftshift(k,**kwargs):
-    use_torch = TORCH_AVAILABLE
-    if type(k) in [ np.memmap, np.ndarray ]:
-        use_torch = False
-    if use_torch and "axes" in kwargs.keys():
-        kwargs["dim"]=kwargs["axes"] ; del kwargs["axes"]
-    if not use_torch and "dim" in kwargs.keys():
-        kwargs["axes"]=kwargs["dim"] ; del kwargs["dim"]
-    if use_torch:
-        return xp.fft.fftshift(k,**kwargs)
-    return np.fft.fftshift(k,**kwargs)
-
-def mean(k,**kwargs):
-    use_torch = TORCH_AVAILABLE
-    if type(k) in [ np.memmap, np.ndarray ]:
-        use_torch = False
-    if use_torch and "keepdims" in kwargs.keys():
-        kwargs["keepdim"]=kwargs["keepdims"] ; del kwargs["keepdims"]
-    if not use_torch and "keepdim" in kwargs.keys():
-        kwargs["keepdims"]=kwargs["keepdim"] ; del kwargs["keepdim"]
-    if use_torch and "axis" in kwargs.keys():
-        kwargs["dim"]=kwargs["axis"] ; del kwargs["axis"]
-    if not use_torch and "dim" in kwargs.keys():
-        kwargs["axis"]=kwargs["dim"] ; del kwargs["dim"]
-    if not use_torch:
-        return np.mean(k,**kwargs)
-    return xp.mean(k,**kwargs)
-
-def ifft2(k):
-    return xp.fft.ifft2(k)
 
 def real(x):
     """Take real part."""
@@ -305,16 +262,26 @@ def amax(x):
     return xp.amax(x)
 
 
-def sum(x, axis=None, **kwargs):
+def arange(*args, **kwargs):
+    """Create array with evenly spaced values."""
+    return xp.arange(*args, **kwargs)
+
+
+def linspace(start, stop, num=50, **kwargs):
+    """Create array with evenly spaced values."""
+    return xp.linspace(start, stop, num, **kwargs)
+
+
+def sum(x: Any, axis: Optional[int] = None, **kwargs: Any) -> Any:
     """Sum elements along axis with kwarg conversion."""
-    if TORCH_BACKEND and type(x) not in [np.memmap, np.ndarray]:
+    if TORCH_BACKEND and type(x) not in (np.memmap, np.ndarray):
         if "axis" in kwargs:
             kwargs["dim"] = kwargs.pop("axis")
-        return xp.sum(x, dim=axis, **kwargs)
+        return xp.sum(x, dim=axis, **kwargs)  # type: ignore[attr-defined]
     else:
         if "dim" in kwargs:
             kwargs["axis"] = kwargs.pop("dim")
-        return np.sum(x, axis=axis, **kwargs)
+        return np.sum(x, axis=axis, **kwargs)  # type: ignore[attr-defined]
 
 
 def mean(x, axis=None, **kwargs):

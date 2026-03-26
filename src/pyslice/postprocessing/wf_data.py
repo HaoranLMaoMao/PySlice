@@ -159,15 +159,22 @@ class WFData(PySliceSerial, Signal):
         if self.probability is None:
             self.probability = self._array
             npt,nt,nx,ny,nl = self._array.shape
-            ary = self._array/xp.sum(xp.absolute(self._array))                  # normalized: ensure values arerelative probabilities of each voxel
-            ary = xp.absolute(ary.reshape(npt*nt*nx*ny*nl))
+            ary = self._array/backend.sum(backend.absolute(self._array))                  # normalized: ensure values arerelative probabilities of each voxel
+            ary = backend.absolute(ary.reshape(npt*nt*nx*ny*nl))
             self.buckets = zeros(len(ary)+1,type_match=ary)
             self.buckets[1:] = cumsum(ary)                                      # cumsum means we can "select" a voxel with a random float 0-1
         detector_hits = asarray(randfloats(N))                                  # randomly "select" histogram bins based on each bin's relative size
         hist = histogram(detector_hits,bins=self.buckets)
         self._array = asarray(hist.reshape((npt,nt,nx,ny,nl)))
 
-    def plot_reciprocal(self,filename=None,whichProbe="mean",whichTimestep="mean",powerscaling=0.25,extent=None,nuke_zerobeam=False,title=None):
+    def plot_reciprocal(self,
+                        filename=None,
+                        whichProbe="mean",
+                        whichTimestep="mean",
+                        powerscaling=0.25,
+                        extent=None,
+                        nuke_zerobeam=False,
+                        title=None):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
 
@@ -184,7 +191,7 @@ class WFData(PySliceSerial, Signal):
             whichTimestep = [whichTimestep]
         for p in whichProbe:
             for t in whichTimestep:
-                layer = absolute(raw[p,t,:,:])
+                layer = backend.absolute(raw[p,t,:,:])
                 if isinstance(raw,np.memmap):
                     layer = asarray(layer)
                 array+=layer
@@ -233,7 +240,7 @@ class WFData(PySliceSerial, Signal):
         # Transpose for imshow convention
         array = array.T  # imshow convention: y,x. our convention: x,y
         if nuke_zerobeam:
-            array[np.argmin(np.absolute(kys_np)),np.argmin(np.absolute(kxs_np))]=0
+            array[np.argmin(backend.absolute(kys_np)),np.argmin(backend.absolute(kxs_np))]=0
 
         # Convert to numpy array if it's a tensor
         # Apply powerscaling to intensity (|Ψ|²)
@@ -370,8 +377,8 @@ class WFData(PySliceSerial, Signal):
         self._array = P[None,None,:,:,None] * self._array
 
     def addSpatialDecoherence(self,sigma_dz,N):
-        dzs = np.linspace(-2*sigma_dz,2*sigma_dz,N) # suppose N=25
-        amplitudes = np.exp(-dzs**2/sigma_dz**2)
+        dzs = backend.linspace(-2*sigma_dz,2*sigma_dz,N) # suppose N=25
+        amplitudes = backend.exp(-dzs**2/sigma_dz**2)
         self._array = self._array[:,None,:,:,:,:] * backend.ones(N)[None,:,None,None,None,None] # n_probes,nt,nx,ny,nl -->
         nc,npt,nt,nx,ny,nl = self._array.shape            # suppose nc=10 (addTemporalDecoherence created 10 wavelengths)
         kx_grid, ky_grid = backend.meshgrid(self._kxs, self._kys, indexing='ij')

@@ -209,17 +209,8 @@ class MultisliceCalculator:
                                            self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence,
                                            self.base_probe._array)
         #print(cache_key)
-        self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+self.cache_key)
+        self.output_dir = Path("psi_data/" + ("torch" if hasattr(self.base_probe._array, 'device') else "numpy") + "_"+self.cache_key)
         #self.output_dir.mkdir(parents=True, exist_ok=True)
-
-        # cache key is calculated TWICE: once during setup (so the user only needs to setup to infer where their cache folder will go), and again during run (just in case the user does something funky)
-        # Generate cache key and setup output directory
-        self.cache_key = self._generate_cache_key(self.trajectory, self.aperture, self.voltage_eV,
-                                           self.slice_thickness, self.sampling, self.probe_positions,
-                                           self.base_probe.spatial_decoherence, self.base_probe.temporal_decoherence,
-                                           self.base_probe._array)
-        #print(cache_key)
-        self.output_dir = Path("psi_data/" + ("torch" if TORCH_AVAILABLE else "numpy") + "_"+self.cache_key)
         #self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def preview_probes(self):
@@ -236,7 +227,7 @@ class MultisliceCalculator:
         potential.flatten()
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
-        array = np.absolute(backend.to_cpu(potential.array))[:,::-1,0].T # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
+        array = np.backend.absolute(backend.to_cpu(potential.array))[:,::-1,0].T # imshow convention: y,x. our convention: x,y, and flip y (0,0 upper-left)
         xs = backend.to_cpu(potential.xs) ; ys = backend.to_cpu(potential.ys)
         extent = (np.amin(xs),np.amax(xs),np.amin(ys),np.amax(ys))
         #print(extent)
@@ -263,7 +254,7 @@ class MultisliceCalculator:
 
 
         # if probes are over vacuum (e.g. nanoparticles), we don't need to propagate them?
-        self.probe_indices = xp.arange(len(self.probe_positions))
+        self.probe_indices = backend.arange(len(self.probe_positions))
         if self.skip_vacuum and len(self.probe_positions)>1 and self.aperture>1 and self.min_dk:
             if os.path.exists(self.output_dir / f"probe_indices.npy"):
                 self.probe_indices = np.load(self.output_dir / f"probe_indices.npy")
@@ -272,7 +263,7 @@ class MultisliceCalculator:
                 self.probe_indices = []
                 for i,p in enumerate(tqdm(self.probe_positions)):
                     p = asarray(p)
-                    d_to_nearest_atom = xp.sqrt( xp.amin( xp.sum( (p[None,:]-xy_atoms)**2,axis=1) ) )
+                    d_to_nearest_atom = backend.sqrt( backend.amin( backend.sum( (p[None,:]-xy_atoms)**2,axis=1) ) )
                     if d_to_nearest_atom < self.probe_cropping*self.sampling:
                         self.probe_indices.append(i)
                 np.save(self.output_dir / f"probe_indices.npy", self.probe_indices)
@@ -310,35 +301,20 @@ class MultisliceCalculator:
             if not isinstance(self.ADF,bool):
                 kwargs["inner_mrad"],kwargs["outer_mrad"] = self.ADF
             from ..postprocessing.haadf_data import HAADFData
-            array = zeros((self.n_probes,1,1,1,1),dtype=self.complex_dtype)
-            array += xp.arange(self.n_probes)[:,None,None,None,None] # we'll use this as an index to map nth probe to the ADF grid coordinates i,j
+            array = backend.zeros((self.n_probes,1,1,1,1),dtype=self.complex_dtype)
+            array += backend.arange(self.n_probes)[:,None,None,None,None] # we'll use this as an index to map nth probe to the ADF grid coordinates i,j
             wf = WFData(probe_positions=self.probe_positions,probe_xs=self.probe_xs,probe_ys=self.probe_ys,
                 time=None,kxs=self.kxs[self.keep_kxs_indices],kys=self.kys[self.keep_kys_indices],xs=self.xs,ys=self.ys,
                 layer=None,array=array,probe=self.base_probe,cache_dir=self.output_dir)
             self.ADF = HAADFData(wf)
-            self.ADFmask = absolute(self.ADF.getMask(**kwargs)) # HAADFData infers mask dtype from _wf_array dtype, but we'll absolute^2 later
-            self.ADFindex = astype(absolute(self.ADF._wf_array[0,:,:,0,0,0,0]),int)
-            self.ADF._array = zeros(self.ADFindex.shape,dtype=self.complex_dtype)
-
-        if self.ADF: # create a dummy HAADFData object, first so we can hijack its getMask function, and later we'll load it up
-            kwargs = {}
-            if not isinstance(self.ADF,bool):
-                kwargs["inner_mrad"],kwargs["outer_mrad"] = self.ADF
-            from ..postprocessing.haadf_data import HAADFData
-            array = zeros((self.n_probes,1,1,1,1),dtype=self.complex_dtype)
-            array += xp.arange(self.n_probes)[:,None,None,None,None] # we'll use this as an index to map nth probe to the ADF grid coordinates i,j
-            wf = WFData(probe_positions=self.probe_positions,probe_xs=self.probe_xs,probe_ys=self.probe_ys,
-                time=None,kxs=self.kxs[self.keep_kxs_indices],kys=self.kys[self.keep_kys_indices],xs=self.xs,ys=self.ys,
-                layer=None,array=array,probe=self.base_probe,cache_dir=self.output_dir)
-            self.ADF = HAADFData(wf)
-            self.ADFmask = absolute(self.ADF.getMask(**kwargs)) # HAADFData infers mask dtype from _wf_array dtype, but we'll absolute^2 later
-            self.ADFindex = astype(absolute(self.ADF._wf_array[0,:,:,0,0,0,0]),int)
-            self.ADF._array = zeros(self.ADFindex.shape,dtype=self.complex_dtype)
+            self.ADFmask = backend.absolute(self.ADF.getMask(**kwargs)) # HAADFData infers mask dtype from _wf_array dtype, but we'll absolute^2 later
+            self.ADFindex = backend.astype(backend.absolute(self.ADF._wf_array[0,:,:,0,0,0,0]),int)
+            self.ADF._array = backend.zeros(self.ADFindex.shape,dtype=self.complex_dtype)
 
         # Process frames one at a time with tqdm progress tracking
         with tqdm(total=self.n_frames, desc="Processing frames", unit="frame") as pbar:
             for frame_idx in range(self.n_frames):
-                #if sum(absolute(self.wavefunction_data[:,frame_idx,:,:,:]),axis=(0,1,2,3))>0: # p,t,x,y,l indices
+                #if sum(backend.absolute(self.wavefunction_data[:,frame_idx,:,:,:]),axis=(0,1,2,3))>0: # p,t,x,y,l indices
                 #continue
                 cache_file = self.output_dir / f"frame_{frame_idx}.npy"
                 # Show detailed progress for single-frame runs
@@ -362,7 +338,7 @@ class MultisliceCalculator:
                 # frame_data should always be shaped: n_probes,nkx,nky,n_layers,1 (idk why there's a trailing 1)
                 cache_exists,frame_data = checkCache(cache_file,self.cache_levels)
                 if cache_exists and not self.prism and self.ADF:
-                    intensities = einsum('pxyln,xy->p',absolute(frame_data)**2,self.ADFmask)
+                    intensities = backend.einsum('pxyln,xy->p',backend.absolute(frame_data)**2,self.ADFmask)
                     self.ADF._array += intensities[self.ADFindex]
 
                 if not os.path.exists(self.output_dir / f"kx.npy"):
@@ -435,8 +411,8 @@ class MultisliceCalculator:
 
                         # expand out to fixed l,p,x,y indices
                         exit_waves_single = backend.expand_dims(exit_waves_single,0) if len(exit_waves_single.shape)==3 else exit_waves_single
-                        # FFT and load into frame_data
-                        kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
+                        # FFT and load into frame_data - always use 'axes' and let backend handle conversion
+                        kwarg = {"axes":(-2,-1)}
                         for layer_idx in range(self.n_layers):
                             exit_waves_k = backend.fft2(exit_waves_single[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
                             diffraction_patterns = backend.fftshift(exit_waves_k, **kwarg)
@@ -461,9 +437,9 @@ class MultisliceCalculator:
 #                        exit_waves_batch = expand_dims(exit_waves_batch,0) if len(exit_waves_batch.shape)==3 else exit_waves_batch
 #                        # FFT and load into frame_data
 #                        for layer_idx in range(self.n_layers):
-#                            kwarg = {"dim":(-2,-1)} if TORCH_AVAILABLE else {"axes":(-2,-1)}
-#                            exit_waves_k = xp.fft.fft2(exit_waves_batch[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
-#                            diffraction_patterns = xp.fft.fftshift(exit_waves_k, **kwarg)
+#                            kwarg = {"dim":(-2,-1)} if hasattr(self.base_probe._array, 'device') else {"axes":(-2,-1)}
+#                            exit_waves_k = backend.fft.fft2(exit_waves_batch[layer_idx,:,:,:], **kwarg) # l,p,x,y --> p,x,y
+#                            diffraction_patterns = backend.fft.fftshift(exit_waves_k, **kwarg)
 #                            #cropped = diffraction_patterns[:,self.i1:self.i2,self.j1:self.j2]
 #                            #if not self.prism:
 #                            diffraction_patterns = diffraction_patterns[:,self.keep_kxs_indices,:][:,:,self.keep_kys_indices]*self.kth**2
@@ -472,12 +448,12 @@ class MultisliceCalculator:
 #                            if self.store_full or self.prism:
 #                                frame_data[:,:,:,layer_idx,0] = diffraction_patterns # load p,x,y --> p,x,y,l,1 indices
 #                            if self.ADF and not self.prism:
-#                                intensities = einsum('pxy,xy->p',absolute(diffraction_patterns)**2,self.ADFmask)
+#                                intensities = backend.einsum('pxy,xy->p',backend.absolute(diffraction_patterns)**2,self.ADFmask)
 #                                #print(type(self.ADF._array),type(intensities),type(self.ADFindex))
 #                                if self.use_memmap:
 #                                    intensities = asarray(intensities,device=self.device)
 #                                self.ADF._array += intensities[self.ADFindex]
-#                                #self.ADF._array = einsum('pxyln,'frame_data
+#                                #self.ADF._array = backend.einsum('pxyln,'frame_data
 
 
                     if not self.use_memmap and ( "exitwaves" in self.cache_levels or "slices" in self.cache_levels ) and (self.store_full or self.prism):
@@ -528,15 +504,15 @@ class MultisliceCalculator:
         # Note: WFData expects (probe_positions, time, kx, ky, layer) format
         # Create k-space coordinates to match expected format (same as AbTem)
         # TWP: If we're not going to also provide a shifted/etc reciprocal_array, we shouldn't shift the kxs
-        #kxs = xp.fft.fftfreq(self.nx, d=self.dx)
-        #kys = xp.fft.fftfreq(self.ny, d=self.dy)
-        #kxs = xp.fft.fftshift(xp.fft.fftfreq(self.nx, self.sampling))  # k-space in 1/Å MOVING TO INIT SO WE CAN CROP ON-THE-FLY
-        #kys = xp.fft.fftshift(xp.fft.fftfreq(self.ny, self.sampling))  # k-space in 1/Å
+        #kxs = backend.fft.fftfreq(self.nx, d=self.dx)
+        #kys = backend.fft.fftfreq(self.ny, d=self.dy)
+        #kxs = backend.fft.fftshift(backend.fft.fftfreq(self.nx, self.sampling))  # k-space in 1/Å MOVING TO INIT SO WE CAN CROP ON-THE-FLY
+        #kys = backend.fft.fftshift(backend.fft.fftfreq(self.ny, self.sampling))  # k-space in 1/Å
         time_array = np.arange(self.n_frames) * self.trajectory.timestep  # Time array in ps
         layer_array = np.arange(self.nz) if "slices" in self.cache_levels else np.array([0])  # Layer indices
         
         # Package results
-        array = zeros((self.n_probes,1,1,1,1),dtype=self.complex_dtype)
+        array = backend.zeros((self.n_probes,1,1,1,1),dtype=self.complex_dtype)
         if self.store_full:
             array = self.wavefunction_data
         #print(array.shape,self.kxs.shape,self.kys.shape)
@@ -610,10 +586,10 @@ class SEDCalculator:
         del nxyz[axis]
         del abc[axis]
 
-        self.kxs=np.linspace(0,2*np.pi/abc[0],nxyz[0])
-        self.kys=np.linspace(0,2*np.pi/abc[1],nxyz[1])
+        self.kxs=backend.linspace(0,2*np.pi/abc[0],nxyz[0])
+        self.kys=backend.linspace(0,2*np.pi/abc[1],nxyz[1])
 
-        self.kvec = np.zeros((len(self.kxs),len(self.kys),3))
+        self.kvec = backend.zeros((len(self.kxs),len(self.kys),3))
         self.kvec[:,:,0] += self.kxs[:,None]
         self.kvec[:,:,1] += self.kys[None,:]
 
@@ -637,7 +613,7 @@ class SEDCalculator:
         #ax.imshow((Zx[::-1,:,0]+Zy[::-1,:,0]+Zz[::-1,:,0])**.25, cmap="inferno", extent=extent,aspect="auto")
         #plt.show()
 
-        i=np.argmin(np.absolute(self.ws-w))
+        i=np.argmin(np.backend.absolute(self.ws-w))
         extent = ( np.amin(self.kxs) , np.amax(self.kxs) , np.amin(self.kys) , np.amax(self.kys) )
 
         fig, ax = plt.subplots()
