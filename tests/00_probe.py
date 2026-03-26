@@ -1,3 +1,5 @@
+import os
+os.environ['MPLBACKEND'] = 'Agg'
 import sys,os,time
 try:
     import pyslice
