@@ -1,12 +1,19 @@
 # backend.py - Backend abstraction layer for NumPy/PyTorch support
 import numpy as np
-from typing import Any, Optional, Union
+from typing import Any, Optional
+import logging
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
+_rng = np.random.default_rng()
 
 try:
     import torch
     xp = torch  # type: ignore[assignment]
     TORCH_AVAILABLE = True
 except ImportError:
+    torch = None  # explicit sentinel
     xp = np  # type: ignore[assignment]
     TORCH_AVAILABLE = False
 
@@ -65,7 +72,9 @@ def device_and_precision(device_spec=None):
 # Determine default device and dtypes at import time
 DEFAULT_DEVICE, DEFAULT_FLOAT_DTYPE, DEFAULT_COMPLEX_DTYPE = device_and_precision()
 
-print(DEFAULT_DEVICE, DEFAULT_FLOAT_DTYPE, DEFAULT_COMPLEX_DTYPE)
+logger.debug("Default device: %s", DEFAULT_DEVICE)
+logger.debug("Default float dtype: %s", DEFAULT_FLOAT_DTYPE)
+logger.debug("Default complex dtype: %s", DEFAULT_COMPLEX_DTYPE)
 
 # Convenience aliases
 float_dtype = DEFAULT_FLOAT_DTYPE
@@ -73,27 +82,42 @@ complex_dtype = DEFAULT_COMPLEX_DTYPE
 
 pi = xp.pi
 
+_NUMPY_FLOAT_DTYPES = {np.float32, np.float64}
+_NUMPY_COMPLEX_DTYPES = {np.complex64, np.complex128}
+_TORCH_FLOAT_DTYPES = {torch.float32, torch.float64} if TORCH_AVAILABLE else set()
+_TORCH_COMPLEX_DTYPES = {torch.complex64, torch.complex128} if TORCH_AVAILABLE else set()
+
+FLOAT_DTYPES = _NUMPY_FLOAT_DTYPES | _TORCH_FLOAT_DTYPES
+COMPLEX_DTYPES = _NUMPY_COMPLEX_DTYPES | _TORCH_COMPLEX_DTYPES
+
+_TORCH_TO_NUMPY_DTYPE: dict = {
+    torch.complex128: np.complex128,
+    torch.complex64:  np.complex64,
+    torch.float64:    np.float64,
+    torch.float32:    np.float32,
+} if TORCH_AVAILABLE else {}
+
 def asarray(arraylike, dtype=None, device=None):
     """Convert array-like object to backend array (NumPy or PyTorch tensor)."""
     if dtype is None:
         dtype = DEFAULT_FLOAT_DTYPE
     if device is None:
         device = DEFAULT_DEVICE
-    # Handle complex to real casting
-    if dtype is not None and 'float' in str(dtype).lower() and hasattr(arraylike, 'dtype') and 'complex' in str(arraylike.dtype).lower():
+
+    # Handle complex to real casting - only strip imaginary part when target is real
+    input_dtype = getattr(arraylike, 'dtype', None)
+    if dtype in FLOAT_DTYPES and input_dtype in COMPLEX_DTYPES:
         arraylike = arraylike.real
+
     if TORCH_BACKEND:
         if hasattr(arraylike, 'detach'):  # it's already a tensor
-            array = arraylike.detach().clone()
-            if dtype is not None:
-                array = array.to(dtype)
-            if device is not None:
-                array = array.to(device)
+            array = arraylike.detach().clone().to(dtype=dtype, device=device)
         else:
-            array = xp.tensor(arraylike, dtype=dtype, device=device)
+            array = torch.tensor(arraylike, dtype=dtype, device=device)
     else:
-        array = xp.asarray(arraylike, dtype=dtype)
+        array = np.asarray(arraylike, dtype=dtype)
     return array
+
 
 def astype(arraylike,dtype):
     if hasattr(arraylike,"to"): # torch
@@ -109,7 +133,7 @@ def zeros(dims, dtype=None, device=None, type_match=None):
             dtype = type_match.dtype
         if device is None and hasattr(type_match, "device"):
             device = type_match.device
-        if type(type_match) in [np.memmap, np.ndarray]:
+        if isinstance(type_match, (np.ndarray, np.memmap)):
             return np.zeros(dims, dtype=dtype)
     
     # Set defaults
@@ -119,7 +143,9 @@ def zeros(dims, dtype=None, device=None, type_match=None):
         device=DEFAULT_DEVICE
     # string handling for dtype, "float" --> float
     if isinstance(dtype,str):
-        dtype={"float":DEFAULT_FLOAT_DTYPE,"complex":DEFAULT_COMPLEX_DTYPE,"int":int}[dtype]
+        dtype={"float": DEFAULT_FLOAT_DTYPE,
+               "complex": DEFAULT_COMPLEX_DTYPE,
+               "int": xp.int64}[dtype]
     # infer if we're using torch or numpy (numpy does not take device arg)
     if TORCH_BACKEND:
         array = xp.zeros(dims, dtype=dtype, device=device)
@@ -127,17 +153,19 @@ def zeros(dims, dtype=None, device=None, type_match=None):
         array = xp.zeros(dims, dtype=dtype)
     return array
 
-def memmap(dims,dtype=DEFAULT_FLOAT_DTYPE,filename=None):
+
+def memmap(dims, dtype=None, filename=None):
+    if dtype is None:
+        dtype = DEFAULT_FLOAT_DTYPE
     from numpy.lib.format import open_memmap
     if filename is None:
-        print("WARNING: memmap attempted without filename, falling back to zeros")
+        logger.warning("memmap attempted without filename, falling back to zeros")
         return zeros(dims,dtype)
     # cast to numpy dtypes so we can use numpy memmaps
-    if xp != np and dtype in [ xp.complex128, xp.complex64, xp.float64, xp.float32 ]:
-        dtype = { xp.complex128:np.complex128, xp.complex64:np.complex64,
-                 xp.float64:np.float64, xp.float32:np.float32 }[ dtype ]
-    mode = 'w+' #'r+' if os.path.exists(filename) else 'w+'
-    #print("creating memmap",mode,dtype,dims,"->",filename)
+    if TORCH_BACKEND and dtype in [ xp.complex128, xp.complex64, xp.float64, xp.float32 ]:
+        dtype = _TORCH_TO_NUMPY_DTYPE[ dtype ]
+    mode = 'w+'
+    logger.debug("creating memmap mode=%s dtype=%s dims=%s filename=%s", mode, dtype, dims, filename)
     return open_memmap(filename, dtype=dtype, mode=mode, shape=dims)
 
 
@@ -148,13 +176,12 @@ def absolute(x):
     return xp.absolute(x)
 
 
-def reshape(array,shape):
-    if xp != np and type(array) == np.memmap:
-        return np.reshape(array,shape)
-    return xp.reshape(array,shape)
-
-def ones(dims, dtype=DEFAULT_FLOAT_DTYPE, device=DEFAULT_DEVICE):
+def ones(dims, dtype=None, device=None):
     """Create a one-filled array."""
+    if dtype is None:
+        dtype = DEFAULT_FLOAT_DTYPE
+    if device is None:
+        device = DEFAULT_DEVICE
     if TORCH_BACKEND:
         return xp.ones(dims, dtype=dtype, device=device)
     else:
@@ -173,7 +200,7 @@ def fftfreq(n, d=1.0, dtype=None, device=None):
     if device is None:
         device = DEFAULT_DEVICE
     if TORCH_BACKEND:
-        print(device, dtype)
+        logger.debug("Creating FFT frequency array with device=%s, dtype=%s", device, dtype)
         return xp.fft.fftfreq(n, d, dtype=dtype, device=device)
     else:
         return xp.fft.fftfreq(n, d).astype(dtype)
@@ -322,28 +349,30 @@ def einsum(subscripts, *operands, **kwargs):
         operands = [ to_cpu(o) for o in operands ]
         return np.einsum(subscripts, *operands, optimize=True, **kwargs)
 
-def to_cpu(array):
-    if type(array) in [ np.ndarray, np.memmap ]:
-        return array
-    else:
-        if "dim" in kwargs:
-            kwargs["axis"] = kwargs.pop("dim")
-        return np.stack(arrays, axis=axis, **kwargs)
 
-# def to_cpu(x):
-#     """Convert tensor to CPU NumPy array."""
-#     if isinstance(x, np.ndarray):
-#         return x
-#     if hasattr(x, 'cpu'):
-#         return x.cpu().numpy()
-#     if isinstance(x, (int, float, complex)):
-#         return x
-#     return np.asarray(x)
+def to_cpu(x):
+    """Convert tensor to CPU."""
+    if isinstance(x, (np.ndarray, np.memmap)):
+        return x
+    elif TORCH_BACKEND and isinstance(x, torch.Tensor):
+        return x.cpu()
+    elif isinstance(x, (int, float, complex)):
+        return x
+    else:
+        return np.asarray(x)
+
+
+def to_numpy(x):
+    """Convert tensor to CPU NumPy array."""
+    x = to_cpu(x)
+    if TORCH_BACKEND and isinstance(x, torch.Tensor):
+        return x.detach().numpy()
+    return x
 
 
 def reshape(x, shape):
     """Reshape array."""
-    if TORCH_BACKEND and type(x) == np.memmap:
+    if TORCH_BACKEND and isinstance(x, (np.ndarray, np.memmap)):
         return np.reshape(x, shape)
     return xp.reshape(x, shape)
 
@@ -361,7 +390,7 @@ def stack(arrays, axis=0, **kwargs):
     if TORCH_BACKEND:
         if "axis" in kwargs:
             kwargs["dim"] = kwargs.pop("axis")
-        return xp.stack(arrays, **kwargs)
+        return xp.stack(arrays, dim=axis, **kwargs)
     else:
         if "dim" in kwargs:
             kwargs["axis"] = kwargs.pop("dim")
@@ -393,17 +422,20 @@ def isnan(x):
 def midcrop(a,n): # e.g. unshifted ks: 0,1,2,3,4.....-4,-3,-,2-1, crop out 3 through -3, the inverse of a[n:-n]
     return xp.roll(xp.roll(a,len(a)//2)[n:-n],len(a)//2-n)
 
+
 def ceil(v):
-    if xp != np and type(v)==torch.Tensor:
+    if TORCH_BACKEND and isinstance(v, torch.Tensor):
         return int(xp.ceil(v))
     return int(np.ceil(v))
 
-def cumsum(a):
-    if xp != np and type(a)==torch.Tensor:
-        return xp.cumsum(a,dim=0)
-    return xp.cumsum(a)
 
-def histogram(a,bins):
+def cumsum(a, axis=0):
+    if TORCH_BACKEND and isinstance(a, torch.Tensor):
+        return xp.cumsum(a, dim=axis)
+    return xp.cumsum(a, axis=axis)
+
+
+def histogram(a, bins):
     #print(bins)
     #print(bins[1:]-bins[:-1])
     #return np.histogram(to_cpu(a),bins=to_cpu(bins))
@@ -416,7 +448,7 @@ def histogram(a,bins):
     #    #    hist[i] = xp.sum(mask)
     #    #return hist
     hist = zeros(len(bins)-1,type_match=a)
-    for chunk in chunkIDs(len(bins)-1,1000):
+    for chunk in chunk_ids(len(bins)-1,1000):
         db = bins[chunk+1]-bins[chunk]
         diff = a[None,:]-bins[chunk,None]
         diff[diff>db[:,None]]=-1
@@ -427,51 +459,34 @@ def histogram(a,bins):
     return hist
     #return np.histogram(to_cpu(a),bins=to_cpu(bins))[0]
     #return np.histogram(a,bins=bins)[0]
+    # torch.histogram has device limitations on CUDA; numpy fallback is correct and avoids
+    # large intermediate allocations from the manual chunked loop.
+    #return np.histogram(to_numpy(a), bins=to_numpy(bins))
 
-def randfloats(N):
-    N=int(N)
-    if xp != np:
-        return xp.rand(N)
-    return np.random.random(N)
+def randfloats(N, device=None, dtype=None):
+    N = int(N)
+    if device is None:
+        device = DEFAULT_DEVICE
+    if dtype is None:
+        dtype = DEFAULT_FLOAT_DTYPE
+    if TORCH_BACKEND:
+        return torch.rand(N, device=device, dtype=dtype)
+    return _rng.random(N).astype(dtype)
+
 
 def clone(a):
     if hasattr(a,"clone"):
         return a.clone()
-    try:
-        if hasattr(a,"copy"):
-            return a.copy()
-    except:
-        pass
+    if hasattr(a,"copy"):
+        return a.copy()
     return a
 
-def chunkIDs(N,chunksize=1000):
-    chunks = [] ; i=0
-    while True:
-        chunk = xp.arange(i*chunksize,min((i+1)*chunksize,N))
-        chunks.append( chunk )
-        i += 1
-        if i*chunksize >= N:
-            break
+
+def chunk_ids(N, chunksize=1000):
+    chunks = []
+    for i in range(0, N, chunksize):
+        chunks.append(np.arange(i, min(i + chunksize, N)))
     return chunks
-
-
-def memmap(dims, dtype=None, filename=None):
-    """Create memory-mapped array."""
-    if filename is None:
-        print("WARNING: memmap attempted without filename, falling back to zeros")
-        return zeros(dims, dtype=dtype)
-    
-    # Convert torch dtypes to numpy for memmap
-    if TORCH_BACKEND and dtype in [xp.complex128, xp.complex64, xp.float64, xp.float32]:
-        dtype_map = {
-            xp.complex128: np.complex128,
-            xp.complex64: np.complex64,
-            xp.float64: np.float64,
-            xp.float32: np.float32,
-        }
-        dtype = dtype_map[dtype]
-    
-    return np.memmap(filename, dtype=dtype, mode='w+', shape=dims)
 
 
 # Keep legacy function for backward compatibility
