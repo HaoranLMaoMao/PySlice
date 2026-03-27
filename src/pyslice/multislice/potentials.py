@@ -55,8 +55,8 @@ def kirkland(qsq, Z):
     d_expanded = d[:, None, None]
     qsq_expanded = qsq[None, :, :]
 
-    term1 = backend.sum(a_expanded / (qsq_expanded + b_expanded), axis=0)
-    term2 = backend.sum(c_expanded * backend.exp(-d_expanded * qsq_expanded), axis=0)
+    term1 = backend.array_sum(a_expanded / (qsq_expanded + b_expanded), axis=0)
+    term2 = backend.array_sum(c_expanded * backend.exp(-d_expanded * qsq_expanded), axis=0)
 
     return term1 + term2
 
@@ -230,7 +230,7 @@ class Potential:
                 
                 spatial_mask = (slice_coords >= slice_min) & (slice_coords < slice_max)
                 
-                if not backend.any(spatial_mask):
+                if not backend.array_any(spatial_mask):
                     continue
                 
                 # Get positions for atoms in this slice and type
@@ -328,7 +328,7 @@ class Potential:
 
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
-        array = backend.sum(
+        array = backend.array_sum(
             backend.absolute(self.array),
             axis=2,
         ).T # imshow convention: y,x. our convention: x,y

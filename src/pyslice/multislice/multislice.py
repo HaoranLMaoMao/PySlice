@@ -251,7 +251,7 @@ class Probe:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
         # calling self.array should convert to CPU/numpy
-        array = backend.mean(backend.absolute(self.array[:,:,::-1,:]),axis=1)[0,:,:] # positional,summable,x,y indices
+        array = backend.array_mean(backend.absolute(self.array[:,:,::-1,:]),axis=1)[0,:,:] # positional,summable,x,y indices
         array=array.T # imshow convention: y,x. our convention: x,y
         plot_array = backend.absolute(array)**.25
 

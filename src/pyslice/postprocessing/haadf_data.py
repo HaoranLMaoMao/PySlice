@@ -9,7 +9,6 @@ from .wf_data import WFData
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
 #from ..data import Signal, Dimensions, Dimension, GeneralMetadata
 import pyslice.backend as backend
-from pyslice.backend import zeros, to_cpu, mean, sum, absolute, einsum, xp, float_dtype
 #from ..data.pyslice_serial import PySliceSerial
 
 logger = logging.getLogger(__name__)
@@ -187,8 +186,8 @@ class HAADFData(PySliceSerial, Signal):
         if preview:
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots()
-            preview_data = mean(absolute(self._wf_array),axis=(0,1,2,3,6))**.2 * (1 - mask)
-            ax.imshow(absolute(np.asarray(preview_data)), cmap="inferno")
+            preview_data = backend.array_mean(backend.absolute(self._wf_array),axis=(0,1,2,3,6))**.2 * (1 - mask)
+            ax.imshow(backend.to_numpy(backend.absolute(preview_data)), cmap="inferno")
             plt.show()
 
         #collected = self._wf_array * mask[None,None,None,:,:,None] # c,x,y,t,kx,ky,l indices, mask is kx,ky
@@ -199,17 +198,11 @@ class HAADFData(PySliceSerial, Signal):
         #        self._array[i,j] = mean(sum(absolute(collected)**2,axis=(2,3)),axis=(0,1,2)) # sum |ψ|² over kx,ky, mean over c,t,l
         # TODO this should be einsum, but i'm not trying to test it right now...
         nc,_,_,nt,_,_,nl = self._wf_array.shape
-        wf_intensity = absolute(self._wf_array)**2 ; mask = absolute(mask)
-        self._array = einsum('cxytkql,kq->xy',wf_intensity,mask)/(nc*nt*nl)
+        wf_intensity = backend.absolute(self._wf_array)**2 ; mask = backend.absolute(mask)
+        self._array = backend.einsum('cxytkql,kq->xy',wf_intensity,mask)/(nc*nt*nl)
 
-        # Update dimensions with computed xs, ys
-        def to_numpy(x):
-            if hasattr(x, 'cpu'):
-                return x.cpu().numpy()
-            return np.asarray(x)
-
-        xs_np = to_numpy(self._xs)
-        ys_np = to_numpy(self._ys)
+        xs_np = backend.to_numpy(self._xs)
+        ys_np = backend.to_numpy(self._ys)
 
         if Dimensions is not None:
             self._local_dimensions = Dimensions([

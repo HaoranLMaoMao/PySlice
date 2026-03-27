@@ -299,7 +299,7 @@ def linspace(start, stop, num=50, **kwargs):
     return xp.linspace(start, stop, num, **kwargs)
 
 
-def sum(x: Any, axis: Optional[int] = None, **kwargs: Any) -> Any:
+def array_sum(x: Any, axis: Optional[int] = None, **kwargs: Any) -> Any:
     """Sum elements along axis with kwarg conversion."""
     if TORCH_BACKEND and type(x) not in (np.memmap, np.ndarray):
         if "axis" in kwargs:
@@ -311,7 +311,7 @@ def sum(x: Any, axis: Optional[int] = None, **kwargs: Any) -> Any:
         return np.sum(x, axis=axis, **kwargs)  # type: ignore[attr-defined]
 
 
-def mean(x, axis=None, **kwargs):
+def array_mean(x, axis=None, **kwargs):
     """Mean of elements along axis with kwarg conversion."""
     is_torch = TORCH_BACKEND and type(x) not in [np.memmap, np.ndarray]
     
@@ -334,7 +334,7 @@ def mean(x, axis=None, **kwargs):
         return np.mean(x, axis=axis, **kwargs)
 
 
-def any(x):
+def array_any(x):
     """Test whether any array elements along a given axis evaluate to True."""
     return xp.any(x)
 

@@ -265,7 +265,7 @@ class MultisliceCalculator:
                 self.probe_indices = []
                 for i,p in enumerate(tqdm(self.probe_positions)):
                     p = asarray(p)
-                    d_to_nearest_atom = backend.sqrt( backend.amin( backend.sum( (p[None,:]-xy_atoms)**2,axis=1) ) )
+                    d_to_nearest_atom = backend.sqrt( backend.amin( backend.array_sum( (p[None,:]-xy_atoms)**2,axis=1) ) )
                     if d_to_nearest_atom < self.probe_cropping*self.sampling:
                         self.probe_indices.append(i)
                 np.save(self.output_dir / f"probe_indices.npy", self.probe_indices)
@@ -395,7 +395,7 @@ class MultisliceCalculator:
                             chunk = backend.arange(i*chunksize,(i+1)*chunksize)
                             #chunk = chunk[chunk<npt]
                             # only keep chunk indices if they're also in probe_indices
-                            chunk = chunk[backend.any(self.probe_indices[None,:]==chunk[:,None],axis=1)]
+                            chunk = chunk[backend.array_any(self.probe_indices[None,:]==chunk[:,None],axis=1)]
                             if (i+1)*chunksize>npt:
                                 break
                             if len(chunk)==0:

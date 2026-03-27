@@ -63,7 +63,7 @@ def SED(avg,displacements,kvec,v_xyz=0,bs=''):
 		v_xyz=np.roll([1,0,0],v_xyz)					# 0,1,2 --> x,y,z
 	else:
 		v_xyz=backend.asarray(v_xyz,dtype=float)
-		v_xyz/=backend.sqrt(backend.sum(v_xyz**2))	# normalize magnitude of passed vector
+		v_xyz/=backend.sqrt(backend.array_sum(v_xyz**2))	# normalize magnitude of passed vector
 
 	# time axis: infer frequencies, calculate length so we can trim off negative frequencies, set up empty 
 	nt2=int(nt/2) ; ws=fftfreq(nt)[:nt2]

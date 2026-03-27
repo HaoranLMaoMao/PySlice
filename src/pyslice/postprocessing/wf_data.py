@@ -159,7 +159,7 @@ class WFData(PySliceSerial, Signal):
         if self.probability is None:
             self.probability = self._array
             npt,nt,nx,ny,nl = self._array.shape
-            ary = self._array/backend.sum(backend.absolute(self._array))                  # normalized: ensure values arerelative probabilities of each voxel
+            ary = self._array/backend.array_sum(backend.absolute(self._array))                  # normalized: ensure values arerelative probabilities of each voxel
             ary = backend.absolute(ary.reshape(npt*nt*nx*ny*nl))
             self.buckets = zeros(len(ary)+1,type_match=ary)
             self.buckets[1:] = cumsum(ary)                                      # cumsum means we can "select" a voxel with a random float 0-1
@@ -279,7 +279,7 @@ class WFData(PySliceSerial, Signal):
         # Get array (with or without averaging)
         if avg:
             array = self._array[whichProbe,:,:,:,-1] # Shape: (time, kx, ky)
-            array = backend.mean(array, axis=0)  # Average over time dimension
+            array = backend.array_mean(array, axis=0)  # Average over time dimension
         else:
             array = self._array[whichProbe,whichTimestep,:,:,-1]
 
@@ -337,12 +337,12 @@ class WFData(PySliceSerial, Signal):
         array = backend.absolute(array) # probe, time, kx, ky, layer --> p,t,kx,ky
 
         if isinstance(whichProbe,str) and whichProbe=="mean":
-            array = backend.mean(backend.absolute(array),axis=0) # p,t,kx,ky --> t,kx,ky
+            array = backend.array_mean(backend.absolute(array),axis=0) # p,t,kx,ky --> t,kx,ky
         else:
             array = array[whichProbe]
 
         if isinstance(whichTimestep,str) and whichTimestep=="mean":
-            array = backend.mean(array,axis=0) # t,kx,ky --> kx,ky
+            array = backend.array_mean(array,axis=0) # t,kx,ky --> kx,ky
         else:
             array = array[whichTimestep]
 
@@ -405,8 +405,8 @@ class WFData(PySliceSerial, Signal):
             self._array*=mask[None,None,:,:,None]
         else:
             # Use numpy for _xs/_ys since they're numpy arrays, then convert result
-            radii_np = backend.sqrt( ( self._xs[:,None] - backend.mean(self._xs) )**2 +\
-                ( self._ys[None,:] - backend.mean(self._ys) )**2 )
+            radii_np = backend.sqrt( ( self._xs[:,None] - backend.array_mean(self._xs) )**2 +\
+                ( self._ys[None,:] - backend.array_mean(self._ys) )**2 )
             if backend.TORCH_BACKEND:
                 radii = backend.asarray(radii_np, dtype=self._array.real.dtype, device=self._array.device)
             else:
