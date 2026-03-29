@@ -153,14 +153,21 @@ class TACAWData(PySliceSerial, Signal):
 
         wf_layer = self._wf_array[:, :, :, :, layer_index]  # p,t,kx,ky
 
+        
         if self.chunk_size_time is None:
             self.n_chunks = 1
         else:
-            self.n_chunks = len(self._time) // self.chunk_size_time
+            if self.chunk_size_time <= 0:
+                raise ValueError("chunk_size_time must be a positive integer")
+            elif self.chunk_size_time > len(self._time):
+                raise ValueError("chunk_size_time cannot exceed total time length")
+            else:
+                self.n_chunks = len(self._time) // self.chunk_size_time
 
-        indices = b.astype(b.linspace(0, len(self._time), self.n_chunks + 1), int)
+        indices = np.linspace(0, len(self._time), self.n_chunks + 1)
+        fft_len = self.chunk_size_time if self.chunk_size_time is not None else len(self._time)
         dt = float(to_numpy(self._time[1] - self._time[0]))
-        self._frequencies = b.fftshift(b.fftfreq(self.n_chunks, d=dt))
+        self._frequencies = b.fftshift(b.fftfreq(fft_len, d=dt))
 
         if self.chunkFFT:
             # Memory-conservative path: loop over kx
@@ -225,8 +232,8 @@ class TACAWData(PySliceSerial, Signal):
         freq_idx = int(np.argmin(np.abs(self.frequencies - frequency)))
         if probe_indices is None:
             probe_indices = list(range(len(self.probe_positions)))
-        return to_numpy([b.sum(self._array[p, freq_idx, :, :])
-                         for p in probe_indices])
+        return np.array([to_numpy(b.sum(self._array[p, freq_idx, :, :])) for p in probe_indices])
+
 
     def diffraction(self, probe_index: Optional[int] = None,
                     space: str = "reciprocal") -> np.ndarray:
@@ -317,12 +324,12 @@ class TACAWData(PySliceSerial, Signal):
         probe_indices = (np.arange(len(self.probe_positions))
                          if probe_index is None else [probe_index])
         n_freq = len(self.frequencies)
-        dispersion = np.zeros((n_freq, len(kx_indices)), dtype=complex)
+        dispersion = np.zeros((n_freq, len(kx_indices)), dtype=np.double)
 
         for w in range(n_freq):
             w_slice = self._array[probe_indices, w, :, :]
             if space == "real":
-                w_slice = b.ifft2(w_slice, axes=(1, 2))
+                w_slice = b.fftshift(b.fft2(w_slice, axes=(1, 2)), axes=(1, 2))
             w_np = np.mean(to_numpy(w_slice), axis=0)
             for i, (ki, kj) in enumerate(zip(kx_indices, ky_indices)):
                 dispersion[w, i] = w_np[ki, kj]

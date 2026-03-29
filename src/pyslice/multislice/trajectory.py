@@ -94,6 +94,12 @@ class Trajectory:
         """Select specific frames by index array."""
         if indices is None:
             indices = slice(0, len(self.positions))
+        # Scalar or tuple indexing collapses the frame axis to 2-D; force list to
+        # preserve the (frames, atoms, 3) shape.
+        if isinstance(indices, (int, np.integer)):
+            indices = [indices]
+        elif isinstance(indices, tuple):
+            indices = list(indices)
         return Trajectory(
             atom_types=self.atom_types,
             positions=self.positions[indices],
@@ -224,6 +230,7 @@ class Trajectory:
 
     def generate_random_displacements(self, n_displacements: int, sigma: float,
                                       seed: Optional[int] = None) -> Trajectory:
+        """Generate random displacements from the mean position with given std dev."""
         rng = np.random.default_rng(seed)
         na = self.n_atoms
         dxyz = rng.normal(0, sigma / np.sqrt(3), size=(n_displacements, na, 3))
