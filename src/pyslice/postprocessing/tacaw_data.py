@@ -1,145 +1,113 @@
 """
 Core data structure for TACAW EELS calculations.
 """
+from __future__ import annotations
+
+import logging
+import os
+from pathlib import Path
+from typing import List, Optional, Union
+
 import numpy as np
-from typing import Optional, Tuple, Dict, Any, List, Union
-import logging, os
+from tqdm import tqdm
+
 from .wf_data import WFData
 from ..data.pyslice_serial import PySliceSerial, Signal, Dimensions, Dimension, Metadata
-import pyslice.backend as backend
-#from ..data import Signal, Dimensions, Dimension, GeneralMetadata
-#from ..data.pyslice_serial import PySliceSerial
-from tqdm import tqdm
+from pyslice.backend import Backend, to_numpy, to_cpu
 
 logger = logging.getLogger(__name__)
 
 
 class TACAWData(PySliceSerial, Signal):
     """
-    Data structure for storing TACAW EELS results with format: probe_positions, frequency, kx, ky.
+    TACAW EELS results: (probe_positions, frequency, kx, ky).
 
-    Inherits from Signal for sea-eco compatibility.
-
-    Attributes:
-        probe_positions: List of (x,y) probe positions in Angstroms.
-        frequencies: Frequencies in THz.
-        kxs: kx sampling vectors (e.g., in Å⁻¹).
-        kys: ky sampling vectors (e.g., in Å⁻¹).
-        xs: x real-space coordinates.
-        ys: y real-space coordinates.
-        intensity: Intensity array |Ψ(ω,q)|² (probe_positions, frequency, kx, ky).
-        probe: Probe object with beam parameters.
-        cache_dir: Path to cache directory.
+    Converts a WFData wavefunction (time-domain) to spectral intensity
+    |Ψ(ω,q)|² via FFT along the time axis.
     """
 
     _sea_config = {
-        'tensor_attrs': ['_kxs', '_kys', '_xs', '_ys', '_time', '_layer', '_frequencies', '_array', 'data'],
+        'tensor_attrs': ['_kxs', '_kys', '_xs', '_ys', '_time', '_layer',
+                         '_frequencies', '_array', 'data'],
         'path_attrs': ['cache_dir'],
         'tuple_list_attrs': ['probe_positions'],
-        'exclude_attrs': ['probe', '_wf_array'],
-        'force_datasets': ['_array', 'probe_positions', '_kxs', '_kys', '_xs', '_ys', '_time', '_layer', '_frequencies'],
+        'exclude_attrs': ['probe', '_wf_array', '_backend'],
+        'force_datasets': ['_array', 'probe_positions', '_kxs', '_kys',
+                           '_xs', '_ys', '_time', '_layer', '_frequencies'],
     }
 
-    def __init__(self, 
-                 wf_data: WFData, 
-                 layer_index: int = None, 
-                 keep_complex: bool = False, 
+    def __init__(self,
+                 wf_data: WFData,
+                 layer_index: Optional[int] = None,
+                 keep_complex: bool = False,
                  chunkFFT: bool = False,
-                 chunk_size_time: int = None) -> None:
-        """
-        Initialize TACAWData from WFData by performing FFT.
+                 chunk_size_time: Optional[int] = None) -> None:
 
-        Args:
-            wf_data: WFData object containing wavefunction data
-            layer_index: Index of the layer to compute FFT for (default: last layer)
-            keep_complex: If True, keep complex FFT result instead of intensity
-        """
-        # Copy needed attributes from WFData (raw tensors for GPU ops)
+        self._backend = wf_data._backend
+        b = self._backend
+
+        # Copy coordinate metadata from WFData
         self.probe_positions = wf_data.probe_positions
-        self._time = wf_data._time
-        self._kxs = wf_data._kxs
-        self._kys = wf_data._kys
-        self._xs = wf_data._xs
-        self._ys = wf_data._ys
+        self._time  = wf_data._time
+        self._kxs   = wf_data._kxs
+        self._kys   = wf_data._kys
+        self._xs    = wf_data._xs
+        self._ys    = wf_data._ys
         self._layer = wf_data._layer
-        self.probe = wf_data.probe
-        self.cache_dir = wf_data.cache_dir
-        self.keep_complex = keep_complex
-        self.chunkFFT = chunkFFT
-        self.use_memmap = isinstance(wf_data._array,np.memmap)
+        self.probe  = wf_data.probe
+        self.cache_dir   = wf_data.cache_dir
+        self.keep_complex  = keep_complex
+        self.chunkFFT      = chunkFFT
+        self.use_memmap    = isinstance(wf_data._array, np.memmap)
         self.chunk_size_time = chunk_size_time
 
-        # Store reference to source WFData array for FFT computation
-        self._wf_array = wf_data._array
-        #print("tacaw > wfdata",wf_data._array.shape)
-
-        # Initialize intensity as None, will be set by fft_from_wf_data
-        self._array = None
+        self._wf_array   = wf_data._array
+        self._array      = None
         self._frequencies = None
 
-        # Perform FFT to compute intensity
         self._fft_from_wf_data(layer_index)
 
-        # Save computed values before super().__init__
-        computed_array = self._array
-        computed_frequencies = backend.to_cpu(self._frequencies) if hasattr(self._frequencies, 'cpu') else self._frequencies
-
-        # Build Dimensions for Signal
-        freq_arr = backend.to_numpy(self._frequencies)
-        kxs_arr = backend.to_numpy(self._kxs)
-        kys_arr = backend.to_numpy(self._kys)
-
         if Dimensions is not None:
-
             self.dimensions = Dimensions([
-                Dimension(name='probe', space='position',
-                        values=np.arange(len(self.probe_positions))),
+                Dimension(name='probe',     space='position',
+                          values=np.arange(len(self.probe_positions))),
                 Dimension(name='frequency', space='spectral', units='THz',
-                        values=freq_arr),
-                Dimension(name='kx', space='scattering', units='Å⁻¹',
-                        values=kxs_arr),
-                Dimension(name='ky', space='scattering', units='Å⁻¹',
-                        values=kys_arr),
+                          values=to_numpy(self._frequencies)),
+                Dimension(name='kx',        space='scattering', units='Å⁻¹',
+                          values=to_numpy(self._kxs)),
+                Dimension(name='ky',        space='scattering', units='Å⁻¹',
+                          values=to_numpy(self._kys)),
             ], nav_dimensions=[0, 1], sig_dimensions=[2, 3])
 
-            # Build metadata
-            metadata_dict = {
-                'General': {
-                    'title': 'TACAW Intensity',
-                    'signal_type': 'TACAW'
-                },
+            self.metadata = Metadata({
+                'General':    {'title': 'TACAW Intensity', 'signal_type': 'TACAW'},
                 'Simulation': {
-                    'voltage_eV': float(self.probe.eV),
-                    'wavelength_A': float(self.probe.wavelength),
+                    'voltage_eV':    float(self.probe.eV),
+                    'wavelength_A':  float(self.probe.wavelength),
                     'aperture_mrad': float(self.probe.mrad),
                     'probe_positions': [list(p) for p in self.probe_positions],
-                }
-            }
-            self.metadata = Metadata(metadata_dict)
-            self.sea_type="Signal"
+                },
+            })
+            self.sea_type = "Signal"
 
-        # Restore computed values AFTER super().__init__
-        self._array = computed_array
-        self._frequencies = computed_frequencies
+    # ------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------
 
-    def __getattr__(self, name):
-        """Auto-convert coordinate arrays from tensor to numpy on access."""
-        coord_attrs = {'time', 'kxs', 'kys', 'xs', 'ys', 'layer', 'frequencies'}
-        if name in coord_attrs:
-            raw = object.__getattribute__(self, f'_{name}')
-            if raw is None:
-                return None
-            if hasattr(raw, 'cpu'):
-                return raw.cpu().numpy()
-            return np.asarray(raw)
-        raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
+    @property
+    def kxs(self)         -> np.ndarray: return to_numpy(self._kxs)
+    @property
+    def kys(self)         -> np.ndarray: return to_numpy(self._kys)
+    @property
+    def xs(self)          -> np.ndarray: return to_numpy(self._xs)
+    @property
+    def ys(self)          -> np.ndarray: return to_numpy(self._ys)
+    @property
+    def frequencies(self) -> np.ndarray: return to_numpy(self._frequencies)
 
     @property
     def data(self):
-        """Lazy conversion to numpy for Signal compatibility."""
-        if self._array is None:
-            return None
-        return to_cpu(self._array)
+        return to_numpy(self._array) if self._array is not None else None
 
     @data.setter
     def data(self, value):
@@ -147,7 +115,6 @@ class TACAWData(PySliceSerial, Signal):
 
     @property
     def intensity(self):
-        """Backward compatible alias for internal intensity array."""
         return self._array
 
     @intensity.setter
@@ -156,433 +123,257 @@ class TACAWData(PySliceSerial, Signal):
 
     @property
     def array(self):
-        """Alias for intensity (backward compatibility with WFData interface)."""
-        return to_cpu(self._array)
+        return to_numpy(self._array) if self._array is not None else None
 
-    def _fft_from_wf_data(self, layer_index: int = None):
-        """
-        Perform FFT along the time axis for a specific layer to convert to TACAW data.
-        This implements the JACR method: Ψ(t,q,r) → |Ψ(ω,q,r)|² via FFT.
+    # ------------------------------------------------------------------
+    # FFT computation
+    # ------------------------------------------------------------------
 
-        Args:
-            layer_index: Index of the layer to compute FFT for (default: last layer)
-        """
-        if os.path.exists(self.cache_dir / "tacaw.npy"):
-            self._array = np.load(self.cache_dir / "tacaw.npy")
-            # sanity check sizes on reload
-            _,nt,nx,ny,_ = self._wf_array.shape
-            _,nw,nx2,ny2 = self._array.shape
-            if nt==nw and nx==nx2 and ny==ny2:
-                self._frequencies = np.load(self.cache_dir / "tacaw_freq.npy")
-                if backend.TORCH_BACKEND:
-                    self._frequencies = backend.asarray(self._frequencies)
-                    self._array = backend.asarray(self._array)
+    def _fft_from_wf_data(self, layer_index: Optional[int] = None):
+        """FFT along the time axis to convert wavefunction to TACAW data."""
+        b = self._backend
+
+        cache_tacaw = self.cache_dir / "tacaw.npy"
+        cache_freq  = self.cache_dir / "tacaw_freq.npy"
+
+        if cache_tacaw.exists():
+            cached = np.load(cache_tacaw)
+            _, nt, nx, ny, _ = self._wf_array.shape
+            _, nw, nx2, ny2  = cached.shape
+            if nt == nw and nx == nx2 and ny == ny2:
+                self._frequencies = b.asarray(np.load(cache_freq))
+                self._array = b.asarray(cached)
                 return
 
-        # Default to last layer if not specified
         if layer_index is None:
             layer_index = len(self._layer) - 1
+        if not (0 <= layer_index < len(self._layer)):
+            raise ValueError(
+                f"layer_index {layer_index} out of range [0, {len(self._layer) - 1}]")
 
-        # Validate layer index
-        if layer_index < 0 or layer_index >= len(self._layer):
-            raise ValueError(f"layer_index {layer_index} out of range [0, {len(self._layer)-1}]")
-
-        # Extract wavefunction data for the specified layer
-        # Shape: (probe_positions, time, kx, ky, layer)
-        wf_layer = self._wf_array[:, :, :, :, layer_index]
+        wf_layer = self._wf_array[:, :, :, :, layer_index]  # p,t,kx,ky
 
         if self.chunk_size_time is None:
             self.n_chunks = 1
         else:
             self.n_chunks = len(self._time) // self.chunk_size_time
-        
-        indices = backend.linspace(0, len(self._time), self.n_chunks + 1)
-        indices = backend.astype(indices, int)
-        dt = self._time[1] - self._time[0]
-        # Compute frequencies from time sampling
-        self._frequencies = backend.fftfreq(self.n_chunks, d=dt)
-        self._frequencies = backend.fftshift(self._frequencies)
 
-        # Perform FFT along time axis (axis=1) for each probe position and k-point
-        # Following abeels.py approach: subtract mean to avoid high zero-frequency peak
-        # then Compute intensity |Ψ(ω,q)|² from the frequency-domain wavefunction
-        
-        if self.chunkFFT: # looping through x (in case super giganormous FFTs blow your ram)
-            dtype = backend.complex_dtype if self.keep_complex else backend.float_dtype
-            shape = (wf_layer.shape[0], self.chunk_size_time, wf_layer.shape[2], wf_layer.shape[3])
+        indices = b.astype(b.linspace(0, len(self._time), self.n_chunks + 1), int)
+        dt = float(to_numpy(self._time[1] - self._time[0]))
+        self._frequencies = b.fftshift(b.fftfreq(self.n_chunks, d=dt))
+
+        if self.chunkFFT:
+            # Memory-conservative path: loop over kx
+            dtype = b.complex_dtype if self.keep_complex else b.float_dtype
+            shape = (wf_layer.shape[0], self.chunk_size_time,
+                     wf_layer.shape[2], wf_layer.shape[3])
             if self.use_memmap:
-                self._array = backend.memmap(shape, dtype=dtype, filename = self.cache_dir / "tacaw.npy")
+                self._array = b.memmap(shape, dtype=dtype,
+                                       filename=self.cache_dir / "tacaw.npy")
             else:
-                self._array = backend.zeros(shape, dtype=dtype)
+                self._array = b.zeros(shape, dtype=dtype)
 
-            for i in range(self.n_chunks):
-                i1 = indices[i]
-                i2 = indices[i+1]
-
-                for i in tqdm(range(len(self._kxs))):
-                    wf_mean = backend.array_mean(wf_layer[:,slice(i1,i2),i,:], axis=1, keepdims=True) # p,t,x,y,[l] indices
-                    wf_fft = backend.fft(wf_layer[:,slice(i1,i2),i,:] - wf_mean, axis=1)
-                    wf_fft = backend.fftshift(wf_fft, axes=1)
-
-                if not self.keep_complex:
-                    wf_fft = backend.absolute(wf_fft)**2
-
-                    self._array[:,:,i,:] += wf_fft
-
+            for chunk_i in range(self.n_chunks):
+                i1, i2 = int(to_numpy(indices[chunk_i])), int(to_numpy(indices[chunk_i + 1]))
+                for kx_i in tqdm(range(len(self._kxs))):
+                    sl = wf_layer[:, i1:i2, kx_i, :]
+                    wf_mean = b.mean(sl, axis=1, keepdims=True)
+                    wf_fft  = b.fftshift(b.fft(sl - wf_mean, axes=1), axes=1)
+                    if not self.keep_complex:
+                        wf_fft = b.absolute(wf_fft) ** 2
+                    self._array[:, :, kx_i, :] += wf_fft
         else:
-            self._array = None
-
-            for i in range(self.n_chunks):
-                i1 = indices[i]
-                i2 = indices[i+1]
-
-                wf_mean = backend.array_mean(wf_layer[:,slice(i1,i2),:,:], axis=1, keepdims=True)
-                wf_fft = backend.fft(wf_layer[:,slice(i1,i2),:,:] - wf_mean, axis=1)
-                wf_fft = backend.fftshift(wf_fft, axes=1)
-
+            # Standard path: FFT over full time window
+            for chunk_i in range(self.n_chunks):
+                i1, i2 = int(to_numpy(indices[chunk_i])), int(to_numpy(indices[chunk_i + 1]))
+                sl = wf_layer[:, i1:i2, :, :]
+                wf_mean = b.mean(sl, axis=1, keepdims=True)
+                wf_fft  = b.fftshift(b.fft(sl - wf_mean, axes=1), axes=1)
                 if not self.keep_complex:
-                    wf_fft = backend.absolute(wf_fft)**2
-                
-                if self._array is None:
-                    self._array = wf_fft
-                else:
-                    self._array += wf_fft
+                    wf_fft = b.absolute(wf_fft) ** 2
+                self._array = wf_fft if self._array is None else self._array + wf_fft
 
-        # Ensure cache directory exists (may have been cleaned up by calculator)
+        # Persist to cache
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        np.save(self.cache_dir / "tacaw_freq.npy", self._frequencies)
+        np.save(cache_freq,  to_numpy(self._frequencies))
         if not self.use_memmap:
-            np.save(self.cache_dir / "tacaw.npy", backend.to_cpu(self._array) )
+            np.save(cache_tacaw, to_numpy(self._array))
 
-
-    # Keep fft_from_wf_data as public alias for backward compatibility
-    def fft_from_wf_data(self, layer_index: int = None):
-        """Public alias for _fft_from_wf_data (backward compatibility)."""
+    def fft_from_wf_data(self, layer_index: Optional[int] = None):
+        """Public alias for backward compatibility."""
         self._fft_from_wf_data(layer_index)
 
-    def spectrum(self, probe_index: int = None) -> np.ndarray:
-        """
-        Extract spectrum for a specific probe position by summing over all k-space.
+    # ------------------------------------------------------------------
+    # Analysis methods
+    # ------------------------------------------------------------------
 
-        Args:
-            probe_index: Index of probe position (default: 0). If None, averages over all probes.
-
-        Returns:
-            Spectrum array (frequency intensity)
-        """
-
+    def spectrum(self, probe_index: Optional[int] = None) -> np.ndarray:
+        """Spectrum for one probe (or mean over all) by summing over k-space."""
+        b = self._backend
         if probe_index is None:
-            # Average over all probe positions
-            all_spectra = []
-            for i in range(len(self.probe_positions)):
-                probe_intensity = self._array[i]  # Shape: (frequency, kx, ky)
-                spectrum = backend.array_sum(probe_intensity, axis=(1, 2))  # Sum over kx, ky
-                all_spectra.append(spectrum)
+            spectra = [to_numpy(b.sum(self._array[i], axis=(1, 2)))
+                       for i in range(len(self.probe_positions))]
+            return np.mean(spectra, axis=0)
+        if probe_index >= len(self.probe_positions):
+            raise ValueError(f"Probe index {probe_index} out of range")
+        return to_numpy(b.sum(self._array[probe_index], axis=(1, 2)))
 
-            # Average all spectra
-            if hasattr(all_spectra[0], 'device'):
-                all_spectra = [backend.to_cpu(s) for s in all_spectra]
-            spectrum = backend.array_mean(backend.asarray(all_spectra), axis=0)
-        else:
-            if probe_index >= len(self.probe_positions):
-                raise ValueError(f"Probe index {probe_index} out of range")
-
-            # Sum intensity data over all k-space for this probe position
-            probe_intensity = self._array[probe_index]  # Shape: (frequency, kx, ky)
-            spectrum = backend.array_sum(probe_intensity, axis=(1, 2))  # Sum over kx, ky
-
-            # Convert to numpy if PyTorch tensor
-            if hasattr(spectrum, 'device'):
-                spectrum = backend.to_cpu(spectrum)
-
-        return spectrum
-
-    def spectrum_image(self, frequency: float, probe_indices: Optional[List[int]] = None) -> np.ndarray:
-        """
-        Extract spectrum image at a specific frequency showing intensity in real space (probe positions).
-
-        Args:
-            frequency: Frequency value in THz
-            probe_indices: List of probe indices to include (default: all probes)
-
-        Returns:
-            Spectrum intensity for each probe position (real space map)
-        """
-        # Find closest frequency index
-        freq_idx = np.argmin(np.abs(self.frequencies - frequency))
-
-        # Use all probes if none specified
+    def spectrum_image(self, frequency: float,
+                       probe_indices: Optional[List[int]] = None) -> np.ndarray:
+        """Intensity at a given frequency for each probe position (real-space map)."""
+        b = self._backend
+        freq_idx = int(np.argmin(np.abs(self.frequencies - frequency)))
         if probe_indices is None:
             probe_indices = list(range(len(self.probe_positions)))
+        return to_numpy([b.sum(self._array[p, freq_idx, :, :])
+                         for p in probe_indices])
 
-        # Extract intensity at this frequency for each selected probe position
-        spectrum_intensities = []
-        for probe_idx in probe_indices:
-            # Sum intensity data over all k-space for this probe at this frequency
-            probe_intensity = self._array[probe_idx, freq_idx, :, :]
-            probe_intensity_sum = backend.array_sum(probe_intensity)
-
-            spectrum_intensities.append(probe_intensity_sum)
-
-        return backend.to_numpy(spectrum_intensities)
-
-    def diffraction(self, probe_index: int = None, space: str = "reciprocal") -> np.ndarray:
-        """
-        Extract diffraction pattern for a specific probe position by summing over all frequencies.
-
-        Args:
-            probe_index: Index of probe position (default: 0). If None, averages over all probes.
-
-        Returns:
-            Diffraction pattern (kx, ky) - intensity summed over all frequencies
-        """
+    def diffraction(self, probe_index: Optional[int] = None,
+                    space: str = "reciprocal") -> np.ndarray:
+        """Diffraction pattern (kx, ky) summed over all frequencies."""
+        b = self._backend
         if probe_index is None:
-            # Average over all probe positions
-            all_diffractions = []
-            for i in range(len(self.probe_positions)):
-                probe_intensity = self._array[i]  # Shape: (frequency, kx, ky)
-                diffraction_pattern = backend.array_sum(probe_intensity, axis=0)  # Sum over frequencies
-                all_diffractions.append(diffraction_pattern)
-
-            # Average all diffraction patterns
-            if hasattr(all_diffractions[0], 'device'):
-                all_diffractions = [backend.to_cpu(d) for d in all_diffractions]
-            diffraction_pattern = backend.array_mean(backend.asarray(all_diffractions), axis=0)
+            patterns = [to_numpy(b.sum(self._array[i], axis=0))
+                        for i in range(len(self.probe_positions))]
+            pattern = np.mean(patterns, axis=0)
         else:
             if probe_index >= len(self.probe_positions):
                 raise ValueError(f"Probe index {probe_index} out of range")
-
-            # Sum intensity data over all frequencies for this probe position
-            probe_intensity = self._array[probe_index]  # Shape: (frequency, kx, ky)
-            diffraction_pattern = backend.array_sum(probe_intensity, axis=0)  # Sum over frequencies
-
-            # Convert to numpy if PyTorch tensor
-            if hasattr(diffraction_pattern, 'device'):
-                diffraction_pattern = backend.to_cpu(diffraction_pattern)
+            pattern = to_numpy(b.sum(self._array[probe_index], axis=0))
 
         if space == "real":
-            diffraction_pattern = backend.absolute(backend.ifft2(diffraction_pattern))
+            pattern = to_numpy(b.absolute(b.ifft2(b.asarray(pattern))))
+        return pattern
 
-        return diffraction_pattern
-
-    def spectral_diffraction(self, frequency: float, probe_index: int = None, space: str = "reciprocal") -> np.ndarray:
-        """
-        Extract spectral diffraction pattern at a specific frequency.
-
-        Args:
-            frequency: Frequency value in THz
-            probe_index: Index of probe position (default: None). If None, averages over all probes.
-
-        Returns:
-            Spectral diffraction pattern (kx, ky) at the specified frequency
-        """
-        # Find closest frequency index
-        freq_idx = np.argmin(np.abs(self.frequencies - frequency))
+    def spectral_diffraction(self, frequency: float,
+                             probe_index: Optional[int] = None,
+                             space: str = "reciprocal") -> np.ndarray:
+        """Diffraction pattern at a specific frequency."""
+        b = self._backend
+        freq_idx = int(np.argmin(np.abs(self.frequencies - frequency)))
 
         if probe_index is None:
-            # Average over all probe positions
-            all_spectral_diffractions = []
-            for i in range(len(self.probe_positions)):
-                spectral_diffraction = self._array[i, freq_idx, :, :]
-                all_spectral_diffractions.append(spectral_diffraction)
-
-            # Average all spectral diffraction patterns
-            if hasattr(all_spectral_diffractions[0], 'device'):
-                all_spectral_diffractions = [to_cpu(sd) for sd in all_spectral_diffractions]
-            spectral_diffraction = backend.array_mean(backend.asarray(all_spectral_diffractions), axis=0)
+            slices = [self._array[i, freq_idx, :, :]
+                      for i in range(len(self.probe_positions))]
+            pattern = to_numpy(b.mean(b.stack([b.asarray(s) for s in slices]), axis=0))
         else:
             if probe_index >= len(self.probe_positions):
                 raise ValueError(f"Probe index {probe_index} out of range")
-
-            # Extract intensity data at this frequency and probe position
-            spectral_diffraction = self._array[probe_index, freq_idx, :, :]
-
-            # Convert to numpy if PyTorch tensor
-            if hasattr(spectral_diffraction, 'device'):
-                spectral_diffraction = backend.to_cpu(spectral_diffraction)
+            pattern = to_numpy(self._array[probe_index, freq_idx, :, :])
 
         if space == "real":
-            spectral_diffraction = backend.absolute(backend.ifft2(spectral_diffraction))
+            pattern = to_numpy(b.absolute(b.ifft2(b.asarray(pattern))))
+        return pattern
 
-        return spectral_diffraction
-
-    def masked_spectrum(self, mask: np.ndarray|dict|None = None, probe_index: int = None, preview=False) -> np.ndarray:
-        """
-        Extract spectrum with spatial masking in k-space.
-
-        Args:
-            mask: Spatial mask array with shape (kx, ky)
-            probe_index: Index of probe position (default: None). If None, averages over all probes.
-
-        Returns:
-            Masked spectrum (frequency intensity) with k-space mask applied
-        """
-        kxs = backend.to_cpu(self.kxs)
-        kys = backend.to_cpu(self.kys)
+    def masked_spectrum(self, mask=None, probe_index: Optional[int] = None,
+                        preview: bool = False) -> np.ndarray:
+        """Spectrum with k-space masking applied."""
+        b = self._backend
+        kxs_np = to_numpy(self._kxs)
+        kys_np = to_numpy(self._kys)
 
         if mask is None:
-            mask = np.zeros((len(kxs),len(kys)))+1
-        elif isinstance(mask,dict):
-            cx,cy=mask.get("center",(0,0))
+            mask = np.ones((len(kxs_np), len(kys_np)))
+        elif isinstance(mask, dict):
+            cx, cy = mask.get("center", (0, 0))
             if mask["shape"] == "round":
-                r=mask["radius"]
-                radii = np.sqrt((kxs[:,None]-cx)**2+(kys[None,:]-cy)**2)
-                mask = np.zeros((len(kxs),len(kys)))
-                mask[radii<=r]=1
+                r = mask["radius"]
+                radii = np.sqrt((kxs_np[:, None] - cx) ** 2 + (kys_np[None, :] - cy) ** 2)
+                mask = (radii <= r).astype(float)
+        elif mask.shape != (len(kxs_np), len(kys_np)):
+            raise ValueError(f"Mask shape {mask.shape} doesn't match "
+                             f"k-space shape ({len(kxs_np)}, {len(kys_np)})")
 
-        elif mask.shape != (len(kxs), len(kys)):
-            raise ValueError(f"Mask shape {mask.shape} doesn't match k-space shape ({len(kxs)}, {len(kys)})")
-
-        if probe_index is None:
-            probe_index = np.arange(len(self.probe_positions))
-        elif isinstance(probe_index,int):
-            probe_index=[probe_index]
+        probe_indices = (np.arange(len(self.probe_positions))
+                         if probe_index is None else [probe_index])
         spectra = []
-        for i in probe_index:
-            masked = self._array[i] * mask[None,:,:]
+        for i in probe_indices:
+            masked = self._array[i] * mask[None, :, :]
             if preview:
                 import matplotlib.pyplot as plt
+                extent = (kxs_np.min(), kxs_np.max(), kys_np.min(), kys_np.max())
                 fig, ax = plt.subplots()
-                extent = ( np.amin(kxs) , np.amax(kxs) , np.amin(kys) , np.amax(kys) )
-                ax.imshow(backend.to_cpu(backend.array_sum(masked, axis=0)).T[::-1,:], cmap="inferno",extent=extent,aspect=1)
-                ax.set_xlabel("kx")
-                ax.set_ylabel("ky")
+                ax.imshow(to_numpy(b.sum(masked, axis=0)).T[::-1, :],
+                          cmap="inferno", extent=extent, aspect=1)
+                ax.set_xlabel("kx"); ax.set_ylabel("ky")
                 ax.set_title("masked_spectrum - preview")
                 plt.show()
-                preview=False
-            spectra.append(backend.to_cpu(backend.array_sum(masked, axis=(1,2))))
-        return backend.to_numpy(backend.array_mean(spectra,axis=0))
+                plt.close(fig)
+                preview = False
+            spectra.append(to_numpy(b.sum(masked, axis=(1, 2))))
+        return np.mean(spectra, axis=0)
 
-    def dispersion(self, kx_path: np.ndarray, ky_path: np.ndarray, probe_index: int = None, space: str = "reciprocal") -> np.ndarray:
-        """
-        Extract dispersion relation from actual TACAW intensity data.
+    def dispersion(self, kx_path: np.ndarray, ky_path: np.ndarray,
+                   probe_index: Optional[int] = None,
+                   space: str = "reciprocal") -> np.ndarray:
+        """Extract dispersion relation along a k-path."""
+        b = self._backend
+        kx_np = to_numpy(self._kxs) if space != "real" else to_numpy(self._xs)
+        ky_np = to_numpy(self._kys) if space != "real" else to_numpy(self._ys)
 
-        Args:
-            kx_path: kx values for dispersion calculation
-            ky_path: ky values for dispersion calculation
-            probe_index: Index of probe position (default: None). If None, averages over all probes.
+        kx_indices = np.array([np.argmin(np.abs(kx_np - v)) for v in kx_path])
+        ky_indices = np.array([np.argmin(np.abs(ky_np - v)) for v in ky_path])
 
-        Returns:
-            Dispersion relation array with shape (n_frequencies, n_k_points)
-            Real intensity data from TACAW simulation
-        """
+        probe_indices = (np.arange(len(self.probe_positions))
+                         if probe_index is None else [probe_index])
+        n_freq = len(self.frequencies)
+        dispersion = np.zeros((n_freq, len(kx_indices)), dtype=complex)
 
-        kx=self.kxs ; ky=self.kys
-        if space == "real":
-            kx=self.xs ; ky=self.ys
-
-        # Convert to CPU/numpy for indexing operations
-        kx = backend.to_cpu(kx)
-        ky = backend.to_cpu(ky)
-
-        # Find closest indices in our kxs/kys arrays for the requested paths
-        kx_indices = []
-        for kx_val in kx_path:
-            idx = np.argmin(np.abs(kx - kx_val))
-            kx_indices.append(idx)
-        kx_indices = np.array(kx_indices)
-
-        ky_indices = []
-        for ky_val in ky_path:
-            idx = np.argmin(np.abs(ky - ky_val))
-            ky_indices.append(idx)
-        ky_indices = np.array(ky_indices)
-
-        # Create dispersion array
-        n_frequencies = len(self.frequencies)
-        n_k_points = len(kx_indices)
-        dispersion = np.zeros((n_frequencies, n_k_points),dtype=complex)
-
-        if probe_index is None:
-            probe_index = np.arange(len(self.probe_positions))
-
-        # loop frequencies first so we can cheaply iFFT kx,ky if we need to
-        for w in range(n_frequencies):
-            # all specified probe positions, this frequency, all kx,ky
-            w_slice = self._array[probe_index, w, :, :]
-            # optionally iFFT across kx,ky
+        for w in range(n_freq):
+            w_slice = self._array[probe_indices, w, :, :]
             if space == "real":
-                w_slice = backend.ifft2(w_slice, axes=(1,2))
-            # bring to CPU
-            if hasattr(w_slice, 'device'):
-                w_slice = backend.to_cpu(w_slice)
-            # sum across probe positions
-            w_slice = backend.array_mean(w_slice,axis=0)
-            # select values at positions
-            for i, (kx_idx, ky_idx) in enumerate(zip(kx_indices, ky_indices)):
-                dispersion[w,i] = w_slice[ kx_idx, ky_idx ]
+                w_slice = b.ifft2(w_slice, axes=(1, 2))
+            w_np = np.mean(to_numpy(w_slice), axis=0)
+            for i, (ki, kj) in enumerate(zip(kx_indices, ky_indices)):
+                dispersion[w, i] = w_np[ki, kj]
 
-        # Do we want to return NumPy or keep as tensor? For now, always return numpy since this is postprocessing and likely small arrays
-        return backend.to_numpy(backend.absolute(dispersion))
+        return np.abs(dispersion)
 
+    # ------------------------------------------------------------------
+    # Generic heatmap plot
+    # ------------------------------------------------------------------
 
-    # Since there are multiple things returnable by the above functions, i'm just offering up a generic heatmap plotter function here, where you pass Z,x,y
-    def plot(self,intensities,xvals,yvals,xlabel="kx ($\\AA^{-1}$)",ylabel="ky ($\\AA^{-1}$)",filename=None,title=None,extent=None):
+    def plot(self, intensities, xvals, yvals,
+             xlabel="kx (Å⁻¹)", ylabel="ky (Å⁻¹)",
+             filename=None, title=None, extent=None):
         import matplotlib.pyplot as plt
-        fig, ax = plt.subplots()
-        array = backend.absolute(to_numpy(intensities)) # imshow convention: y,x. our convention: x,y
-        aspect = None
 
-        if isinstance(xvals,str):
-            if xvals in ["kx","k"]:
-                xlabel = "kx ($\\AA^{-1}$)" ; xvals = backend.to_numpy(self.kxs)
-            elif xvals == "ky":
-                xlabel = "ky ($\\AA^{-1}$)" ; xvals = backend.to_numpy(self.kys)
-            elif xvals == "x":
-                xlabel = "x ($\\AA$)" ; xvals = backend.to_numpy(self.xs)
-            elif xvals == "y":
-                xlabel = "y ($\\AA$)" ; xvals = backend.to_numpy(self.ys)
+        _AXIS_MAP = {
+            "kx": ("kx (Å⁻¹)", lambda s: to_numpy(s._kxs)),
+            "k":  ("kx (Å⁻¹)", lambda s: to_numpy(s._kxs)),
+            "ky": ("ky (Å⁻¹)", lambda s: to_numpy(s._kys)),
+            "x":  ("x (Å)",    lambda s: to_numpy(s._xs)),
+            "y":  ("y (Å)",    lambda s: to_numpy(s._ys)),
+            "omega": ("frequency (THz)", lambda s: s.frequencies),
+        }
 
-        if isinstance(yvals,str):
-            if yvals == "omega":
-                aspect = "auto"
-            if yvals == "kx":
-                ylabel = "kx ($\\AA^{-1}$)" ; yvals = backend.to_numpy(self.kxs)
-            elif yvals in ["ky","k"]:
-                ylabel = "ky ($\\AA^{-1}$)" ; yvals = backend.to_numpy(self.kys)
-            elif yvals == "x":
-                ylabel = "x ($\\AA$)" ; yvals = backend.to_numpy(self.xs)
-            elif yvals == "y":
-                ylabel = "y ($\\AA$)" ; yvals = backend.to_numpy(self.ys)
-            elif yvals == "omega":
-                ylabel = "frequency (THz)" ; yvals = backend.to_numpy(self.frequencies)
+        if isinstance(xvals, str) and xvals in _AXIS_MAP:
+            xlabel, xvals = _AXIS_MAP[xvals][0], _AXIS_MAP[xvals][1](self)
+        if isinstance(yvals, str) and yvals in _AXIS_MAP:
+            ylabel, yvals = _AXIS_MAP[yvals][0], _AXIS_MAP[yvals][1](self)
 
         if extent is None:
-            extent = ( np.amin(xvals) , np.amax(xvals) , np.amin(yvals) , np.amax(yvals) )
-        ax.imshow(array, cmap="inferno",extent=extent,aspect=aspect)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        if title is not None:
-            ax.set_title(title)
+            extent = (np.amin(xvals), np.amax(xvals), np.amin(yvals), np.amax(yvals))
+        aspect = "auto" if ylabel == "frequency (THz)" else None
 
-        if filename is not None:
+        fig, ax = plt.subplots()
+        ax.imshow(to_numpy(np.abs(intensities)), cmap="inferno",
+                  extent=extent, aspect=aspect)
+        ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
+        if title:
+            ax.set_title(title)
+        if filename:
             plt.savefig(filename)
         else:
             plt.show()
+        plt.close(fig)
 
 
 class SEDData(TACAWData):
     """
-    Data structure for SED (Spectral Energy Density) calculations.
-
-    Functionally identical to TACAWData - both compute |Ψ(ω,q)|² from time-domain wavefunction data
-    via FFT along the time axis.
-
-    Attributes:
-        probe_positions: List of (x,y) probe positions in Angstroms.
-        frequencies: Frequencies in THz.
-        kxs: kx sampling vectors (e.g., in Å⁻¹).
-        kys: ky sampling vectors (e.g., in Å⁻¹).
-        intensity: Intensity array |Ψ(ω,q)|² (probe_positions, frequency, kx, ky).
+    SED (Spectral Energy Density) results.
+    Functionally identical to TACAWData — both compute |Ψ(ω,q)|² via time-axis FFT.
     """
-
-    def __init__(self, wf_data: WFData, layer_index: int = None, keep_complex: bool = False) -> None:
-        """
-        Initialize SEDData from WFData by performing FFT.
-
-        Args:
-            wf_data: WFData object containing wavefunction data
-            layer_index: Index of the layer to compute FFT for (default: last layer)
-            keep_complex: If True, keep complex FFT result instead of intensity
-        """
+    def __init__(self, wf_data: WFData, layer_index: Optional[int] = None,
+                 keep_complex: bool = False) -> None:
         super().__init__(wf_data, layer_index, keep_complex)

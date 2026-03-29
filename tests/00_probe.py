@@ -1,6 +1,6 @@
-import os
-os.environ['MPLBACKEND'] = 'Agg'
-import sys,os,time
+import testtools
+from testtools import differ
+import sys, os, time
 try:
     import pyslice
 except ModuleNotFoundError:
@@ -8,13 +8,12 @@ except ModuleNotFoundError:
     sys.path.insert(0, '../src')
 start=time.time()
 from pyslice.multislice.multislice import Probe
+from pyslice.backend import make_backend
 print("probe import took",time.time()-start,"s")
 
-start=time.time()
-from pyslice import differ
-print("differ import took",time.time()-start,"s")
-
 import numpy as np
+
+backend = make_backend()
 
 # Generate a few dummy probes
 xs=np.linspace(0,50,501)
@@ -23,7 +22,7 @@ ys=np.linspace(0,49,491)
 mrads=[1,3,5,15,30]
 ary=np.zeros((5,501,491),dtype=complex)
 for i,mrad in enumerate(mrads):
-	probe=Probe(xs,ys,mrad=mrad,eV=100e3,preview=False,gaussianVOA=0)
+	probe=Probe(xs,ys,mrad=mrad,eV=100e3,backend=backend,preview=False,gaussianVOA=0)
 	probe.plot("outputs/figs/00_probe_"+str(i)+".png")
 	#if hasattr(probe, 'to_cpu'):
 	#	ary[i] = probe.to_cpu()

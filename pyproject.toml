@@ -19,7 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 fast = ["torch","torchvision"]
-test = ["abtem>=1.0.6"]
+test = ["abtem>=1.0.6", "pytest"]
 md = ["orb-models"]
 fairchem = ["fairchem-core"]
 

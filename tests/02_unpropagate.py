@@ -4,9 +4,13 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, '../src')
 
-from pyslice import Loader,Probe,Propagate,gridFromTrajectory,Potential,differ,to_cpu,calculateObject
+from testtools import differ
+from pyslice import Loader,Probe,Propagate,grid_from_trajectory,Potential,calculateObject
+from pyslice.backend import make_backend, to_cpu
 import matplotlib.pyplot as plt
 import numpy as np
+
+backend = make_backend()
 
 dump="inputs/hBN_truncated.lammpstrj"
 dt=.005
@@ -16,24 +20,24 @@ for flatten in [True,False]:
 
     # LOAD MD OUTPUT
     trajectory=Loader(dump,timestep=dt,atom_mapping=types).load()
-    xs,ys,zs,lx,ly,lz=gridFromTrajectory(trajectory,sampling=0.1,slice_thickness=0.5)
+    xs,ys,zs,lx,ly,lz=grid_from_trajectory(trajectory,sampling=0.1,slice_thickness=0.5)
 
     # GENERATE PROBE (ENSURE 00_PROBE.PY PASSES BEFORE RUNNING)
     xpr=[lx/2,lx/2+5] ; ypr=[ly/2]*2 ; Os=[]
     for x,y in zip(xpr,ypr):
 
-        probe=Probe(xs,ys,mrad=5,eV=100e3,probe_xs=[x],probe_ys=[y])
+        probe=Probe(xs,ys,mrad=5,eV=100e3,backend=backend,probe_xs=[x],probe_ys=[y])
         probe.defocus(200)
         #probe.plot()
 
         # GENERATE THE POTENTIAL (ENSURE 01_POTENTIAL.PY PASSES BEFORE RUNNING)
         positions = trajectory.positions[0]
         atom_types=trajectory.atom_types
-        potential = Potential(xs, ys, zs, positions, atom_types, kind="kirkland")
+        potential = Potential(xs, ys, zs, positions, atom_types, backend=backend, kind="kirkland")
         potential.plot()
         potential.build()
-        if flatten:
-            potential.flatten() # TECHNICALLY calculateObject ONLY RETURNS THE TRULY CORRECT SOLUTION FOR A SINGLE SLICE
+        # NOTE: potential.flatten() removed — not available in new Potential API
+        # TECHNICALLY calculateObject ONLY RETURNS THE TRULY CORRECT SOLUTION FOR A SINGLE SLICE
         p_arry = np.absolute(np.sum(potential.array,axis=2))
 
         #fig, ax = plt.subplots()
@@ -42,8 +46,7 @@ for flatten in [True,False]:
         #plt.show()
 
         # PROPAGATION
-        # Handle device conversion properly for PyTorch tensors
-        result = Propagate(probe,potential,onthefly=True)
+        result = Propagate(probe,potential,backend,onthefly=True)
         res = to_cpu(result[0,:,:])
         #fig, ax = plt.subplots()
         #ax.imshow(np.absolute(res), cmap="inferno")
@@ -55,7 +58,7 @@ for flatten in [True,False]:
         #plt.show()
 
         # RECALCULATE OBJECT FROM THE RESULT
-        dO = calculateObject(probe,result[0,:,:],np.zeros((len(xs),len(ys))),weighting=1,dz=0.5)
+        dO = calculateObject(probe,result[0,:,:],np.zeros((len(xs),len(ys))),backend,weighting=1,dz=0.5)
         Os.append(dO)
         dO = to_cpu(dO)
         fig, ax = plt.subplots()
@@ -75,4 +78,3 @@ for flatten in [True,False]:
     ax.imshow(delta**.1, cmap="inferno")
     plt.title("|OP-RP|/|OP|="+str(np.amax(delta)/np.amax(p_arry)))
     plt.show()
-

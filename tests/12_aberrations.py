@@ -4,13 +4,16 @@ try:
 except ModuleNotFoundError:
     sys.path.insert(0, '../src')
 
-from pyslice import Loader,Probe,Propagate,gridFromTrajectory,Potential,MultisliceCalculator,differ
-#from pyslice.backend import xp, to_cpu
+from testtools import differ
+from pyslice import Loader,Probe,Propagate,grid_from_trajectory,Potential,MultisliceCalculator
+from pyslice.backend import make_backend
 
 import numpy as np
 import matplotlib.pyplot as plt
 import os,shutil
 from tqdm import tqdm
+
+backend = make_backend()
 
 # PROBE
 xs=np.linspace(0,70,701)
@@ -18,7 +21,7 @@ ys=np.linspace(0,69,691)
 eVs = np.linspace(80,120,50)
 weighting = np.exp(-(eVs-100)**2/6**2)
 plt.plot(eVs,weighting) ; plt.savefig("outputs/figs/12_aberrations_espread.png")
-probes = [ Probe(xs,ys,mrad=30,eV=eV*1e3) for eV in eVs ]
+probes = [ Probe(xs,ys,mrad=30,eV=eV*1e3,backend=backend) for eV in eVs ]
 # does it matter whether you aberrate the focused or defocused probe? i don't think so??
 
 # Andy has: r = np.sqrt(x*x + y*y) ; theta = np.arctan2(x,y)

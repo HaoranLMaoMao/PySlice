@@ -8,7 +8,7 @@ from pyslice.io.loader import Loader
 from pyslice.multislice.potentials import gridFromTrajectory,Potential
 from pyslice.multislice.potentials2 import gridFromTrajectory as gridFromTrajectory2
 from pyslice.multislice.potentials2 import Potential as Potential2
-from pyslice.postprocessing.testtools import differ
+from testtools import differ
 import numpy as np
 #from ..pyslice.tacaw.ms_calculator_npy import gridFromTrajectory
 #from pyslice.tacaw.multislice_npy import Probe,Propagate ; import numpy as xp

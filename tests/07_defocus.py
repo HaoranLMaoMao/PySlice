@@ -4,7 +4,9 @@ try:
 except ModuleNotFoundError:
 	sys.path.insert(0, '../src')
 
-from pyslice import Loader,Probe,Propagate,gridFromTrajectory,Potential,MultisliceCalculator,differ
+from testtools import differ
+from pyslice import Loader,Probe,Propagate,gridFromTrajectory,Potential,MultisliceCalculator
+from pyslice.backend import to_numpy
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -48,9 +50,8 @@ for z in zs:
 
 	array=probe.array[0,0,:,:]  # ".array" converts torch tensor to CPU numpy array automatically if required
 	xs_p = probe.xs ; ys_p = probe.ys
-	if hasattr(xs_p,'cpu'):
-		xs_p = np.asarray(xs_p.cpu()) # also need to convert to numpy if using Torch/gpu
-		ys_p = np.asarray(ys_p.cpu())
+	xs_p = to_numpy(xs_p)
+	ys_p = to_numpy(ys_p)
 
 	CS=plt.contour(xs_p[::3], ys_p[::3], (z+np.absolute(array[::3,::3])/zmax).T) #, levels=lv,alpha=alpha,cmap=cmap)
 	probe.defocus(dz)
