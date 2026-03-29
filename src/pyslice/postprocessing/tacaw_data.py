@@ -41,10 +41,10 @@ class TACAWData(PySliceSerial, Signal):
                  layer_index: Optional[int] = None,
                  keep_complex: bool = False,
                  chunkFFT: bool = False,
-                 chunk_size_time: Optional[int] = None) -> None:
+                 chunk_size_time: Optional[int] = None,
+                 force_rerun: bool = False) -> None:
 
         self._backend = wf_data._backend
-        b = self._backend
 
         # Copy coordinate metadata from WFData
         self.probe_positions = wf_data.probe_positions
@@ -60,6 +60,7 @@ class TACAWData(PySliceSerial, Signal):
         self.chunkFFT      = chunkFFT
         self.use_memmap    = isinstance(wf_data._array, np.memmap)
         self.chunk_size_time = chunk_size_time
+        self.force_rerun   = force_rerun
 
         self._wf_array   = wf_data._array
         self._array      = None
@@ -136,11 +137,13 @@ class TACAWData(PySliceSerial, Signal):
         cache_tacaw = self.cache_dir / "tacaw.npy"
         cache_freq  = self.cache_dir / "tacaw_freq.npy"
 
-        if cache_tacaw.exists():
+        fft_len = self.chunk_size_time if self.chunk_size_time is not None else len(self._time)
+
+        if not self.force_rerun and cache_tacaw.exists():
             cached = np.load(cache_tacaw)
             _, nt, nx, ny, _ = self._wf_array.shape
             _, nw, nx2, ny2  = cached.shape
-            if nt == nw and nx == nx2 and ny == ny2:
+            if nw == fft_len and nx == nx2 and ny == ny2:
                 self._frequencies = b.asarray(np.load(cache_freq))
                 self._array = b.asarray(cached)
                 return
@@ -153,7 +156,6 @@ class TACAWData(PySliceSerial, Signal):
 
         wf_layer = self._wf_array[:, :, :, :, layer_index]  # p,t,kx,ky
 
-        
         if self.chunk_size_time is None:
             self.n_chunks = 1
         else:
@@ -165,14 +167,13 @@ class TACAWData(PySliceSerial, Signal):
                 self.n_chunks = len(self._time) // self.chunk_size_time
 
         indices = np.linspace(0, len(self._time), self.n_chunks + 1)
-        fft_len = self.chunk_size_time if self.chunk_size_time is not None else len(self._time)
         dt = float(to_numpy(self._time[1] - self._time[0]))
         self._frequencies = b.fftshift(b.fftfreq(fft_len, d=dt))
 
         if self.chunkFFT:
             # Memory-conservative path: loop over kx
             dtype = b.complex_dtype if self.keep_complex else b.float_dtype
-            shape = (wf_layer.shape[0], self.chunk_size_time,
+            shape = (wf_layer.shape[0], fft_len,
                      wf_layer.shape[2], wf_layer.shape[3])
             if self.use_memmap:
                 self._array = b.memmap(shape, dtype=dtype,
@@ -382,5 +383,5 @@ class SEDData(TACAWData):
     Functionally identical to TACAWData — both compute |Ψ(ω,q)|² via time-axis FFT.
     """
     def __init__(self, wf_data: WFData, layer_index: Optional[int] = None,
-                 keep_complex: bool = False) -> None:
-        super().__init__(wf_data, layer_index, keep_complex)
+                 keep_complex: bool = False, force_rerun: bool = False) -> None:
+        super().__init__(wf_data, layer_index, keep_complex, force_rerun=force_rerun)

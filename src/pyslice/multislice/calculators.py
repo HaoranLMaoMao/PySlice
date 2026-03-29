@@ -113,7 +113,7 @@ class MultisliceCalculator:
             batch_size: Number of frames to process at once
             save_path: Optional path to save wave function data
             cleanup_temp_files: Whether to delete temp files after loading
-            store_all_slices: If True, store wavefunction at each slice for 3D visualization
+            cache_levels: List of which levels to cache (e.g. "potentials", "exitwaves", "slices")
         """
         b = self._backend
 
@@ -129,7 +129,7 @@ class MultisliceCalculator:
         self.save_path = save_path
         self.cleanup_temp_files = cleanup_temp_files
         self.slice_axis = slice_axis
-        self.cache_levels = cache_levels
+        self.cache_levels = cache_levels  # TODO: I think only cache_level "exitwaves" is properly implemented
         self.max_kx = max_kx
         self.max_ky = max_ky
         self.use_memmap = use_memmap   # bool: frame_data (p,x,y,l,1) and wavefunction_data (p,t,x,y,l) will be memmapped instead of held in RAM
@@ -232,7 +232,7 @@ class MultisliceCalculator:
         plt.show()
 
     #@profile
-    def run(self) -> WFData:
+    def run(self, force_rerun: bool = False) -> WFData:
         b = self._backend
 
         # cache key is calculated TWICE: once during setup (so the user only needs to setup to infer where their cache folder will go), and again during run (just in case the user does something funky)
@@ -300,18 +300,24 @@ class MultisliceCalculator:
             self.ADFindex = b.astype(b.absolute(self.ADF._wf_array[0, :, :, 0, 0, 0, 0]), int)
             self.ADF._array = b.zeros(self.ADFindex.shape, dtype=self.complex_dtype)
 
+        # If tacaw.npy already exists and no per-frame cache will be written, there is
+        # nothing to reload or recompute — skip the entire loop. Pass force_rerun=True
+        # to override (e.g. after changing cache_levels or probe parameters).
+        skip_all_frames = (
+            not force_rerun
+            and os.path.exists(self.output_dir / "tacaw.npy")
+            and not any(lv in self.cache_levels for lv in ("exitwaves", "slices"))
+        )
+        if skip_all_frames:
+            logger.info("tacaw.npy found and no per-frame cache levels active; skipping multislice computation. Pass force_rerun=True to recompute.")
+
         # Process frames one at a time with tqdm progress tracking
-        with tqdm(total=self.n_frames, desc="Processing frames", unit="frame") as pbar:
+        if not skip_all_frames:
+          with tqdm(total=self.n_frames, desc="Processing frames", unit="frame") as pbar:
             for frame_idx in range(self.n_frames):
                 cache_file = self.output_dir / f"frame_{frame_idx}.npy"
                 # Show detailed progress for single-frame runs
                 show_progress = (frame_idx == 0 and self.n_frames == 1 and not self.loop_probes)
-
-                # special case: no frames cached, but we clearly finished and got to tacaw. if so, don't bother regenerating
-                # this allows cache_levels = [] to be used for disk space savings
-                if os.path.exists(self.output_dir / f"tacaw.npy") and not os.path.exists(cache_file):
-                    pbar.update(1)
-                    continue
 
                 positions = self.trajectory.positions[frame_idx]
                 atom_types = self.trajectory.atom_types
