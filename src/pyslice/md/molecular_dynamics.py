@@ -627,7 +627,7 @@ class ORBMDCalculator(MDCalculator):
         """Load ORB calculator."""
         try:
             from orb_models.forcefield import pretrained
-            from orb_models.forcefield.calculator import ORBCalculator
+            from orb_models.forcefield.inference.calculator import ORBCalculator
 
             logger.info(f"Loading {self.model_name} model...")
 
@@ -648,14 +648,14 @@ class ORBMDCalculator(MDCalculator):
             if self.device == 'mps':
                 logger.info("MPS detected: loading on CPU, converting to float32, moving to MPS...")
                 # compile=False required for MPS (dynamo has float64 issues)
-                orbff = model_func(device='cpu', **model_kwargs)
+                orbff, atoms_adapter = model_func(device='cpu', **model_kwargs)
                 orbff = orbff.float()  # Ensure float32 (MPS doesn't support float64)
                 orbff = orbff.to('mps')
             else:
                 # compile=False to avoid slow torch.compile on first run
-                orbff = model_func(device=self.device, **model_kwargs)
+                orbff, atoms_adapter = model_func(device=self.device, **model_kwargs)
 
-            self.calculator = ORBCalculator(orbff)
+            self.calculator = ORBCalculator(orbff, atoms_adapter=atoms_adapter, device=self.device)
 
             logger.info(f"Successfully loaded {self.model_name} on {self.device}")
             return True
