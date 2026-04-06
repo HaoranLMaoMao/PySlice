@@ -18,7 +18,7 @@ import numpy as np
 from ase import Atoms
 from ase.build import bulk, surface
 
-from pyslice import Loader, MDCalculator, MultisliceCalculator, TACAWData
+from pyslice import Loader, ORBMDCalculator, MultisliceCalculator, TACAWData
 
 # =============================================================================
 # CONFIGURATION
@@ -116,14 +116,14 @@ def run_md(atoms, output_dir: Path, save_interval: int):
         return Loader(filename=str(traj_file), timestep=timestep_ps).load()
 
     from orb_models.forcefield import pretrained
-    from orb_models.forcefield.calculator import ORBCalculator
+    from orb_models.forcefield.inference.calculator import ORBCalculator
     from ase.optimize import FIRE
 
-    orb = pretrained.orb_v3_conservative_inf_omat(weights_path=CACHED_WEIGHTS_PATH)
-    atoms.calc = ORBCalculator(orb)
+    orbff, atoms_adapter = pretrained.orb_v3_conservative_inf_omat(weights_path=CACHED_WEIGHTS_PATH)
+    atoms.calc = ORBCalculator(orbff, atoms_adapter=atoms_adapter)
     FIRE(atoms, logfile=str(output_dir / "relax.log")).run(fmax=0.05, steps=500)
 
-    md = MDCalculator(
+    md = ORBMDCalculator(
         model_name="orb-v3-conservative-inf-omat",
         weights_path=CACHED_WEIGHTS_PATH,
     )

@@ -14,7 +14,7 @@ No external input files needed — the structure is built from scratch with ASE.
 
 import os
 from ase.build import bulk
-from pyslice import MDCalculator, Trajectory, analyze_md_trajectory
+from pyslice import ORBMDCalculator, Trajectory, analyze_md_trajectory
 
 os.makedirs("outputs/md_demo", exist_ok=True)
 os.makedirs("outputs/md_production", exist_ok=True)
@@ -35,7 +35,7 @@ print(f"Created Si supercell: {len(atoms)} atoms")
 # ---------------------------------------------------------------------------
 # 2. Set up the MD calculator with an ORB potential
 # ---------------------------------------------------------------------------
-md = MDCalculator(model_name="orb-v3-conservative-inf-omat")
+md = ORBMDCalculator(model_name="orb-v3-conservative-inf-omat")
 
 md.setup(
     atoms=atoms,
@@ -120,7 +120,7 @@ print(f"Created Si supercell: {len(atoms_prod)} atoms")
 #              production_relaxation_steps lets the system forget the
 #              thermostat kick before recording begins.
 #
-md_prod = MDCalculator(model_name="orb-v3-conservative-inf-omat")
+md_prod = ORBMDCalculator(model_name="orb-v3-conservative-inf-omat")
 
 md_prod.setup(
     atoms=atoms_prod,

@@ -71,6 +71,7 @@ def kirkland(qsq, Z):
         else:
             loadKirkland()
     else:
+        # Move kirklandABCDs to match qsq device if needed
         if hasattr(qsq, 'device') and hasattr(kirklandABCDs, 'device'):
             if qsq.device != kirklandABCDs.device:
                 kirklandABCDs = kirklandABCDs.to(qsq.device)
@@ -368,7 +369,9 @@ class Potential:
             real = xp.real(real)
             # Convert from electron scattering factor f_e to projected potential V_proj.
             # Kirkland Eq C.1: f_e(q) = (m_e/2πℏ²) FT[V], so FT[V] = (2πℏ²/m_e) f_e.
-            # On discrete grid: V(r) = (2πℏ²/m_e) / (dx·dy) × ifft2(S · f_e)
+            # On discrete grid: V(r) = (1/A) Σ_k FT[V](k) exp(2πi k·r)
+            # = (2πℏ²/m_e) / (dx·dy) × ifft2(S · f_e)
+            # where A = Lx·Ly, and ifft2 already includes 1/N = 1/(Lx·Ly)×(dx·dy).
             dx = self.xs[1] - self.xs[0]
             dy = self.ys[1] - self.ys[0]
             fe_to_V = 47.87764737  # 2πℏ²/m_e in V·Å² (Kirkland, Eq C.1 prefactor)

@@ -33,13 +33,13 @@ uv sync
 
 ```python
 from ase.build import bulk
-from pyslice import MDCalculator,MultisliceCalculator,TACAWData
+from pyslice import ORBMDCalculator,MultisliceCalculator,TACAWData
 
 # 1. Create structure
 atoms = bulk("Si", "diamond", a=5.431, cubic=True) * (10, 10, 2)
 
 # 2. Run molecular dynamics
-md = MDCalculator(model_name="orb-v3-direct-inf-omat")
+md = ORBMDCalculator(model_name="orb-v3-direct-inf-omat")
 md.setup(atoms, temperature=300, timestep=2.0, production_steps=500, save_interval=5)
 trajectory = md.run()
 
@@ -123,8 +123,8 @@ wf_data.plot(powerscaling=0.125)  # Diffraction pattern
 ```
 Input Sources          Processing              Analysis            Output
 ─────────────────────────────────────────────────────────────────────────────
-CIF / XYZ / LAMMPS ─┬─→ Loader ─┬─→ MDCalculator ─┐
-ASE Atoms / .traj  ─┘           │   (ORB, MACE)   │
+CIF / XYZ / LAMMPS ─┬─→ Loader ─┬─→ ORBMDCalculator ─┐
+ASE Atoms / .traj  ─┘           │   (or FAIRChem)    │
                                 │                 ↓
                                 └───────────→ Trajectory
                                                   │
@@ -159,13 +159,13 @@ traj = Loader("file.cif").load()
 traj = Loader("dump.lammpstrj", timestep=0.01, atom_mapping={1: "B", 2: "N"}).load()
 ```
 
-### `MDCalculator`
+### `ORBMDCalculator` / `FAIRChemMDCalculator`
 Run molecular dynamics with universal ML potentials.
 
 ```python
-from pyslice.md import MDCalculator
+from pyslice.md import ORBMDCalculator
 
-md = MDCalculator(model_name="orb-v3-direct-inf-omat", device="cuda")
+md = ORBMDCalculator(model_name="orb-v3-direct-inf-omat", device="cuda")
 md.setup(
     atoms,
     temperature=300,        # K

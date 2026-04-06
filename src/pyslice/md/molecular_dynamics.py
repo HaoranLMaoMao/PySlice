@@ -1,11 +1,17 @@
 """
-Molecular dynamics module using ORB models for PySlice package.
+Molecular dynamics module for PySlice package.
+
+Provides a base MDCalculator class and backend-specific subclasses
+(ORBMDCalculator, FAIRChemMDCalculator) for running MD simulations
+with machine-learning force fields.
 """
+from __future__ import annotations
+
 import numpy as np
 from pathlib import Path
 import logging,traceback
 import time
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, TYPE_CHECKING
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from ase.md.langevin import Langevin
 from ase.md.nvtberendsen import NVTBerendsen
@@ -17,7 +23,12 @@ from ase import Atoms
 from ..multislice.trajectory import Trajectory
 from ..io.loader import Loader
 
+if TYPE_CHECKING:
+    from fairchem.core.units.mlip_unit import InferenceSettings
+
 logger = logging.getLogger(__name__)
+
+__all__ = ['MDCalculator', 'ORBMDCalculator', 'FAIRChemMDCalculator', 'MDConvergenceChecker', 'analyze_md_trajectory']
 
 
 class MDConvergenceChecker:
@@ -123,80 +134,33 @@ class MDConvergenceChecker:
 
 class MDCalculator:
     """
-    Molecular dynamics calculator using ORB force fields.
+    Base class for molecular dynamics calculators.
 
-    Integrates with PySlice's Trajectory and Loader infrastructure.
+    Subclasses must implement ``__init__`` (to store backend-specific
+    options) and ``_setup_calculator`` (to load the ML force-field).
+
+    The generic MD workflow — ``setup``, ``run_equilibration``,
+    ``run_production``, ``run`` — lives here and is shared by all backends.
     """
 
-    def __init__(self, model_name: str = 'orb-v3-direct-inf-omat', device: str = 'cpu', precision: str = 'float32-high', weights_path: Optional[str] = None):
+    def __init__(self, model_name: str, device: str = 'cpu'):
         """
-        Initialize MD calculator.
+        Initialize base MD calculator.
 
         Args:
-            model_name: ORB model to use
-            device: Device for ORB calculations ('cpu', 'cuda', etc.)
-            precision: Precision for ORB calculations ('float32-high', 'float32-highest', etc.)
-            weights_path: Optional local path to model weights (bypasses network download)
+            model_name: Name/identifier of the ML model (used in log messages)
+            device: Device for calculations ('cpu', 'cuda', 'mps', etc.)
         """
         self.model_name = model_name
         self.device = device
-        self.precision = precision
-        self.weights_path = weights_path
         self.calculator = None
 
-        # Available ORB models
-        self.model_functions = {
-            'orb-v3-direct-omol': 'orb_v3_direct_omol',
-            'orb-v3-conservative-omol': 'orb_v3_conservative_omol',
-            'orb-v3-direct-inf-omat': 'orb_v3_direct_inf_omat',
-            'orb-v3-conservative-inf-omat': 'orb_v3_conservative_inf_omat',
-            'orb-v3-direct-20-omat': 'orb_v3_direct_20_omat',
-            'orb-v3-conservative-20-omat': 'orb_v3_conservative_20_omat',
-        }
-
-        logger.info(f"Initialized MDCalculator with model: {model_name}")
-
     def _setup_calculator(self) -> bool:
-        """Load ORB calculator."""
-        try:
-            from orb_models.forcefield import pretrained
-            from orb_models.forcefield.calculator import ORBCalculator
-
-            logger.info(f"Loading {self.model_name} model...")
-
-            model_func_name = self.model_functions.get(self.model_name)
-            if model_func_name is None:
-                logger.error(f"Unknown model: {self.model_name}")
-                return False
-
-            model_func = getattr(pretrained, model_func_name)
-
-            # Build kwargs for model loading
-            model_kwargs = {'precision': self.precision, 'compile': False}
-            if self.weights_path:
-                logger.info(f"Using local weights: {self.weights_path}")
-                model_kwargs['weights_path'] = self.weights_path
-
-            # ORB doesn't natively support MPS, so we load on CPU then move
-            if self.device == 'mps':
-                logger.info("MPS detected: loading on CPU, converting to float32, moving to MPS...")
-                # compile=False required for MPS (dynamo has float64 issues)
-                orbff = model_func(device='cpu', **model_kwargs)
-                orbff = orbff.float()  # Ensure float32 (MPS doesn't support float64)
-                orbff = orbff.to('mps')
-            else:
-                # compile=False to avoid slow torch.compile on first run
-                orbff = model_func(device=self.device, **model_kwargs)
-
-            self.calculator = ORBCalculator(orbff)
-
-            logger.info(f"Successfully loaded {self.model_name} on {self.device}")
-            return True
-
-        except Exception as e:
-            logger.error(f"Failed to load ORB: {e}")
-            print(traceback.format_exc())
-            return False
+        """Load the ML force-field calculator. Subclasses must override."""
+        raise NotImplementedError(
+            "Subclasses must implement _setup_calculator(). "
+            "Use ORBMDCalculator or FAIRChemMDCalculator instead of MDCalculator directly."
+        )
 
     def setup(
         self,
@@ -219,6 +183,7 @@ class MDCalculator:
         save_interval: int = 10,
         output_dir: Optional[Path] = None,
         save_xyz: bool = True,
+        rng: Optional[np.random.Generator] = None,
     ):
         """
         Set up MD simulation.
@@ -247,6 +212,7 @@ class MDCalculator:
             save_interval: Save trajectory every N steps
             output_dir: Directory for output files
             save_xyz: If True, also save trajectories in XYZ format for OVITO compatibility
+            rng: Optional numpy random generator (avoids FAIRChem global seed issue)
         """
         self.atoms = atoms
         self.temperature = temperature
@@ -268,15 +234,19 @@ class MDCalculator:
         self.output_dir = Path(output_dir) if output_dir is not None else Path.cwd()
         self.save_xyz = save_xyz
 
+        if rng is None:
+            rng = np.random.default_rng()
+        self.rng = rng
+
         # Set up calculator
         if not self._setup_calculator():
-            raise RuntimeError("Failed to setup ORB calculator")
+            raise RuntimeError(f"Failed to setup calculator ({self.model_name})")
 
         self.atoms.calc = self.calculator
 
         # Initialize velocities
         logger.info(f"Initializing velocities for T = {temperature} K")
-        MaxwellBoltzmannDistribution(self.atoms, temperature_K=temperature)
+        MaxwellBoltzmannDistribution(self.atoms, temperature_K=temperature, rng=self.rng)
 
         # Remove center of mass motion
         self.atoms.arrays['momenta'] -= self.atoms.arrays['momenta'].mean(axis=0)
@@ -285,21 +255,37 @@ class MDCalculator:
         logger.info(f"Setting up {ensemble.upper()} ensemble")
 
         if ensemble.lower() == 'nvt':
-            self.dyn = Langevin(self.atoms, timestep * units.fs,
-                              temperature_K=temperature, friction=friction)
+            self.dyn = Langevin(
+                self.atoms,
+                timestep * units.fs,
+                temperature_K=temperature,
+                friction=friction / units.fs,
+                rng=self.rng,
+            )
         elif ensemble.lower() == 'npt':
-            self.dyn = NPT(self.atoms, timestep * units.fs,
-                         temperature_K=temperature,
-                         externalstress=pressure,
-                         ttime=25*units.fs,
-                         pfactor=75*units.fs**2)
+            self.dyn = NPT(
+                self.atoms,
+                timestep * units.fs,
+                temperature_K=temperature,
+                externalstress=pressure,
+                ttime=25*units.fs,
+                pfactor=75*units.fs**2,
+            )
         elif ensemble.lower() == 'nve':
             from ase.md.verlet import VelocityVerlet
-            self.dyn = VelocityVerlet(self.atoms, timestep * units.fs)
+            self.dyn = VelocityVerlet(
+                self.atoms,
+                timestep * units.fs,
+            )
         else:
             logger.warning(f"Unknown ensemble {ensemble}, using NVT")
-            self.dyn = Langevin(self.atoms, timestep * units.fs,
-                              temperature_K=temperature, friction=friction)
+            self.dyn = Langevin(
+                self.atoms,
+                timestep * units.fs,
+                temperature_K=temperature,
+                friction=friction / units.fs,
+                rng=self.rng,
+            )
 
     def run_equilibration(
         self,
@@ -347,7 +333,7 @@ class MDCalculator:
 
         # Open log and trajectory files
         log = open(log_file, 'w')
-        log.write(f"# ORB MD Equilibration\n")
+        log.write(f"# MD Equilibration\n")
         log.write(f"# System: {len(self.atoms)} atoms\n")
         log.write(f"# Ensemble: {self.ensemble.upper()}\n")
         log.write(f"# Temperature: {self.temperature} K\n")
@@ -452,17 +438,28 @@ class MDCalculator:
                        f"{self.production_ensemble.upper()} (friction={self.production_friction}) for production")
 
             if self.production_ensemble.lower() == 'nvt':
-                self.dyn = Langevin(self.atoms, self.timestep * units.fs,
-                                  temperature_K=self.temperature, friction=self.production_friction)
+                self.dyn = Langevin(
+                    self.atoms,
+                    self.timestep * units.fs,
+                    temperature_K=self.temperature,
+                    friction=self.production_friction / units.fs,
+                    rng=self.rng,
+                )
             elif self.production_ensemble.lower() == 'npt':
-                self.dyn = NPT(self.atoms, self.timestep * units.fs,
-                             temperature_K=self.temperature,
-                             externalstress=self.pressure,
-                             ttime=25*units.fs,
-                             pfactor=75*units.fs**2)
+                self.dyn = NPT(
+                    self.atoms,
+                    self.timestep * units.fs,
+                    temperature_K=self.temperature,
+                    externalstress=self.pressure,
+                    ttime=25*units.fs,
+                    pfactor=75*units.fs**2,
+                )
             elif self.production_ensemble.lower() == 'nve':
                 from ase.md.verlet import VelocityVerlet
-                self.dyn = VelocityVerlet(self.atoms, self.timestep * units.fs)
+                self.dyn = VelocityVerlet(
+                    self.atoms,
+                    self.timestep * units.fs,
+                )
                 logger.info("  NVE ensemble: microcanonical dynamics (no thermostat noise)")
             else:
                 logger.warning(f"Unknown production ensemble {self.production_ensemble}, keeping current")
@@ -479,7 +476,7 @@ class MDCalculator:
 
         # Open log and trajectory
         log = open(log_file, 'w')
-        log.write(f"# ORB MD Production\n")
+        log.write(f"# MD Production\n")
         log.write(f"# System: {len(self.atoms)} atoms\n")
         log.write(f"# Ensemble: {self.production_ensemble.upper()}\n")
         log.write(f"# Temperature: {self.temperature} K\n")
@@ -593,6 +590,82 @@ class MDCalculator:
         return self.run_production()
 
 
+class ORBMDCalculator(MDCalculator):
+    """
+    Molecular dynamics calculator using ORB force fields.
+
+    Integrates with PySlice's Trajectory and Loader infrastructure.
+    """
+
+    def __init__(self, model_name: str = 'orb-v3-direct-inf-omat', device: str = 'cpu', precision: str = 'float32-high', weights_path: Optional[str] = None):
+        """
+        Initialize ORB MD calculator.
+
+        Args:
+            model_name: ORB model to use
+            device: Device for ORB calculations ('cpu', 'cuda', etc.)
+            precision: Precision for ORB calculations ('float32-high', 'float32-highest', etc.)
+            weights_path: Optional local path to model weights (bypasses network download)
+        """
+        super().__init__(model_name=model_name, device=device)
+        self.precision = precision
+        self.weights_path = weights_path
+
+        # Available ORB models
+        self.model_functions = {
+            'orb-v3-direct-omol': 'orb_v3_direct_omol',
+            'orb-v3-conservative-omol': 'orb_v3_conservative_omol',
+            'orb-v3-direct-inf-omat': 'orb_v3_direct_inf_omat',
+            'orb-v3-conservative-inf-omat': 'orb_v3_conservative_inf_omat',
+            'orb-v3-direct-20-omat': 'orb_v3_direct_20_omat',
+            'orb-v3-conservative-20-omat': 'orb_v3_conservative_20_omat',
+        }
+
+        logger.info(f"Initialized ORBMDCalculator with model: {model_name}")
+
+    def _setup_calculator(self) -> bool:
+        """Load ORB calculator."""
+        try:
+            from orb_models.forcefield import pretrained
+            from orb_models.forcefield.inference.calculator import ORBCalculator
+
+            logger.info(f"Loading {self.model_name} model...")
+
+            model_func_name = self.model_functions.get(self.model_name)
+            if model_func_name is None:
+                logger.error(f"Unknown model: {self.model_name}")
+                return False
+
+            model_func = getattr(pretrained, model_func_name)
+
+            # Build kwargs for model loading
+            model_kwargs = {'precision': self.precision, 'compile': False}
+            if self.weights_path:
+                logger.info(f"Using local weights: {self.weights_path}")
+                model_kwargs['weights_path'] = self.weights_path
+
+            # ORB doesn't natively support MPS, so we load on CPU then move
+            if self.device == 'mps':
+                logger.info("MPS detected: loading on CPU, converting to float32, moving to MPS...")
+                # compile=False required for MPS (dynamo has float64 issues)
+                orbff, atoms_adapter = model_func(device='cpu', **model_kwargs)
+                orbff = orbff.float()  # Ensure float32 (MPS doesn't support float64)
+                orbff = orbff.to('mps')
+            else:
+                # compile=False to avoid slow torch.compile on first run
+                orbff, atoms_adapter = model_func(device=self.device, **model_kwargs)
+
+            self.calculator = ORBCalculator(orbff, atoms_adapter=atoms_adapter, device=self.device)
+
+            logger.info(f"Successfully loaded {self.model_name} on {self.device}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to load ORB: {e}")
+            print(traceback.format_exc())
+            return False
+
+
 def analyze_md_trajectory(
     trajectory_file: str = 'production.traj',
     log_file: str = 'production.log',
@@ -689,3 +762,74 @@ def analyze_md_trajectory(
 
     except Exception as e:
         logger.error(f"Analysis failed: {e}")
+
+
+class FAIRChemMDCalculator(MDCalculator):
+    """
+    Molecular dynamics calculator using FAIRChem force fields.
+
+    Integrates with PySlice's Trajectory and Loader infrastructure.
+    """
+
+    def __init__(self,
+                 model_name: str = 'uma-s-1p1',
+                 task_name: str = 'omat',
+                 device: str = 'cpu',
+                 workers: int = 1,
+                 inference_settings: 'InferenceSettings | str' = 'default'):
+        """
+        Initialize FAIRChem MD calculator.
+
+        Args:
+            model_name: FAIRChem model to use
+            task_name: Task name for FAIRChem model
+            device: Device for FAIRChem calculations ('cpu', 'cuda', etc.)
+            workers: Number of workers for FAIRChem calculations
+            inference_settings: InferenceSettings object or 'default'
+        """
+        # Lazy import of InferenceSettings - only when FAIRChemMDCalculator is instantiated
+        try:
+            from fairchem.core.units.mlip_unit import InferenceSettings
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                "FAIRChem is required to use FAIRChemMDCalculator. "
+                "Install it with: pip install fairchem-core"
+            )
+
+        super().__init__(model_name=model_name, device=device)
+        self.task_name = task_name
+        self.workers = workers
+        self.inference_settings = inference_settings
+
+        logger.info(f"Initialized FAIRChemMDCalculator with model: {model_name}")
+
+    def _setup_calculator(self) -> bool:
+        """Load FAIRChem calculator."""
+        try:
+            logger.info(f"Loading {self.model_name} model...")
+
+            from fairchem.core import pretrained_mlip, FAIRChemCalculator
+
+            # Not sure if this works also for fairchem, but in case MPS support is similar to ORB, we load on CPU then move
+            if self.device == 'mps':
+                logger.info("MPS detected: loading on CPU, converting to float32, moving to MPS...")
+                predictor = pretrained_mlip.get_predict_unit(
+                    self.model_name, device='cpu', workers=self.workers,
+                    inference_settings=self.inference_settings,
+                )
+                predictor = predictor.to('mps')
+            else:
+                predictor = pretrained_mlip.get_predict_unit(
+                    self.model_name, device=self.device, workers=self.workers,
+                    inference_settings=self.inference_settings,
+                )
+
+            self.calculator = FAIRChemCalculator(predictor, task_name=self.task_name)
+
+            logger.info(f"Successfully loaded {self.model_name} on {self.device}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to load FAIRChem model {self.model_name}: {e}")
+            print(traceback.format_exc())
+            return False
