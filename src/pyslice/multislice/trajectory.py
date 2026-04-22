@@ -56,16 +56,20 @@ class Trajectory:
         return np.array([self.box_matrix[0, 1], self.box_matrix[0, 2], self.box_matrix[1, 2]])
 
     @property
+    def corners(self) -> np.ndarray:
+        a, b, c = self.box_matrix[0], self.box_matrix[1], self.box_matrix[2]
+        return np.array([
+            [0, 0, 0], a, b, c, a+b, a+c, b+c, a+b+c
+        ])
+
+    @property
     def extent(self) -> np.ndarray:
         """Return Cartesian extent (x, y, z) of the cell in Angstroms.
 
         Computes the bounding box of the parallelepiped defined by the lattice vectors.
         Useful for determining sampling: sampling = extent / n_pixels.
         """
-        a, b, c = self.box_matrix[0], self.box_matrix[1], self.box_matrix[2]
-        corners = np.array([
-            [0, 0, 0], a, b, c, a+b, a+c, b+c, a+b+c
-        ])
+        corners = self.corners
         return corners.max(axis=0) - corners.min(axis=0)
 
     def get_mean_positions(self) -> np.ndarray: # TODO: THIS DOES NOT INCLUDE WRAPPING (what if an atom drifts out of the bbox and comes back in through PBC?)
@@ -374,12 +378,8 @@ class Trajectory:
             ax.legend()
 
             # Draw box outline
-            box = self.box_matrix
-            corners = np.array([
-                [0, 0, 0], [box[0,0], 0, 0], [box[0,0], box[1,1], 0], [0, box[1,1], 0],
-                [0, 0, box[2,2]], [box[0,0], 0, box[2,2]], [box[0,0], box[1,1], box[2,2]], [0, box[1,1], box[2,2]]
-            ])
-            edges = [(0,1), (1,2), (2,3), (3,0), (4,5), (5,6), (6,7), (7,4), (0,4), (1,5), (2,6), (3,7)]
+            corners = self.corners
+            edges = [ (0,1),(0,2), (0,3), (1,4),(1,5),(2,4),(2,6),(3,5),(3,6),(4,7),(5,7),(6,7) ] # corners defined as: [0, 0, 0], a, b, c, a+b, a+c, b+c, a+b+c
             for edge in edges:
                 pts = corners[list(edge)]
                 ax.plot3D(pts[:,0], pts[:,1], pts[:,2], 'k-', alpha=0.3, linewidth=1)
@@ -417,25 +417,25 @@ class Trajectory:
         plt.show()
 
 
-    def rotate_to(self, direction: Tuple[int, int, int]) -> 'Trajectory':
+    def rotate_to(self, miller_vector: Tuple[int, int, int] = None, direction_cartesian: Tuple[int, int, int] = None,) -> 'Trajectory':
         """
         Rotate the structure so that a crystallographic direction aligns with the z-axis.
 
         Args:
-            direction: Miller indices [h, k, l] defining the direction to align with z
+            miller_vector: Miller indices [h, k, l] in reciprocal space defining the direction to align with z
+            direction_cartesian: vector in real space defining the direction to align with z
 
         Returns:
             New Trajectory with rotated positions, velocities, and box_matrix
         """
-        h, k, l = direction
-
         # Convert Miller indices to real-space Cartesian direction using box_matrix
-        # The direction in reciprocal space becomes a real-space vector via box_matrix^T
-        miller_vec = np.array([h, k, l], dtype=float)
-        direction_cart = self.box_matrix.T @ miller_vec
+        # The direction in reciprocal space becomes a real-space vector via box_matrix
+        if miller_vector is not None:
+            miller_vector = np.asarray( miller_vector )
+            direction_cartesian = self.box_matrix @ miller_vector
 
         # Normalize the direction vector
-        direction_cart = direction_cart / np.linalg.norm(direction_cart)
+        direction_cartesian = direction_cartesian / np.linalg.norm(direction_cartesian)
 
         # Target direction is z-axis
         z_axis = np.array([0.0, 0.0, 1.0])
@@ -447,7 +447,7 @@ class Trajectory:
         # where K is the cross-product matrix of the rotation axis
 
         # If direction is already aligned (or anti-aligned) with z, handle specially
-        dot_product = np.dot(direction_cart, z_axis)
+        dot_product = np.dot(direction_cartesian, z_axis)
         if np.abs(dot_product - 1.0) < 1e-10:
             # Already aligned, return copy
             return Trajectory(
@@ -466,11 +466,11 @@ class Trajectory:
             ])
         else:
             # General case: use Rodrigues' formula
-            rotation_axis = np.cross(direction_cart, z_axis)
+            rotation_axis = np.cross(direction_cartesian, z_axis)
             rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)
 
             angle = np.arccos(np.clip(dot_product, -1.0, 1.0))
-
+            print("rotation_axis",rotation_axis,"angle",angle)
             # Build the cross-product matrix K
             kx, ky, kz = rotation_axis
             K = np.array([
@@ -483,19 +483,25 @@ class Trajectory:
             I = np.eye(3)
             rotation_matrix = I + np.sin(angle) * K + (1.0 - np.cos(angle)) * (K @ K)
 
+        print("rotation_matrix",rotation_matrix)
         # Apply rotation to positions and velocities
-        n_frames, n_atoms, _ = self.positions.shape
-        positions_flat = self.positions.reshape(-1, 3)
-        velocities_flat = self.velocities.reshape(-1, 3)
+        #n_frames, n_atoms, _ = self.positions.shape
+        #positions_flat = self.positions.reshape(-1, 3)
+        #velocities_flat = self.velocities.reshape(-1, 3)
 
-        rotated_positions_flat = positions_flat @ rotation_matrix.T
-        rotated_velocities_flat = velocities_flat @ rotation_matrix.T
+        #rotated_positions_flat = positions_flat @ rotation_matrix.T
+        #rotated_velocities_flat = velocities_flat @ rotation_matrix.T
 
-        rotated_positions = rotated_positions_flat.reshape(n_frames, n_atoms, 3)
-        rotated_velocities = rotated_velocities_flat.reshape(n_frames, n_atoms, 3)
+        #rotated_positions = rotated_positions_flat.reshape(n_frames, n_atoms, 3)
+        #rotated_velocities = rotated_velocities_flat.reshape(n_frames, n_atoms, 3)
+
+        rotated_positions = np.einsum('tax,yx->tay',self.positions,rotation_matrix)
+        rotated_velocities = np.einsum('tax,yx->tay',self.velocities,rotation_matrix)
 
         # Rotate the box_matrix as well
-        rotated_box_matrix = rotation_matrix @ self.box_matrix
+        #rotated_box_matrix = rotation_matrix @ self.box_matrix
+        rotated_box_matrix = np.einsum('vx,yx->vy',self.box_matrix,rotation_matrix)
+
 
         return Trajectory(
             atom_types=self.atom_types,

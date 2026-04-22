@@ -120,18 +120,21 @@ def gridFromTrajectory(trajectory,sampling=0.1,slice_thickness=0.5):
     box_matrix = trajectory.box_matrix
     
     # Extract box dimensions from diagonal elements (assuming orthogonal box)
-    lx = box_matrix[0, 0]  # X dimension
-    ly = box_matrix[1, 1]  # Y dimension  
-    lz = box_matrix[2, 2]  # Z dimension
-    
+    #lx = box_matrix[0, 0]  # X dimension
+    #ly = box_matrix[1, 1]  # Y dimension
+    #lz = box_matrix[2, 2]  # Z dimension
+    lx,ly,lz = trajectory.extent
+    corners = trajectory.corners
+    x0,y0,z0 = corners.min(axis=0)
+
     # Create grids based on sampling
     nx = int(lx / sampling) + 1
     ny = int(ly / sampling) + 1  
     nz = int(lz / slice_thickness) + 1
      
-    xs = np.linspace(0, lx, nx, endpoint=False)
-    ys = np.linspace(0, ly, ny, endpoint=False)
-    zs = np.linspace(0, lz, nz, endpoint=False)
+    xs = np.linspace(x0, x0+lx, nx, endpoint=False)
+    ys = np.linspace(y0, y0+ly, ny, endpoint=False)
+    zs = np.linspace(z0, z0+lz, nz, endpoint=False)
 
     return xs,ys,zs,lx,ly,lz
 

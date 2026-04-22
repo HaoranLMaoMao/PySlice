@@ -252,8 +252,7 @@ class Loader:
 
         # Extract basic info
         n_atoms = len(frame0_data.particles.positions)
-        h_matrix = np.array(frame0_data.cell.matrix, dtype=np.float32)[:3, :3]
-
+        h_matrix = np.array(frame0_data.cell.matrix, dtype=np.float32)[:3, :3].T
         has_velocities = (hasattr(frame0_data.particles, 'velocities') and
                          frame0_data.particles.velocities is not None)
 
